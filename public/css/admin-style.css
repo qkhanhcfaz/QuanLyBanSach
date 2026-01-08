@@ -43,7 +43,7 @@ body {
   }
 
   #wrapper.toggled #sidebar-wrapper {
-    margin-left: -15rem;
+    margin-left: -15rem; 
   }
 }
 .list-group-item.active-admin {
@@ -52,4 +52,4 @@ body {
     border: none;
     border-radius: 5px;
     font-weight: bold;
-}
+} 

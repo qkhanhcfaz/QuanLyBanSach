@@ -234,4 +234,4 @@ a:hover {
 .star-rating label.star:hover ~ label.star,
 .star-rating input[type="radio"]:checked ~ label.star {
     color: #ffc107; /* Màu vàng khi được chọn hoặc hover */
-}
+}  
