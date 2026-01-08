@@ -60,3 +60,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// UI interaction script
