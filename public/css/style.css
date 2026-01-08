@@ -1,0 +1,237 @@
+/* --- General & Typography --- */
+/* 
+  Sử dụng font Inter, một font chữ hiện đại và rất dễ đọc.
+  Nếu máy người dùng không có, nó sẽ tự động dùng các font thay thế.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f8f9fa; /* Một màu xám rất nhạt, dịu mắt hơn màu trắng tinh */
+    color: #212529;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600; /* Làm cho các tiêu đề đậm hơn một chút */
+}
+
+a {
+    color: #0d6efd; /* Màu xanh dương mặc định của Bootstrap */
+    text-decoration: none; /* Bỏ gạch chân mặc định của link */
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    color: #0a58ca; /* Sẫm màu hơn một chút khi di chuột qua */
+    text-decoration: none; /* Giữ nguyên không gạch chân khi hover, trừ khi có class riêng */
+}
+
+/* --- Navbar --- */
+.navbar {
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Thêm một bóng đổ nhẹ cho header */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    font-weight: 500;
+    color: #495057;
+}
+
+.nav-link.active {
+    color: #0d6efd !important; /* Làm cho link đang active nổi bật hơn */
+}
+
+/* --- Buttons --- */
+.btn {
+    border-radius: 0.5rem; /* Bo góc nút mềm mại hơn */
+    padding: 0.6rem 1rem; /* Chỉnh lại padding cho cân đối */
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px); /* Hiệu ứng "nhấc" nút lên khi hover */
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+/* --- Product Card Styling --- */
+/* Áp dụng cho cả trang chủ và trang sản phẩm */
+.product-card {
+    border: 1px solid #e9ecef; /* Viền xám nhạt */
+    border-radius: 0.75rem; /* Bo góc card nhiều hơn */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease-in-out;
+    background-color: #ffffff;
+}
+
+.product-card:hover {
+    transform: translateY(-5px); /* Hiệu ứng "nhấc" cả card lên khi hover */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.product-card .card-img-top {
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+    height: 200px;
+    object-fit: contain; /* Đổi thành contain để ảnh không bị cắt */
+    padding: 1rem;
+}
+
+.product-card .card-body {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.product-card .card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    flex-grow: 1; /* Giúp tiêu đề chiếm không gian còn lại, đẩy giá xuống */
+    min-height: 42px; /* Đảm bảo các card cao bằng nhau dù tiêu đề 1 hay 2 dòng */
+}
+
+.product-card .card-title a {
+    color: #212529; /* Màu chữ đen cho tiêu đề sách */
+}
+
+.product-card .card-title a:hover {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.product-card .card-text.text-danger {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.product-card .card-footer {
+    background-color: transparent;
+    border-top: none;
+    padding: 0 1rem 1rem;
+}
+.item-quantity {
+    max-width: 80px; /* Giới hạn chiều rộng ô nhập số lượng */
+    text-align: center;
+}
+
+.remove-item-btn {
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
+}
+.remove-item-btn:hover {
+    background-color: #f8f9fa;
+}
+
+/* --- Footer --- */
+.footer {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    background-color: #212529; /* Đổi màu footer cho đẹp hơn */
+    color: #adb5bd;
+    margin-top: 4rem;
+}
+.footer h5 {
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+.footer a {
+    color: #adb5bd;
+}
+.footer a:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* === CUSTOM STYLE FOR PRODUCT DETAIL PAGE === */
+/* ============================================= */
+
+.product-title {
+    font-weight: 600;
+}
+
+.product-meta a {
+    text-decoration: none;
+    color: #0d6efd;
+}
+.product-meta a:hover {
+    text-decoration: underline;
+}
+
+.product-price-current {
+    font-weight: 700;
+}
+
+.product-price-old {
+    font-size: 1.25rem;
+    margin-left: 1rem;
+}
+
+.product-specs li {
+    padding: 5px 0;
+}
+
+.quantity-selector .form-control {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+}
+.quantity-selector .btn {
+    z-index: 1;
+}
+
+.service-box {
+    border: 1px solid #e9ecef;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+}
+
+.service-box-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.service-box ul li {
+    font-size: 0.95rem;
+}
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse; /* Đảo ngược thứ tự để CSS selector ~ hoạt động đúng */
+    justify-content: flex-end;
+}
+
+.star-rating input[type="radio"] {
+    display: none; /* Ẩn các nút radio mặc định */
+}
+
+.star-rating label.star {
+    font-size: 2.5rem; /* Kích thước của ngôi sao */
+    color: #ddd; /* Màu mặc định của sao */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+/* Khi hover vào một ngôi sao, tất cả các sao trước nó (theo chiều DOM ngược) sẽ sáng lên */
+.star-rating label.star:hover,
+.star-rating label.star:hover ~ label.star,
+.star-rating input[type="radio"]:checked ~ label.star {
+    color: #ffc107; /* Màu vàng khi được chọn hoặc hover */
+}
