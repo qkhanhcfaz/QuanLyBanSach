@@ -13,7 +13,17 @@ router.get('/public', async (req, res) => {
             attributes: ['id', 'image_url', 'tieu_de', 'phu_de', 'link_to', 'thu_tu_hien_thi', 'trang_thai']
         });
         
-        res.json(slideshows);
+        // Normalize image paths: nếu DB lưu chỉ tên file (ví dụ 'slider_item_2_image.png'),
+        // chuyển thành đường dẫn tĩnh '/images/...' để client có thể tải được ảnh.
+        const normalized = slideshows.map(s => {
+            const obj = s && s.toJSON ? s.toJSON() : s;
+            if (obj.image_url && !/^https?:\/\//i.test(obj.image_url) && !obj.image_url.startsWith('/')) {
+                obj.image_url = '/images/' + obj.image_url;
+            }
+            return obj;
+        });
+
+        res.json(normalized);
     } catch (error) {
         console.error('Lỗi slideshow:', error);
         res.status(500).json({ error: 'Lỗi khi lấy slideshow', chi_tiet: error.message });
