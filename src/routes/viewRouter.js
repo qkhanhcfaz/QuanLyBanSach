@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 // const adminViewController = require('../controllers/adminViewController');
-const { protect, admin } = require('../middlewares/authMiddleware');
+// const { protect, admin } = require('../middlewares/authMiddleware');
 
 const {
     renderHomePage,
