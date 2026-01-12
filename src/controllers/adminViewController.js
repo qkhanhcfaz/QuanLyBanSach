@@ -1,102 +1,248 @@
 // File: /src/controllers/adminViewController.js
-// Bộ điều khiển (Controller) để render các trang giao diện Admin
+// GIAI ĐOẠN 1: Code cơ bản - Hiển thị được dữ liệu là thành công
+const db = require('../models');
+const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, sequelize } = db;
 
 /**
- * Render trang Dashboard
+ * Render Dashboard
  */
-const renderAdminDashboard = (req, res) => {
-    res.render('admin/pages/dashboard', { title: 'Admin Dashboard' });
+const renderAdminDashboard = async (req, res) => {
+    try {
+        res.render('admin/pages/dashboard', {
+            title: 'Dashboard',
+            user: req.user,
+            path: '/'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Lỗi server');
+    }
 };
 
 /**
- * Render trang Quản lý Sản phẩm
+ * Render Danh sách Sản phẩm (CƠ BẢN)
+ * - Chưa có lọc, chưa có sort động
+ * - Lấy toàn bộ danh sách (ngây thơ)
  */
-const renderAdminProducts = (req, res) => {
-    res.render('admin/pages/products', { title: 'Admin Products' });
+const renderAdminProducts = async (req, res) => {
+    try {
+        // Lấy hết sản phẩm, không phân trang gì cả
+        const products = await Product.findAll({
+            include: [{ model: Category, as: 'category' }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.render('admin/pages/products', {
+            title: 'Quản lý Sản phẩm',
+            user: req.user,
+            path: '/products',
+            products: products,
+            // Truyền giá trị mặc định để View không bị lỗi undefined
+            currentPage: 1,
+            totalPages: 1,
+            keyword: '',
+            sortBy: 'createdAt',
+            order: 'DESC'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Lỗi tải sản phẩm');
+    }
 };
 
 /**
- * Render trang Form Thêm/Sửa Sản phẩm
+ * Render Form Sản phẩm
  */
-const renderProductFormPage = (req, res) => {
-    const productId = req.params.id;
-    const isEdit = !!productId;
-    res.render('admin/pages/product-form', { 
-        title: isEdit ? 'Sửa Sản phẩm' : 'Thêm Sản phẩm',
-        product: null
-    });
+const renderProductFormPage = async (req, res) => {
+    try {
+        const categories = await Category.findAll();
+        let product = null;
+        let title = 'Thêm Sản phẩm';
+
+        if (req.params.id) {
+            product = await Product.findByPk(req.params.id);
+            title = 'Sửa Sản phẩm';
+        }
+
+        res.render('admin/pages/product-form', {
+            title,
+            user: req.user,
+            path: '/products',
+            categories,
+            product
+        });
+    } catch (error) {
+        res.redirect('/admin/products');
+    }
 };
 
 /**
- * Render trang Quản lý Danh mục
+ * Render Danh mục
  */
-const renderAdminCategoriesPage = (req, res) => {
-    res.render('admin/pages/categories', { title: 'Admin Categories' });
+const renderAdminCategoriesPage = async (req, res) => {
+    try {
+        res.render('admin/pages/categories', {
+            title: 'Quản lý Danh mục',
+            user: req.user,
+            path: '/categories'
+        });
+    } catch (error) {
+        res.status(500).send('Lỗi');
+    }
 };
 
 /**
- * Render trang Quản lý Đơn hàng
+ * Render Danh sách Đơn hàng (CƠ BẢN)
  */
-const renderAdminOrdersPage = (req, res) => {
-    res.render('admin/pages/orders', { title: 'Admin Orders' });
+const renderAdminOrdersPage = async (req, res) => {
+    try {
+        res.render('admin/pages/orders', {
+            title: 'Quản lý Đơn hàng',
+            user: req.user,
+            path: '/orders'
+        });
+    } catch (error) {
+        res.status(500).send('Lỗi');
+    }
 };
 
 /**
- * Render trang Chi tiết Đơn hàng
+ * Render Chi tiết Đơn hàng
  */
-const renderAdminOrderDetailPage = (req, res) => {
-    const orderId = req.params.id;
-    res.render('admin/pages/order-detail', { 
-        title: `Chi tiết Đơn hàng #${orderId}`,
-        orderId
-    });
+const renderAdminOrderDetailPage = async (req, res) => {
+    try {
+        // Bắt buộc phải include đủ, nếu không View sẽ lỗi khi truy cập order.user.ho_ten
+        const order = await Order.findByPk(req.params.id, {
+            include: [
+                { model: User, as: 'user' },
+                { 
+                    model: db.OrderItem, 
+                    as: 'orderItems',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
+        });
+
+        if (!order) return res.status(404).send('Không tìm thấy đơn');
+
+        res.render('admin/pages/order-detail', {
+            title: `Đơn hàng #${order.id}`,
+            user: req.user,
+            path: '/orders',
+            order
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Lỗi server');
+    }
 };
 
 /**
- * Render trang Quản lý Người dùng
+ * Render User
  */
 const renderAdminUsersPage = (req, res) => {
-    res.render('admin/pages/users', { title: 'Admin Users' });
-};
-
-/**
- * Render trang Danh sách Nhập hàng
- */
-const renderReceiptsListPage = (req, res) => {
-    res.render('admin/pages/receipts', { title: 'Admin Receipts' });
-};
-
-/**
- * Render trang Chi tiết Nhập hàng
- */
-const renderReceiptDetailPage = (req, res) => {
-    const receiptId = req.params.id;
-    res.render('admin/pages/receipt-detail', { 
-        title: `Chi tiết Nhập hàng #${receiptId}`,
-        receiptId
+    res.render('admin/pages/users', {
+        title: 'Quản lý Người dùng',
+        user: req.user,
+        path: '/users'
     });
 };
 
 /**
- * Render trang Quản lý Khuyến mãi
+ * Render Phiếu nhập (CƠ BẢN)
+ */
+const renderReceiptsListPage = async (req, res) => {
+    try {
+        // Lấy hết phiếu nhập, chưa tìm kiếm
+        const receipts = await Receipt.findAll({
+            include: [{ model: User, as: 'creator' }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.render('admin/pages/receipts', {
+            title: 'Quản lý Nhập hàng',
+            user: req.user,
+            path: '/receipts',
+            receipts: receipts,
+            currentPage: 1,
+            totalPages: 1,
+            keyword: ''
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Lỗi');
+    }
+};
+
+/**
+ * Render Chi tiết Phiếu nhập
+ */
+const renderReceiptDetailPage = async (req, res) => {
+    try {
+        const receipt = await Receipt.findByPk(req.params.id, {
+            include: [
+                { model: User, as: 'creator' },
+                { 
+                    model: ReceiptItem, 
+                    as: 'receiptItems',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
+        });
+
+        if (!receipt) return res.status(404).send('Không tìm thấy');
+
+        res.render('admin/pages/receipt-detail', {
+            title: `Phiếu nhập #${receipt.id}`,
+            user: req.user,
+            path: '/receipts',
+            receipt
+        });
+    } catch (error) {
+        res.status(500).send('Lỗi');
+    }
+};
+
+/**
+ * Render Khuyến mãi
  */
 const renderAdminPromotionsPage = (req, res) => {
-    res.render('admin/pages/promotions', { title: 'Admin Promotions' });
-};
-
-/**
- * Render trang Form Thêm/Sửa Khuyến mãi
- */
-const renderPromotionFormPage = (req, res) => {
-    const promotionId = req.params.id;
-    const isEdit = !!promotionId;
-    res.render('admin/pages/promotion-form', { 
-        title: isEdit ? 'Sửa Khuyến mãi' : 'Thêm Khuyến mãi',
-        promotion: null
+    res.render('admin/pages/promotions', { 
+        title: 'Quản lý Khuyến mãi',
+        user: req.user, 
+        path: '/promotions' 
     });
 };
 
-// Export tất cả các hàm
+/**
+ * Render Form Khuyến mãi
+ */
+const renderPromotionFormPage = async (req, res) => {
+    try {
+        let promotion = null;
+        let title = 'Thêm Khuyến mãi';
+
+        if (req.params.id) {
+            promotion = await Promotion.findByPk(req.params.id);
+            title = 'Sửa Khuyến mãi';
+        }
+
+        const products = await Product.findAll();
+        const categories = await Category.findAll();
+
+        res.render('admin/pages/promotion-form', {
+            title,
+            user: req.user,
+            promotion,
+            products,
+            categories,
+            path: '/promotions'
+        });
+    } catch (error) {
+        res.redirect('/admin/promotions');
+    }
+};
+
 module.exports = {
     renderAdminDashboard,
     renderAdminProducts,
