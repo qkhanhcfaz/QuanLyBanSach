@@ -389,7 +389,16 @@ router.get('/bestsellers', async (req, res) => {
             attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan']
         });
         
-        res.json(bestsellers);
+        // Normalize img paths
+        const normalizedBestsellers = bestsellers.map(p => {
+            const obj = p && p.toJSON ? p.toJSON() : p;
+            if (obj.img && !/^https?:\/\//i.test(obj.img) && !obj.img.startsWith('/')) {
+                obj.img = '/images/' + obj.img;
+            }
+            return obj;
+        });
+
+        res.json(normalizedBestsellers);
     } catch (error) {
         console.error('Lỗi sản phẩm bán chạy:', error);
         res.status(500).json({ error: 'Lỗi khi lấy sản phẩm bán chạy', chi_tiet: error.message });
@@ -421,7 +430,15 @@ router.get('/', async (req, res) => {
             attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan', 'danh_muc_id']
         });
         
-        res.json({ products });
+        // Convert to plain objects and normalize img paths
+        const productsPlain = products.map(r => r && r.toJSON ? r.toJSON() : r).map(p => {
+            if (p.img && !/^https?:\/\//i.test(p.img) && !p.img.startsWith('/')) {
+                p.img = '/images/' + p.img;
+            }
+            return p;
+        });
+
+        res.json({ products: productsPlain });
     } catch (error) {
         console.error('Lỗi sản phẩm:', error);
         res.status(500).json({ error: 'Lỗi khi lấy sản phẩm', chi_tiet: error.message });

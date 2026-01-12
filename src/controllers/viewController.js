@@ -1,5 +1,7 @@
 // View Controller - Xử lý render các trang view
 
+
+
 // Render trang chủ
 exports.renderHomePage = (req, res) => {
     res.render('pages/home', { title: 'Trang Chủ' });
@@ -7,7 +9,19 @@ exports.renderHomePage = (req, res) => {
 
 // Render danh sách sản phẩm
 exports.renderProductListPage = (req, res) => {
-    res.render('pages/products', { title: 'Sản Phẩm' });
+    res.render('pages/products', { 
+        title: 'Sản Phẩm',
+        currentCategory: null,
+        allCategories: [],
+        queryParams: req.query || {},
+        products: [],
+        pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalProducts: 0,
+            limit: 12
+        }
+    });
 };
 
 // Render chi tiết sản phẩm
