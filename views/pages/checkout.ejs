@@ -1,0 +1,112 @@
+<!-- File: /views/pages/checkout.ejs -->
+<%- include('../partials/header') %>
+
+<div class="container py-5">
+    <h1 class="text-center mb-5">Thông tin thanh toán</h1>
+    <div class="row">
+        <!-- Cột thông tin giao hàng -->
+        <div class="col-md-7">
+            <h4>Thông tin giao hàng</h4>
+            <div id="alertBox" class="alert" style="display: none;"></div>
+            <form id="checkoutForm">
+                <div class="mb-3">
+                    <label for="ten_nguoi_nhan" class="form-label">Họ và tên người nhận</label>
+                    <input type="text" class="form-control" id="ten_nguoi_nhan" required>
+                </div>
+                <div class="mb-3">
+                    <label for="sdt_nguoi_nhan" class="form-label">Số điện thoại</label>
+                    <input type="tel" class="form-control" id="sdt_nguoi_nhan" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email_nguoi_nhan" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email_nguoi_nhan" required>
+                </div>
+                <!-- Ô input cho địa chỉ chi tiết -->
+                <div class="mb-3">
+                    <label for="address-detail" class="form-label">Địa chỉ chi tiết (Số nhà, tên đường...)</label>
+                    <input type="text" class="form-control" id="address-detail" placeholder="Ví dụ: 502 Lê Hồng Phong" required>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label for="province" class="form-label">Tỉnh / Thành phố</label>
+                        <select class="form-select" id="province" required>
+                            <option value="" selected disabled>Chọn Tỉnh / TP</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="district" class="form-label">Quận / Huyện</label>
+                        <select class="form-select" id="district" required disabled>
+                            <option value="" selected disabled>Chọn Quận / Huyện</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="ward" class="form-label">Phường / Xã</label>
+                        <select class="form-select" id="ward" required disabled>
+                            <option value="" selected disabled>Chọn Phường / Xã</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="ghi_chu_khach_hang" class="form-label">Ghi chú (tùy chọn)</label>
+                    <textarea class="form-control" id="ghi_chu_khach_hang" rows="3"></textarea>
+                </div>
+
+                <hr class="my-4">
+
+                <h4>Phương thức thanh toán</h4>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="COD" checked>
+                    <label class="form-check-label" for="cod">
+                        Thanh toán khi nhận hàng (COD)
+                    </label>
+                </div>
+                <div class="form-check">
+                    <!-- 1. Bỏ thuộc tính 'disabled' -->
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="momo" value="momo">
+                    <!-- 2. Sửa lại tên và value cho nhất quán (viết thường) -->
+                    <label class="form-check-label d-flex align-items-center" for="momo">
+                        Thanh toán qua ví 
+                        <img src="/images/momo-logo.png" alt="MoMo" style="height: 20px; margin-left: 5px;">
+                    </label>
+                </div>
+                <hr class="my-4">
+
+                <button type="submit" class="w-100 btn btn-primary btn-lg">Hoàn tất đặt hàng</button>
+            </form>
+        </div>
+
+        <!-- Cột tóm tắt đơn hàng -->
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Tóm tắt đơn hàng</h4>
+                </div>
+                <div class="card-body" id="order-summary">
+                    <!-- Tóm tắt sản phẩm sẽ được JS render vào đây -->
+                    <p>Đang tải...</p>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <p class="mb-2">Tạm tính</p>
+                        <p class="mb-2" id="subtotal">0đ</p>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <p class="mb-2">Phí vận chuyển</p>
+                        <p class="mb-2" id="shipping">0đ</p>
+                    </div>
+                    <div class="d-flex justify-content-between text-success" id="discount-row-checkout" style="display: none;">
+                        <p class="mb-2">Giảm giá</p>
+                        <p class="mb-2" id="discount-amount-checkout">- 0đ</p>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <p class="mb-2 fw-bold">Tổng cộng</p>
+                        <p class="mb-2 fw-bold" id="total">0đ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/checkout.js"></script>
+<%- include('../partials/footer') %>
