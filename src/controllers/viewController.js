@@ -1,29 +1,48 @@
 // File: /src/controllers/viewController.js
 const { Op } = require('sequelize');
-// [QUAN TRỌNG] Thêm 'Review' vào danh sách import
+// Import các Model từ Sequelize
 const { Product, Category, Slideshow, Order, OrderItem, User, Review } = require('../models');
 
 /**
- * Render Trang Chủ
+ * @description     Render Trang Chủ
+ * @route           GET /
  */
 const renderHomePage = async (req, res) => {
     try {
+        // 1. Lấy Slideshow
         const slides = await Slideshow.findAll({
             where: { trang_thai: true },
             order: [['thu_tu_hien_thi', 'ASC']]
         });
 
+        // 2. Lấy "Sách Mới Lên Kệ" (8 cuốn mới nhất)
         const newProducts = await Product.findAll({
             limit: 8,
             order: [['createdAt', 'DESC']],
             include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
         });
 
+        // 3. Lấy "Top Sách Bán Chạy" (Dựa trên cột da_ban mới thêm)
+        const bestSellers = await Product.findAll({
+            limit: 8,
+            order: [['da_ban', 'DESC']], 
+            include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
+        });
+
+        // 4. Lấy sách cho mục "Văn Học" (Danh mục ID = 1)
+        const featuredCategoryProducts = await Product.findAll({
+            where: { danh_muc_id: 4 }, 
+            limit: 4,
+            order: [['createdAt', 'DESC']]
+        });
+
         res.render('pages/home', { 
-            title: 'Trang Chủ',
+            title: 'Trang Chủ - Nhà Sách',
             slides,
             newProducts,
-            user: req.user
+            bestSellers,        
+            featuredCategoryProducts, 
+            user: req.user // Truyền thông tin user để hiển thị trên Header
         });
     } catch (error) {
         console.error("Lỗi trang chủ:", error);
@@ -32,7 +51,8 @@ const renderHomePage = async (req, res) => {
 };
 
 /**
- * Render Danh sách Sản phẩm
+ * @description     Render Danh sách Sản phẩm
+ * @route           GET /products
  */
 const renderProductListPage = async (req, res) => {
     try {
@@ -44,6 +64,7 @@ const renderProductListPage = async (req, res) => {
         if (category) where.danh_muc_id = category;
         if (keyword) where.ten_sach = { [Op.iLike]: `%${keyword}%` };
 
+        // Lấy thông tin danh mục hiện tại để hiển thị tiêu đề
         const allCategories = await Category.findAll();
         let currentCategoryInfo = null;
         if (category) {
@@ -79,11 +100,17 @@ const renderProductListPage = async (req, res) => {
 };
 
 /**
- * Render Chi tiết Sản phẩm (ĐÃ SỬA LỖI REVIEWS)
+ * @description     Render Chi tiết Sản phẩm (ĐÃ SỬA LỖI REVIEWS & ID)
+ * @route           GET /products/:id
  */
 const renderProductDetailPage = async (req, res) => {
     try {
         const { id } = req.params;
+
+        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi Database crash
+        if (!id || isNaN(id)) {
+            return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ' });
+        }
 
         // 1. Tìm sản phẩm
         const product = await Product.findByPk(id, {
@@ -94,33 +121,32 @@ const renderProductDetailPage = async (req, res) => {
             return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại' });
         }
 
-        // 2. [CODE MỚI] Lấy danh sách đánh giá của sản phẩm này
-        // Nếu chưa có bảng reviews thì nó sẽ trả về mảng rỗng [] -> Không bị lỗi nữa
+        // 2. Lấy danh sách đánh giá (Khắc phục lỗi reviews is not defined)
         let reviews = [];
         try {
             reviews = await Review.findAll({
                 where: { product_id: id },
-                include: [{ model: User, as: 'user', attributes: ['ho_ten'] }], // Lấy tên người review
+                include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
                 order: [['createdAt', 'DESC']]
             });
         } catch (err) {
-            console.warn("Chưa thể tải đánh giá (có thể do thiếu bảng Review), bỏ qua.");
+            console.warn("Chưa có bảng reviews hoặc lỗi lấy review, trả về rỗng.");
         }
 
-        // 3. Lấy sản phẩm liên quan
+        // 3. Lấy sản phẩm liên quan (cùng danh mục)
         const relatedProducts = await Product.findAll({
             where: { 
                 danh_muc_id: product.danh_muc_id,
-                id: { [Op.ne]: product.id }
+                id: { [Op.ne]: product.id } // Loại trừ chính nó
             },
             limit: 4
         });
 
-        // 4. Render và TRUYỀN ĐỦ BIẾN
+        // 4. Render view
         res.render('pages/product-detail', {
             title: product.ten_sach,
             product: product,
-            reviews: reviews, // <--- Đây là biến "thuốc giải" cho lỗi của bạn
+            reviews: reviews, // <--- BIẾN QUAN TRỌNG NHẤT
             relatedProducts: relatedProducts,
             user: req.user
         });
@@ -131,7 +157,7 @@ const renderProductDetailPage = async (req, res) => {
     }
 };
 
-// --- Các trang tĩnh khác ---
+// --- Các trang tĩnh / Auth ---
 
 const renderLoginPage = (req, res) => {
     res.render('pages/login', { title: 'Đăng Nhập', user: req.user });
@@ -154,7 +180,12 @@ const renderMyOrdersPage = (req, res) => {
 };
 
 const renderOrderDetailPage = (req, res) => {
-    res.render('pages/order-detail', { title: 'Chi tiết đơn hàng', user: req.user });
+    // Chỉ render khung, dữ liệu load bằng JS client hoặc update logic sau
+    res.render('pages/order-detail', { 
+        title: 'Chi tiết đơn hàng', 
+        orderId: req.params.id,
+        user: req.user 
+    });
 };
 
 const renderProfilePage = (req, res) => {
