@@ -8,6 +8,7 @@ const Product = require('./productModel');
 const Category = require('./categoryModel')(sequelize);
 const Slideshow = require('./slideshowModel')(sequelize);
 const Post = require('./postModel')(sequelize);
+const SiteSetting = require('./siteSettingModel')(sequelize);
 
 // === THIẾT LẬP QUAN HỆ GIỮA CÁC MODELS ===
 // Product thuộc về Category
@@ -28,5 +29,6 @@ module.exports = {
     Category,
     Product,
     Slideshow,
-    Post
+    Post,
+    SiteSetting
 };
