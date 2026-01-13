@@ -15,7 +15,9 @@ const { connectDB, sequelize } = require('./src/config/connectDB');
 
 // [QUAN TRỌNG] Import file models/index.js để thiết lập mối quan hệ giữa các bảng
 // Nếu thiếu dòng này, các lệnh include: [{ model: Category }] sẽ bị lỗi
-require('./src/models'); 
+const db = require('./src/models');
+const { SiteSetting } = db;
+
 
 // --- 2. IMPORT TẤT CẢ CÁC ROUTER ---
 // Routers cho Giao diện (Views)
@@ -59,6 +61,40 @@ app.use(cookieParser());
 // Middleware phục vụ file tĩnh (CSS, JS, Ảnh)
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Middleware: gắn thông tin website dùng chung cho EJS
+app.use(async (req, res, next) => {
+  try {
+    let site = await SiteSetting.findOne();
+
+    // Nếu chưa có dòng cấu hình nào thì tạo 1 dòng mặc định
+    if (!site) {
+      site = await SiteSetting.create({
+  ten_website: 'BookZone',
+  dia_chi: 'Quận 5, TP. Hồ Chí Minh',
+  email: 'bookzone@gmail.com',
+  so_dien_thoai: '0339 945 345',
+
+  // ✅ ĐÚNG TÊN CỘT DB
+  facebook: 'https://facebook.com',
+  instagram: 'https://instagram.com',
+  twitter: 'https://twitter.com',
+  linkedin: 'https://linkedin.com',
+
+  nam_ban_quyen: 2025
+});
+    }
+
+    // res.locals là biến “dùng chung” trong EJS (mọi trang đều truy cập được)
+    res.locals.site = site;
+    next();
+  } catch (err) {
+    console.error('Lỗi load SiteSetting:', err);
+    // Nếu lỗi DB thì vẫn cho chạy trang (footer sẽ fallback)
+    res.locals.site = null;
+    next();
+  }
+});
+
 // --- 5. GẮN (MOUNT) ROUTER ---
 
 // A. API Routes
@@ -82,8 +118,14 @@ app.use('/api/provinces', provinceRouter);
 // B. Admin Routes
 app.use('/admin', adminRouter);
 
+
+
+
+
 // C. View Routes (Trang chủ, sản phẩm...) - Đặt cuối cùng
 app.use('/', viewRouter);
+
+
 
 // --- 6. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 8080;
