@@ -1,47 +1,42 @@
 // File: /src/models/postModel.js
 const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/connectDB');
 
-module.exports = (sequelize) => {
-    return sequelize.define('Post', {
-        id: {
-            type: DataTypes.BIGINT,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        tieu_de: {
-            type: DataTypes.STRING(255),
-            allowNull: false
-        },
-        slug: {
-            type: DataTypes.STRING(255),
-            allowNull: true
-        },
-        anh_dai_dien: {
-            type: DataTypes.STRING(255),
-            allowNull: true
-        },
-        noi_dung_ngan: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        noi_dung: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        trang_thai: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
-        },
-        createdAt: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW
-        },
-        updatedAt: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW
-        }
-    }, {
-        tableName: 'posts',
-        timestamps: true
-    });
-};
+const Post = sequelize.define('Post', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    tieu_de: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    slug: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    tom_tat: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    noi_dung: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    anh_dai_dien: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'URL ảnh đại diện cho bài viết'
+    },
+    trang_thai: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // true: published, false: draft
+    }
+}, {
+    tableName: 'posts',
+    timestamps: true,
+});
+
+module.exports = Post;
