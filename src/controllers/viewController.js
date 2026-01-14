@@ -1,7 +1,14 @@
 // File: /src/controllers/viewController.js
 const { Op } = require('sequelize');
 // Import các Model từ Sequelize
-const { Product, Category, Slideshow, Order, OrderItem, User, Review } = require('../models');
+const db = require('../models');
+
+const Product = db.Product;
+const Category = db.Category;
+const Slideshow = db.Slideshow;
+const Review = db.Review;
+const User = db.User;
+
 
 /**
  * @description     Render Trang Chủ
@@ -22,12 +29,13 @@ const renderHomePage = async (req, res) => {
             include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
         });
 
-        // 3. Lấy "Top Sách Bán Chạy" (Dựa trên cột da_ban mới thêm)
+        // 3. Lấy "Top Sách NỔI BẬT" (tạm thời theo sản phẩm mới)
         const bestSellers = await Product.findAll({
             limit: 8,
-            order: [['da_ban', 'DESC']], 
+            order: [['createdAt', 'DESC']], 
             include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
         });
+
 
         // 4. Lấy sách cho mục "Văn Học" (Danh mục ID = 1)
         const featuredCategoryProducts = await Product.findAll({

@@ -88,13 +88,21 @@ app.use('/', viewRouter);
 // --- 6. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 8080;
 
-// Sử dụng { alter: true } để tự động cập nhật cấu trúc bảng nếu có thay đổi
-// (Ví dụ: thêm cột mới vào bảng products, tạo bảng receipts mới...)
-sequelize.sync({ alter: true }).then(() => {
+// 👉 IMPORT SEED (chỉ dùng khi cần)
+// const seedProducts = require('./src/seeders/seedProducts');
+// const seedOrders = require('./src/seeders/seedOrders');
+
+sequelize.sync()
+  .then(async () => {
+    // ⚠️ CHỈ CHẠY SEED 1 LẦN, SAU ĐÓ COMMENT DÒNG NÀY
+    // await seedProducts();
+    // await seedOrders();
+
     app.listen(PORT, () => {
-        console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
-        console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
+      console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+      console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
     });
-}).catch((err) => {
+  })
+  .catch((err) => {
     console.error('❌ Lỗi đồng bộ Database:', err);
-});
+  });
