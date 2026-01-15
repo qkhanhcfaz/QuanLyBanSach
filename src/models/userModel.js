@@ -97,6 +97,7 @@ User.associate = (models) => {
   User.belongsTo(models.Role, {
     foreignKey: "role_id",
     as: "role",
+    constraints: false, // Tắt ràng buộc khóa ngoại trong DB để tránh lỗi syntax khi sync
     onDelete: "RESTRICT", // Nếu Role bị xóa, role_id trong User sẽ thành NULL
     onUpdate: "CASCADE", // Nếu id trong Role thay đổi, role_id trong User cũng thay đổi theo
   });
