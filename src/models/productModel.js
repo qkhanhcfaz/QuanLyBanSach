@@ -2,7 +2,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 
-// Định nghĩa model 'Product' tương ứng với bảng 'products' trong CSDL
+// Định nghĩa model Product
 const Product = sequelize.define('Product', {
     // Sequelize sẽ tự động tạo cột 'id' làm khóa chính (primary key) với auto-increment
     // nên chúng ta không cần định nghĩa nó ở đây.
@@ -19,6 +19,18 @@ const Product = sequelize.define('Product', {
 
     gia_bia: {
         type: DataTypes.DECIMAL(12, 2), // Kiểu số thập phân, ví dụ: 1234567890.12
+    ten_sach: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+
+    mo_ta_ngan: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+
+    gia_bia: {
+        type: DataTypes.DECIMAL(12, 2),
         allowNull: false
     },
 
@@ -45,8 +57,7 @@ const Product = sequelize.define('Product', {
 
     img: {
         type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'URL đến hình ảnh đại diện của sản phẩm'
+        allowNull: true
     },
     so_trang: {
         type: DataTypes.INTEGER, // kiểu số nguyên
@@ -77,7 +88,7 @@ const Product = sequelize.define('Product', {
         allowNull: false
     }
 
-}, {
+}, 
     // Các tùy chọn cho model
     tableName: 'products', // Chỉ định rõ tên bảng trong CSDL
     timestamps: true, // Tự động thêm các cột createdAt và updatedAt
@@ -118,8 +129,17 @@ Product.associate = (models) => {
     });
      Product.hasMany(models.ReceiptItem, {
         foreignKey: 'product_id',
-        as: 'receiptHistory' // Lịch sử nhập hàng
-    });
-};
+        as: 'receiptHistory', // Lịch sử nhập hàng
+        tableName: 'products',
+        timestamps: true
+});
 
+// ✅ CHỈ GIỮ QUAN HỆ TỐI THIỂU – AN TOÀN – CHẠY ĐƯỢC
+Product.associate = (models) => {
+    Product.belongsTo(models.Category, {
+        foreignKey: 'danh_muc_id',
+        as: 'category'
+    });
+};          
+}
 module.exports = Product;
