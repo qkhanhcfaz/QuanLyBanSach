@@ -29,6 +29,45 @@ const renderHomePage = async (req, res) => {
     } catch (e) {
       // nếu chưa có bảng/Model slideshow thì vẫn render trang chủ được
       slides = [];
+        // 1. Lấy Slideshow
+        const slides = await Slideshow.findAll({
+            where: { trang_thai: true },
+            order: [['thu_tu_hien_thi', 'ASC']]
+        });
+
+        // 2. Lấy "Sách Mới Lên Kệ" (8 cuốn mới nhất)
+        const newProducts = await Product.findAll({
+            limit: 8,
+            order: [['createdAt', 'DESC']],
+            include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
+        });
+
+        // 3. Lấy "Top Sách NỔI BẬT" (tạm thời theo sản phẩm mới)
+        const bestSellers = await Product.findAll({
+            limit: 8,
+            order: [['createdAt', 'DESC']],
+            include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
+        });
+
+
+        // 4. Lấy sách cho mục "Văn Học" (Danh mục ID = 1)
+        const featuredCategoryProducts = await Product.findAll({
+            where: { danh_muc_id: 4 },
+            limit: 4,
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.render('pages/home', {
+            title: 'Trang Chủ - Nhà Sách',
+            slides,
+            newProducts,
+            bestSellers,
+            featuredCategoryProducts,
+            user: req.user // Truyền thông tin user để hiển thị trên Header
+        });
+    } catch (error) {
+        console.error("Lỗi trang chủ:", error);
+        res.render('pages/error', { message: 'Lỗi tải trang chủ' });
     }
 
     // 2) Sách mới (8)
@@ -98,6 +137,56 @@ const renderProductListPage = async (req, res) => {
     let currentCategoryInfo = null;
     if (category && category > 0) {
       currentCategoryInfo = allCategories.find((c) => String(c.id) === String(category)) || null;
+    try {
+        const { page = 1, category, keyword, sortBy = 'createdAt', order = 'DESC' } = req.query;
+        const limit = 12;
+        const offset = (page - 1) * limit;
+
+        let where = {};
+        if (category) where.danh_muc_id = category;
+        if (keyword) {
+            where[Op.and] = [
+                db.sequelize.where(
+                    db.sequelize.fn('unaccent', db.sequelize.col('ten_sach')),
+                    {
+                        [Op.iLike]: db.sequelize.fn('unaccent', `%${keyword}%`)
+                    }
+                )
+            ];
+        }
+
+        // Lấy thông tin danh mục hiện tại để hiển thị tiêu đề
+        const allCategories = await Category.findAll();
+        let currentCategoryInfo = null;
+        if (category) {
+            currentCategoryInfo = allCategories.find(c => c.id == category);
+        }
+
+        const { count, rows } = await Product.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [[sortBy, order]],
+            include: [{ model: Category, as: 'category' }]
+        });
+
+        res.render('pages/products', {
+            title: currentCategoryInfo ? currentCategoryInfo.ten_danh_muc : 'Tất Cả Sản Phẩm',
+            products: rows,
+            allCategories,
+            currentCategory: currentCategoryInfo,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(count / limit),
+                limit
+            },
+            queryParams: req.query,
+            user: req.user
+        });
+
+    } catch (error) {
+        console.error("Lỗi trang sản phẩm:", error);
+        res.render('pages/error', { message: 'Không thể tải danh sách sản phẩm' });
     }
 
     const { rows: products, count: totalProducts } = await Product.findAndCountAll({
@@ -168,6 +257,55 @@ const renderProductDetailPage = async (req, res) => {
     } catch (err) {
       // không có bảng review hoặc association user chưa đúng -> để rỗng
       reviews = [];
+        const { id } = req.params;
+
+        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi Database crash
+        if (!id || isNaN(id)) {
+            return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ' });
+        }
+
+        // 1. Tìm sản phẩm
+        const product = await Product.findByPk(id, {
+            include: [{ model: Category, as: 'category' }]
+        });
+
+        if (!product) {
+            return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại' });
+        }
+
+        // 2. Lấy danh sách đánh giá (Khắc phục lỗi reviews is not defined)
+        let reviews = [];
+        try {
+            reviews = await Review.findAll({
+                where: { product_id: id },
+                include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
+                order: [['createdAt', 'DESC']]
+            });
+        } catch (err) {
+            console.warn("Chưa có bảng reviews hoặc lỗi lấy review, trả về rỗng.");
+        }
+
+        // 3. Lấy sản phẩm liên quan (cùng danh mục)
+        const relatedProducts = await Product.findAll({
+            where: {
+                danh_muc_id: product.danh_muc_id,
+                id: { [Op.ne]: product.id } // Loại trừ chính nó
+            },
+            limit: 4
+        });
+
+        // 4. Render view
+        res.render('pages/product-detail', {
+            title: product.ten_sach,
+            product: product,
+            reviews: reviews, // <--- BIẾN QUAN TRỌNG NHẤT
+            relatedProducts: relatedProducts,
+            user: req.user
+        });
+
+    } catch (error) {
+        console.error("Lỗi chi tiết sản phẩm:", error);
+        res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm' });
     }
 
     // 3) sản phẩm liên quan
@@ -217,11 +355,12 @@ const renderMyOrdersPage = (req, res) => {
 };
 
 const renderOrderDetailPage = (req, res) => {
-  res.render('pages/order-detail', {
-    title: 'Chi tiết đơn hàng',
-    orderId: req.params.id,
-    user: req.user,
-  });
+    // Chỉ render khung, dữ liệu load bằng JS client hoặc update logic sau
+    res.render('pages/order-detail', {
+        title: 'Chi tiết đơn hàng',
+        orderId: req.params.id,
+        user: req.user
+    });
 };
 
 const renderProfilePage = (req, res) => {
