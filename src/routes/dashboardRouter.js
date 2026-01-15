@@ -1,8 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-router.get('/', (req, res) => {
-    res.json({ message: 'Dashboard routes' });
-});
+const { getDashboardStats } = require("../controllers/dashboardController");
+const { protect, admin } = require("../middlewares/authMiddleware");
+
+router.get("/stats", protect, admin, getDashboardStats);
 
 module.exports = router;
