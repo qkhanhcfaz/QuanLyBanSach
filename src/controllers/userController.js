@@ -47,12 +47,10 @@ const getAllUsers = async (request, response) => {
     });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách người dùng:", error);
-    response
-      .status(500)
-      .json({
-        message: "Lỗi server khi lấy danh sách người dùng.",
-        error: error.message,
-      });
+    response.status(500).json({
+      message: "Lỗi server khi lấy danh sách người dùng.",
+      error: error.message,
+    });
   }
 };
 
@@ -207,6 +205,7 @@ const updateUserProfile = async (req, res) => {
     user.ho_ten = req.body.ho_ten || user.ho_ten;
     user.phone = req.body.phone || user.phone;
     user.dia_chi = req.body.dia_chi || user.dia_chi;
+    user.ngay_sinh = req.body.ngay_sinh || user.ngay_sinh;
 
     // Xử lý khi người dùng thay đổi email
     if (req.body.email && req.body.email !== user.email) {
@@ -228,6 +227,7 @@ const updateUserProfile = async (req, res) => {
       email: updatedUser.email,
       ten_dang_nhap: updatedUser.ten_dang_nhap,
       role_id: updatedUser.role_id,
+      ngay_sinh: updatedUser.ngay_sinh,
       token: generateToken(updatedUser.id), // Tạo token mới để client cập nhật
     });
   } catch (error) {

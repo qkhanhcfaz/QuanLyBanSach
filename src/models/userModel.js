@@ -58,6 +58,10 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    ngay_sinh: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
     trang_thai: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
