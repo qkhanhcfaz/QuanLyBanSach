@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lấy token xác thực từ localStorage.
     const token = localStorage.getItem('token');
-    
+
     // Nếu không có token, nghĩa là người dùng chưa đăng nhập.
     // Chuyển hướng họ về trang đăng nhập và dừng thực thi script.
     if (!token) {
@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === BƯỚC 1: LẤY CÁC ELEMENT HTML CẦN THIẾT ===
     const cartItemsContainer = document.getElementById('cart-items-container');
-      if (!cartItemsContainer) {
+    if (!cartItemsContainer) {
         // Nếu không phải trang giỏ hàng, dừng thực thi ngay lập tức
-        return; 
+        return;
     }
     sessionStorage.removeItem('promoCodeToCheckout');
     sessionStorage.removeItem('discountAmountApplied');
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Biến để lưu trữ trạng thái của giỏ hàng và khuyến mãi trên toàn trang.
     let currentCart = null;
     let currentDiscountAmount = 0; // Số tiền được giảm
-    
+
     // Hàm helper để định dạng số thành chuỗi tiền tệ Việt Nam (vd: 50000 -> 50.000 ₫)
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -53,13 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCartItems(items) {
         cartItemsContainer.innerHTML = ''; // Luôn xóa nội dung cũ trước khi vẽ lại.
 
-         if (!items || items.length === 0) {
+        if (!items || items.length === 0) {
             cartItemsContainer.innerHTML = '<div class="text-center p-5"><p>Giỏ hàng của bạn đang trống.</p><a href="/products" class="btn btn-primary">Tiếp tục mua sắm</a></div>';
             return;
         }
 
         items.forEach(item => {
-            const itemTotal = item.so_luong * item.product.gia_bia;
+            const itemTotal = item.quantity * item.product.gia_bia;
             const cartItemHTML = `
                 <div class="row mb-4 d-flex justify-content-between align-items-center">
                     <div class="col-md-2 col-lg-2 col-xl-2">
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h6 class="text-black mb-0">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</h6>
                     </div>
                     <div class="col-md-3 col-lg-3 col-xl-2 d-flex">
-                        <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.so_luong}" type="number"
+                        <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.quantity}" type="number"
                             class="form-control form-control-sm item-quantity" data-item-id="${item.id}" />
                     </div>
                     
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             cartItemsContainer.insertAdjacentHTML('beforeend', cartItemHTML);
         });
-        
+
         // Sau khi vẽ xong, gắn lại các event listener cho các nút vừa tạo.
         addEventListenersToCartItems();
     }
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Nó sẽ được gọi mỗi khi có thay đổi trong giỏ hàng hoặc áp dụng khuyến mãi.
      */
     function updateOrderSummary() {
-        if (!currentCart || !currentCart.items|| currentCart.items.length === 0)  {
+        if (!currentCart || !currentCart.items || currentCart.items.length === 0) {
             // Nếu không có giỏ hàng, reset mọi thứ về 0.
             subtotalEl.textContent = formatCurrency(0);
             shippingFeeEl.textContent = formatCurrency(0);
@@ -103,9 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
             discountRow.style.display = 'none';
             return;
         }
-        
+
         // Tính toán các giá trị
-        const subtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
+        const subtotal = currentCart.items.reduce((sum, item) => sum + (item.quantity * item.product.gia_bia), 0);
         const shippingFee = (subtotal > 0) ? 30000 : 0; // Chỉ tính phí ship khi có hàng.
 
         // Cập nhật giao diện
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             discountRow.style.display = 'none'; // Ẩn dòng giảm giá
         }
-        
+
         // Tính tổng tiền cuối cùng và đảm bảo không bị âm
         const finalTotal = subtotal - currentDiscountAmount + shippingFee;
         finalTotalEl.textContent = formatCurrency(finalTotal > 0 ? finalTotal : 0);
@@ -143,10 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 throw new Error('Không thể tải giỏ hàng từ server.');
             }
-            
+
             const cartData = await response.json();
             currentCart = cartData; // Lưu lại dữ liệu giỏ hàng
-            
+
             renderCartItems(currentCart.items);
             updateOrderSummary();
 
@@ -189,16 +189,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ soLuong: quantity })
+                body: JSON.stringify({ quantity: quantity })
             });
+
             if (response.ok) {
-                fetchAndRenderCart(); // Tải lại toàn bộ giỏ hàng
+                // 1. Cập nhật dữ liệu trong biến currentCart
+                const itemIndex = currentCart.items.findIndex(item => item.id == itemId);
+                if (itemIndex > -1) {
+                    currentCart.items[itemIndex].quantity = quantity;
+
+                    // 2. Tính lại thành tiền của item đó (Frontend update)
+                    const item = currentCart.items[itemIndex];
+                    const newItemTotal = item.quantity * item.product.gia_bia;
+
+                    // Tìm element hiển thị thành tiền của item này và cập nhật
+                    // Lưu ý: Cần thêm class hoặc id cho element thành tiền trong renderCartItems để dễ tìm
+                    // Tạm thời tìm theo cấu trúc DOM (cách chữa cháy nếu ko muốn sửa HTML string nhiều)
+                    const quantityInput = document.querySelector(`.item-quantity[data-item-id="${itemId}"]`);
+                    if (quantityInput) {
+                        const row = quantityInput.closest('.row');
+                        const totalEl = row.querySelector('.col-md-3.col-lg-2 h6'); // Element chứa thành tiền
+                        if (totalEl) {
+                            totalEl.textContent = newItemTotal.toLocaleString('vi-VN') + 'đ';
+                        }
+                    }
+
+                    // 3. Cập nhật lại Tổng quan đơn hàng (Subtotal, Total...)
+                    updateOrderSummary();
+                }
             } else {
                 alert('Cập nhật số lượng thất bại. Vui lòng thử lại.');
-                fetchAndRenderCart(); // Tải lại để trả về số lượng cũ
+                fetchAndRenderCart(); // Fallback: Tải lại nếu lỗi
             }
         } catch (error) {
             console.error('Lỗi API khi cập nhật số lượng:', error);
+            fetchAndRenderCart(); // Fallback
         }
     }
 
@@ -212,29 +237,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function addEventListenersToCartItems() {
         // Gắn sự kiện cho tất cả các nút "Xóa"
         document.querySelectorAll('.remove-item-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
-        const buttonElement = event.target.closest('button');
-        const itemId = buttonElement.dataset.itemId;
+            button.addEventListener('click', (event) => {
+                const buttonElement = event.target.closest('button');
+                const itemId = buttonElement.dataset.itemId;
 
-        // SỬ DỤNG SWEETALERT2 ĐỂ THAY THẾ CONFIRM
-        Swal.fire({
-            title: 'Bạn chắc chắn?',
-            text: "Bạn sẽ không thể hoàn tác hành động này!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33', // Màu đỏ cho nút xóa
-            cancelButtonColor: '#3085d6', // Màu xanh cho nút hủy
-            confirmButtonText: 'Vâng, xóa nó!',
-            cancelButtonText: 'Hủy'
-        }).then((result) => {
-            // Nếu người dùng nhấn vào nút "Vâng, xóa nó!"
-            if (result.isConfirmed) {
-                // Gọi hàm để xóa sản phẩm
-                removeItemFromCart(itemId);
-            }
-        })
-    });
-});
+                // SỬ DỤNG SWEETALERT2 ĐỂ THAY THẾ CONFIRM
+                Swal.fire({
+                    title: 'Bạn chắc chắn?',
+                    text: "Bạn sẽ không thể hoàn tác hành động này!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33', // Màu đỏ cho nút xóa
+                    cancelButtonColor: '#3085d6', // Màu xanh cho nút hủy
+                    confirmButtonText: 'Vâng, xóa nó!',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    // Nếu người dùng nhấn vào nút "Vâng, xóa nó!"
+                    if (result.isConfirmed) {
+                        // Gọi hàm để xóa sản phẩm
+                        removeItemFromCart(itemId);
+                    }
+                })
+            });
+        });
 
 
         // Gắn sự kiện cho tất cả các ô input số lượng
@@ -254,18 +279,18 @@ document.addEventListener('DOMContentLoaded', () => {
         applyBtn.addEventListener('click', async () => {
             const promoCode = promoInput.value.trim().toUpperCase();
             if (!promoCode) {
-                promoTextMessage.textContent = 'Vui lòng nhập mã khuyến mãi.'; 
+                promoTextMessage.textContent = 'Vui lòng nhập mã khuyến mãi.';
                 promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
                 removePromoBtn.style.display = 'none';
                 return;
             }
-    if (!currentCart || !currentCart.items || currentCart.items.length === 0) {
+            if (!currentCart || !currentCart.items || currentCart.items.length === 0) {
                 promoTextMessage.textContent = 'Giỏ hàng của bạn đang trống để áp dụng mã.'; // Sửa lại thông báo lỗi
                 promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
                 return;
-    }
-        // Tính toán tổng tiền hàng ngay tại thời điểm áp dụng
-        const cartSubtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
+            }
+            // Tính toán tổng tiền hàng ngay tại thời điểm áp dụng
+            const cartSubtotal = currentCart.items.reduce((sum, item) => sum + (item.quantity * item.product.gia_bia), 0);
 
             // Vô hiệu hóa nút và hiển thị spinner để người dùng biết đang xử lý
             applyBtn.disabled = true;
@@ -275,10 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/promotions/apply', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ 
-                    ma_khuyen_mai: promoCode,
-                    currentSubtotal: cartSubtotal 
-                })
+                    body: JSON.stringify({
+                        ma_khuyen_mai: promoCode,
+                        currentSubtotal: cartSubtotal
+                    })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Có lỗi không xác định.');
@@ -297,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 promoTextMessage.textContent = error.message;
                 promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
                 removePromoBtn.style.display = 'none'; // ẨN NÚT HỦY
-                
+
                 currentDiscountAmount = 0;
                 sessionStorage.removeItem('discountAmountApplied');
                 updateOrderSummary();
@@ -308,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
- // <<< THÊM SỰ KIỆN CLICK CHO NÚT HỦY MỚI >>>
+    // <<< THÊM SỰ KIỆN CLICK CHO NÚT HỦY MỚI >>>
     if (removePromoBtn) {
         removePromoBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -343,47 +368,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const promoModal = document.getElementById('promo-modal');
     if (promoModal) {
-    const promoListContainer = document.getElementById('promo-list-container');
-    const selectPromoBtn = document.getElementById('select-promo-btn');
-    const promoCodeInput = document.getElementById('promo-code-input');
-    const applyPromoBtn = document.getElementById('apply-promo-btn');
-     const token = localStorage.getItem('token');
-    // Biến để lưu mã KM đang được chọn trong modal
-    let selectedPromoCode = null;
+        const promoListContainer = document.getElementById('promo-list-container');
+        const selectPromoBtn = document.getElementById('select-promo-btn');
+        const promoCodeInput = document.getElementById('promo-code-input');
+        const applyPromoBtn = document.getElementById('apply-promo-btn');
+        const token = localStorage.getItem('token');
+        // Biến để lưu mã KM đang được chọn trong modal
+        let selectedPromoCode = null;
 
-    // Sự kiện được kích hoạt ngay khi modal bắt đầu mở ra
-    promoModal.addEventListener('show.bs.modal', async () => {
-        // Reset trạng thái
-        selectedPromoCode = null;
-        promoListContainer.innerHTML = '<p class="text-center">Đang tìm các ưu đãi tốt nhất...</p>';
-        
-        // Lấy tổng tiền tạm tính hiện tại của giỏ hàng
-        const subtotalText = document.getElementById('cart-subtotal').textContent;
-        const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, ''));
-        
-        try {
-            // Gọi API mới để lấy các mã KM hợp lệ
-            const response = await fetch(`/api/promotions/available?subtotal=${subtotal}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Không thể tải ưu đãi.');
-            
-            const promos = await response.json();
-            
-            // Render danh sách KM vào modal
-            promoListContainer.innerHTML = '';
-            if (promos.length === 0) {
-                promoListContainer.innerHTML = '<p class="text-center text-muted">Rất tiếc, chưa có ưu đãi nào phù hợp cho giỏ hàng của bạn.</p>';
-                return;
-            }
+        // Sự kiện được kích hoạt ngay khi modal bắt đầu mở ra
+        promoModal.addEventListener('show.bs.modal', async () => {
+            // Reset trạng thái
+            selectedPromoCode = null;
+            promoListContainer.innerHTML = '<p class="text-center">Đang tìm các ưu đãi tốt nhất...</p>';
 
-            promos.forEach(promo => {
-                const discountText = promo.loai_giam_gia === 'percentage'
-                    ? `Giảm ${parseInt(promo.gia_tri_giam)}%`
-                    : `Giảm ${parseInt(promo.gia_tri_giam).toLocaleString('vi-VN')}đ`;
+            // Lấy tổng tiền tạm tính hiện tại của giỏ hàng
+            const subtotalText = document.getElementById('cart-subtotal').textContent;
+            const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, ''));
 
-                // Tạo từng item khuyến mãi
-                const promoItemHTML = `
+            try {
+                // Gọi API mới để lấy các mã KM hợp lệ
+                const response = await fetch(`/api/promotions/available?subtotal=${subtotal}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Không thể tải ưu đãi.');
+
+                const promos = await response.json();
+
+                // Render danh sách KM vào modal
+                promoListContainer.innerHTML = '';
+                if (promos.length === 0) {
+                    promoListContainer.innerHTML = '<p class="text-center text-muted">Rất tiếc, chưa có ưu đãi nào phù hợp cho giỏ hàng của bạn.</p>';
+                    return;
+                }
+
+                promos.forEach(promo => {
+                    const discountText = promo.loai_giam_gia === 'percentage'
+                        ? `Giảm ${parseInt(promo.gia_tri_giam)}%`
+                        : `Giảm ${parseInt(promo.gia_tri_giam).toLocaleString('vi-VN')}đ`;
+
+                    // Tạo từng item khuyến mãi
+                    const promoItemHTML = `
                     <div class="promo-item border rounded p-3 mb-2" style="cursor: pointer;" data-code="${promo.ma_khuyen_mai}">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -394,46 +419,46 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 `;
-                promoListContainer.insertAdjacentHTML('beforeend', promoItemHTML);
-            });
+                    promoListContainer.insertAdjacentHTML('beforeend', promoItemHTML);
+                });
 
-        } catch (error) {
-            promoListContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
-        }
-    });
-
-    // Xử lý sự kiện khi click chọn một mã KM trong modal
-    promoListContainer.addEventListener('click', (e) => {
-        const selectedItem = e.target.closest('.promo-item');
-        if (!selectedItem) return;
-
-        // Bỏ chọn tất cả các item khác (reset giao diện)
-        document.querySelectorAll('.promo-item').forEach(item => {
-            item.classList.remove('border-primary', 'bg-light');
-            item.querySelector('.promo-check-icon').className = 'far fa-circle promo-check-icon fs-4 text-muted';
+            } catch (error) {
+                promoListContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
+            }
         });
 
-        // Đánh dấu item được chọn
-        selectedItem.classList.add('border-primary', 'bg-light');
-        selectedItem.querySelector('.promo-check-icon').className = 'fas fa-check-circle promo-check-icon fs-4 text-primary';
-        
-        // Lưu lại mã đã chọn
-        selectedPromoCode = selectedItem.dataset.code;
-    });
+        // Xử lý sự kiện khi click chọn một mã KM trong modal
+        promoListContainer.addEventListener('click', (e) => {
+            const selectedItem = e.target.closest('.promo-item');
+            if (!selectedItem) return;
 
-    // Xử lý sự kiện khi nhấn nút "Áp dụng mã đã chọn"
-    selectPromoBtn.addEventListener('click', () => {
-        if (selectedPromoCode) {
-            // Điền mã đã chọn vào ô input
-            promoCodeInput.value = selectedPromoCode;
-            // Tự động nhấn nút "Áp dụng" để tái sử dụng logic có sẵn
-            applyPromoBtn.click();
-        }
-        // Đóng modal
-        const modalInstance = bootstrap.Modal.getInstance(promoModal);
-        modalInstance.hide();
-    });
-}
+            // Bỏ chọn tất cả các item khác (reset giao diện)
+            document.querySelectorAll('.promo-item').forEach(item => {
+                item.classList.remove('border-primary', 'bg-light');
+                item.querySelector('.promo-check-icon').className = 'far fa-circle promo-check-icon fs-4 text-muted';
+            });
+
+            // Đánh dấu item được chọn
+            selectedItem.classList.add('border-primary', 'bg-light');
+            selectedItem.querySelector('.promo-check-icon').className = 'fas fa-check-circle promo-check-icon fs-4 text-primary';
+
+            // Lưu lại mã đã chọn
+            selectedPromoCode = selectedItem.dataset.code;
+        });
+
+        // Xử lý sự kiện khi nhấn nút "Áp dụng mã đã chọn"
+        selectPromoBtn.addEventListener('click', () => {
+            if (selectedPromoCode) {
+                // Điền mã đã chọn vào ô input
+                promoCodeInput.value = selectedPromoCode;
+                // Tự động nhấn nút "Áp dụng" để tái sử dụng logic có sẵn
+                applyPromoBtn.click();
+            }
+            // Đóng modal
+            const modalInstance = bootstrap.Modal.getInstance(promoModal);
+            modalInstance.hide();
+        });
+    }
 
     // === BƯỚC 5: KHỞI CHẠY ===
     // Gọi hàm này lần đầu tiên để tải và hiển thị giỏ hàng khi người dùng truy cập trang.
@@ -468,7 +493,7 @@ async function addToCart(productId, quantity = 1) {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ productId: productId, soLuong: quantity })
+            body: JSON.stringify({ productId: productId, quantity: quantity })
         });
 
         if (response.ok) {

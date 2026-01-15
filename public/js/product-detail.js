@@ -100,3 +100,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+// === THÊM VÀO GIỎ HÀNG ===
+const addToCartBtn = document.getElementById('add-to-cart');
+
+if (addToCartBtn) {
+    addToCartBtn.addEventListener('click', async function () {
+        const productId = window.location.pathname.split('/').pop();
+        const quantity = parseInt(document.getElementById('quantity-input').value, 10);
+
+        try {
+            const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId, quantity })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Swal.fire('Thành công!', 'Đã thêm vào giỏ hàng', 'success');
+            } else {
+                Swal.fire('Lỗi!', result.message || 'Không thể thêm vào giỏ hàng', 'error');
+            }
+        } catch (error) {
+            console.error('Lỗi thêm vào giỏ hàng:', error);
+            Swal.fire('Lỗi kết nối', 'Không thể kết nối đến máy chủ.', 'error');
+        }
+    });
+}
+
+// === HÀM THÊM VÀO GIỎ HÀNG ===
+async function addToCart(productId, quantity) {
+    try {
+        const response = await fetch('/api/cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ productId, quantity })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            Swal.fire('Thành công!', 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
+        } else {
+            Swal.fire('Lỗi!', result.message || 'Không thể thêm vào giỏ.', 'error');
+        }
+
+    } catch (error) {
+        console.error('Lỗi khi thêm vào giỏ hàng:', error);
+        Swal.fire('Lỗi kết nối', 'Không thể kết nối tới máy chủ.', 'error');
+    }
+}
