@@ -92,7 +92,7 @@ const PORT = process.env.PORT || 8080;
 // (Ví dụ: thêm cột mới vào bảng products, tạo bảng receipts mới...)
 // TẠM THỜI TẮT alter: true ĐỂ TRÁNH LỖI SYNTAX POSTGRES
 sequelize
-  .sync({ alter: true })
+  .sync()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
