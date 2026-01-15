@@ -1,13 +1,19 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const {
+  registerUser,
+  loginUser,
+  logoutUser,
+  forgotPassword, // import hàm mới
+  resetPassword,
+} = require("../controllers/authController");
 
-// Placeholder routes for auth router
-router.post('/login', (req, res) => {
-    res.json({ message: 'Login API' });
-});
+router.post("/register", registerUser);
+router.post("/login", loginUser);
+router.post("/logout", logoutUser);
 
-router.post('/register', (req, res) => {
-    res.json({ message: 'Register API' });
-});
+// <<< THÊM 2 ROUTE MỚI >>>
+router.post("/forgotpassword", forgotPassword);
+router.put("/resetpassword/:resettoken", resetPassword);
 
 module.exports = router;
