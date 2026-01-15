@@ -6,6 +6,12 @@ const Sequelize = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 const basename = path.basename(__filename);
 
+// Import các models - productModel đã export trực tiếp model instance
+const Product = require('./productModel');
+const Category = require('./categoryModel')(sequelize);
+const Slideshow = require('./slideshowModel')(sequelize);
+const Post = require('./postModel')(sequelize);
+const SiteSetting = require('./siteSettingModel')(sequelize);
 const db = {};
 
 // Đọc tất cả các file trong thư mục hiện tại
@@ -32,6 +38,15 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
+// === EXPORT CÁC MODELS VÀ SEQUELIZE INSTANCE ===
+module.exports = {
+    sequelize,
+    Category,
+    Product,
+    Slideshow,
+    Post,
+    SiteSetting
+};
 // Gắn sequelize instance và class Sequelize vào đối tượng db
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
