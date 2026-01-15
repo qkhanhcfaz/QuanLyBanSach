@@ -91,7 +91,54 @@ const getOrderById = async (req, res) => {
   }
 };
 
+/**
+ * @description     Admin: Cập nhật trạng thái đơn hàng
+ * @route           PUT /api/orders/:id/status
+ * @access          Private/Admin
+ */
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    // VALIDATION: Chỉ cho phép hủy khi đang chờ hoặc đã xác nhận
+    if (status === "cancelled") {
+      if (
+        order.trang_thai_don_hang !== "pending" &&
+        order.trang_thai_don_hang !== "confirmed"
+      ) {
+        return res.status(400).json({
+          message:
+            "Không thể hủy đơn hàng đã giao hoặc đang giao. Chỉ hủy được khi chưa xử lý xong.",
+        });
+      }
+    }
+
+    // Cập nhật trạng thái
+    order.trang_thai_don_hang = status;
+
+    // Nếu là 'delivered', cập nhật luôn trạng thái thanh toán thành true (nếu chưa)
+    if (status === "delivered") {
+      order.trang_thai_thanh_toan = true;
+    }
+
+    await order.save();
+
+    res.json({ message: "Cập nhật trạng thái thành công!", order });
+  } catch (error) {
+    console.error("Lỗi cập nhật đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
+  updateOrderStatus,
 };
