@@ -445,4 +445,10 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/products/:id - Lấy chi tiết sản phẩm
+router.get('/:id', getProductById);
+
+// PUT /api/products/:id - Cập nhật sản phẩm
+router.put('/:id', updateProduct);
+
 module.exports = router;
