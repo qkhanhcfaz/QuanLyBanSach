@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // ====================================================================
     // ======================= KHAI BÁO BIẾN & DOM =======================
     // ====================================================================
@@ -32,37 +32,36 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const parentCategories = categories.filter(cat => !cat.danh_muc_cha_id);
-    
-    // Sắp xếp danh mục cha theo tên
-    parentCategories.sort((a, b) => a.ten_danh_muc.localeCompare(b.ten_danh_muc));
+        // Helper recursive function to render category tree
+        const renderTree = (cats, level) => {
+            // Sort by name
+            cats.sort((a, b) => a.ten_danh_muc.localeCompare(b.ten_danh_muc));
 
-    // Bước 2: Duyệt qua từng danh mục cha
-    parentCategories.forEach(parent => {
-        // Render hàng của chính danh mục cha
-        tableBody.insertAdjacentHTML('beforeend', createCategoryRowHTML(parent, 0));
+            cats.forEach(cat => {
+                tableBody.insertAdjacentHTML('beforeend', createCategoryRowHTML(cat, level));
 
-        // Bước 3: Tìm TẤT CẢ các danh mục con của nó
-        const childCategories = categories.filter(child => child.danh_muc_cha_id === parent.id);
+                // Find children: Loose equality (==) to handle string/number mismatch
+                const children = categories.filter(c => c.danh_muc_cha_id == cat.id);
 
-        // Sắp xếp danh mục con theo tên
-        childCategories.sort((a, b) => a.ten_danh_muc.localeCompare(b.ten_danh_muc));
+                if (children.length > 0) {
+                    renderTree(children, level + 1);
+                }
+            });
+        };
 
-        // Bước 4: Duyệt qua và render các danh mục con
-        childCategories.forEach(child => {
-            tableBody.insertAdjacentHTML('beforeend', createCategoryRowHTML(child, 1)); // level = 1
-        });
-    });
-
-        // Hàm đệ quy để render các hàng
+        // Start with root categories (no parent)
+        const rootCategories = categories.filter(cat => !cat.danh_muc_cha_id);
+        renderTree(rootCategories, 0);
     }
 
     /**
      * Hàm tiện ích tạo chuỗi HTML cho một hàng <tr>
      */
     function createCategoryRowHTML(category, level) {
-        const indent = level > 0 ? ' '.repeat(level * 4) + '└─ ' : '';
-        const parentName = category.parentCategory ? category.parentCategory.ten_danh_muc : '(Không có)';
+        const indent = level > 0 ? '&nbsp;'.repeat(level * 4) + '└─ ' : '';
+        // Find parent name
+        const parent = allCategories.find(c => c.id == category.danh_muc_cha_id);
+        const parentName = parent ? parent.ten_danh_muc : '(Không có)';
         const productCount = category.productCount || (category.dataValues ? category.dataValues.productCount : 0);
 
         return `
@@ -85,31 +84,50 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateParentCategorySelect(currentCategoryId = null) {
         parentSelect.innerHTML = '<option value="">-- Là danh mục gốc --</option>';
 
-        const categoryMap = new Map(allCategories.map(cat => [cat.id, { ...cat, subCategories: [] }]));
-        const rootCategories = [];
+        // Build tree for select options
+        const roots = [];
+        const categoryMap = new Map();
+
+        // Initialize map
+        allCategories.forEach(cat => {
+            cat.children = [];
+            categoryMap.set(cat.id, cat); // ID should be number from API usually, but map uses strict key
+        });
 
         allCategories.forEach(cat => {
-            // Không cho phép chọn chính nó hoặc con của nó làm cha
-            if (cat.id === currentCategoryId) return;
+            if (cat.id == currentCategoryId) return; // Skip self
 
             if (cat.danh_muc_cha_id) {
-                const parent = categoryMap.get(cat.danh_muc_cha_id);
-                if (parent) parent.subCategories.push(categoryMap.get(cat.id));
+                // Convert to same type as key (assuming cat.id is number, ensure danh_muc_cha_id is number)
+                // But safer to just find via loop if we are unsure, OR cast to number.
+                // Let's cast to whatever the map key is.
+                // Assuming cat.id is likely a number if from JSON usually.
+                // But let's safely use find if we want to be 100% sure or cast.
+                // Casting to Number is safe for "1" -> 1.
+                const parentId = Number(cat.danh_muc_cha_id);
+                const parent = categoryMap.get(parentId);
+                if (parent) {
+                    parent.children.push(cat);
+                } else {
+                    // If parent not found (maybe filtered out?), treat as root for select? 
+                    // Or just ignore.
+                }
             } else {
-                rootCategories.push(categoryMap.get(cat.id));
+                roots.push(cat);
             }
         });
 
-        function populateOptions(categories, level) {
-            categories.forEach(category => {
-                const indent = '-'.repeat(level);
-                parentSelect.innerHTML += `<option value="${category.id}">${indent} ${category.ten_danh_muc}</option>`;
-                if (category.subCategories.length > 0) {
-                    populateOptions(category.subCategories, level + 1);
+        const renderOptions = (cats, level) => {
+            cats.forEach(category => {
+                const indent = '- '.repeat(level);
+                parentSelect.innerHTML += `<option value="${category.id}">${indent}${category.ten_danh_muc}</option>`;
+                if (category.children.length > 0) {
+                    renderOptions(category.children, level + 1);
                 }
             });
-        }
-        populateOptions(rootCategories, 0);
+        };
+
+        renderOptions(roots, 0);
     }
 
     // ====================================================================
@@ -147,10 +165,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('img').value = category.img || '';
             parentSelect.value = category.danh_muc_cha_id || '';
             document.getElementById('categoryModalLabel').textContent = 'Chỉnh sửa Danh mục';
-            
+
             updateParentCategorySelect(id); // Cập nhật lại select, loại bỏ chính nó
             parentSelect.value = category.danh_muc_cha_id || ''; // Đặt lại giá trị sau khi cập nhật
-            
+
             categoryModalInstance.show();
         } catch (error) {
             Swal.fire('Lỗi!', error.message, 'error');
@@ -216,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
-                
+
                 Swal.fire('Đã xóa!', result.message, 'success');
                 loadCategories();
             } catch (error) {

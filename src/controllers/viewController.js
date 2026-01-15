@@ -32,24 +32,24 @@ const renderHomePage = async (req, res) => {
         // 3. Lấy "Top Sách NỔI BẬT" (tạm thời theo sản phẩm mới)
         const bestSellers = await Product.findAll({
             limit: 8,
-            order: [['createdAt', 'DESC']], 
+            order: [['createdAt', 'DESC']],
             include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
         });
 
 
         // 4. Lấy sách cho mục "Văn Học" (Danh mục ID = 1)
         const featuredCategoryProducts = await Product.findAll({
-            where: { danh_muc_id: 4 }, 
+            where: { danh_muc_id: 4 },
             limit: 4,
             order: [['createdAt', 'DESC']]
         });
 
-        res.render('pages/home', { 
+        res.render('pages/home', {
             title: 'Trang Chủ - Nhà Sách',
             slides,
             newProducts,
-            bestSellers,        
-            featuredCategoryProducts, 
+            bestSellers,
+            featuredCategoryProducts,
             user: req.user // Truyền thông tin user để hiển thị trên Header
         });
     } catch (error) {
@@ -70,7 +70,16 @@ const renderProductListPage = async (req, res) => {
 
         let where = {};
         if (category) where.danh_muc_id = category;
-        if (keyword) where.ten_sach = { [Op.iLike]: `%${keyword}%` };
+        if (keyword) {
+            where[Op.and] = [
+                db.sequelize.where(
+                    db.sequelize.fn('unaccent', db.sequelize.col('ten_sach')),
+                    {
+                        [Op.iLike]: db.sequelize.fn('unaccent', `%${keyword}%`)
+                    }
+                )
+            ];
+        }
 
         // Lấy thông tin danh mục hiện tại để hiển thị tiêu đề
         const allCategories = await Category.findAll();
@@ -143,7 +152,7 @@ const renderProductDetailPage = async (req, res) => {
 
         // 3. Lấy sản phẩm liên quan (cùng danh mục)
         const relatedProducts = await Product.findAll({
-            where: { 
+            where: {
                 danh_muc_id: product.danh_muc_id,
                 id: { [Op.ne]: product.id } // Loại trừ chính nó
             },
@@ -189,10 +198,10 @@ const renderMyOrdersPage = (req, res) => {
 
 const renderOrderDetailPage = (req, res) => {
     // Chỉ render khung, dữ liệu load bằng JS client hoặc update logic sau
-    res.render('pages/order-detail', { 
-        title: 'Chi tiết đơn hàng', 
+    res.render('pages/order-detail', {
+        title: 'Chi tiết đơn hàng',
         orderId: req.params.id,
-        user: req.user 
+        user: req.user
     });
 };
 
