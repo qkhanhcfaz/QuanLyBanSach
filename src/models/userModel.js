@@ -1,44 +1,56 @@
-// File: /src/models/userModel.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
+const bcrypt = require('bcryptjs');
 
 const User = sequelize.define('User', {
-    ho_ten: {
-        type: DataTypes.STRING,
-        allowNull: false
+    id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true
     },
-
+    role_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        defaultValue: 2
+    },
     email: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true
     },
-
-    password: {
+    mat_khau: {
         type: DataTypes.STRING,
-        allowNull: false,
-        field: 'mat_khau'
+        allowNull: false
     },
-
-    role_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        defaultValue: 2   // 2 = user thường
-        // ❌ TUYỆT ĐỐI KHÔNG ĐẶT references Ở ĐÂY
-    }
-
+    ho_ten: DataTypes.STRING
 }, {
     tableName: 'users',
-    timestamps: true
+    timestamps: true,
+    hooks: {
+        beforeCreate: async (user) => {
+            if (user.mat_khau) {
+                const salt = await bcrypt.genSalt(10);
+                user.mat_khau = await bcrypt.hash(user.mat_khau, salt);
+            }
+        },
+        beforeUpdate: async (user) => {
+            if (user.changed('mat_khau')) {
+                const salt = await bcrypt.genSalt(10);
+                user.mat_khau = await bcrypt.hash(user.mat_khau, salt);
+            }
+        }
+    }
 });
 
-// ✅ KHAI BÁO QUAN HỆ Ở ĐÂY
+// Method kiểm tra mật khẩu
+User.prototype.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.mat_khau);
+};
+
 User.associate = (models) => {
     User.belongsTo(models.Role, {
         foreignKey: 'role_id',
-        as: 'role',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE'
+        as: 'role'
     });
 };
 
