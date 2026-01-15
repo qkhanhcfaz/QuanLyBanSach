@@ -106,37 +106,32 @@ User.associate = (models) => {
     onUpdate: "CASCADE", // Nếu id trong Role thay đổi, role_id trong User cũng thay đổi theo
   });
 
-  // --- CÁC MỐI QUAN HỆ DƯỚI ĐÂY ĐƯỢC COMMENT LẠI VÌ MODEL CHƯA TỒN TẠI TRONG QUANLYBANSACH ---
-  // Để tránh lỗi khi chạy server. Khi nào port các model này sang thì bỏ comment.
+  // Mối quan hệ User "có nhiều" Receipt
+  if (models.Receipt) {
+    User.hasMany(models.Receipt, {
+      foreignKey: "user_id",
+      as: "receipts",
+    });
+  }
 
-  /*
-    // Mối quan hệ User "có nhiều" Receipt
-    if (models.Receipt) {
-        User.hasMany(models.Receipt, {
-            foreignKey: 'user_id',
-            as: 'receipts' 
-        });
-    }
-
-    // Thêm các mối quan hệ khác ở đây nếu cần, ví dụ: User có nhiều Order
-    if (models.Order) {
-        User.hasMany(models.Order, {
-            foreignKey: 'user_id',
-            as: 'orders',
-            onDelete: 'SET NULL', 
-            onUpdate: 'CASCADE'
-        });
-    }
-     // Quan hệ: User có nhiều Review
-    if (models.Review) {
-        User.hasMany(models.Review, {
-            foreignKey: 'user_id',
-            as: 'reviews',
-            onDelete: 'CASCADE', 
-            onUpdate: 'CASCADE'
-        });
-    }
-    */
+  // Thêm các mối quan hệ khác ở đây nếu cần, ví dụ: User có nhiều Order
+  if (models.Order) {
+    User.hasMany(models.Order, {
+      foreignKey: "user_id",
+      as: "orders",
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
+    });
+  }
+  // Quan hệ: User có nhiều Review
+  if (models.Review) {
+    User.hasMany(models.Review, {
+      foreignKey: "user_id",
+      as: "reviews",
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
+    });
+  }
 };
 
 // Phương thức so sánh mật khẩu
