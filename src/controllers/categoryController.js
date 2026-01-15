@@ -4,7 +4,7 @@ const { Category } = require("../models");
 const getAllCategories = async (req, res) => {
   try {
     const categories = await Category.findAll({
-      attributes: ["id", "ten_danh_muc", "mo_ta", "danh_muc_cha_id", "img"],
+      attributes: ["id", "ten_danh_muc", "mo_ta", "danh_muc_cha_id"], // Removed "img"
       order: [["id", "ASC"]],
     });
 
@@ -20,7 +20,7 @@ const getAllCategories = async (req, res) => {
 // POST /api/categories
 const createCategory = async (req, res) => {
   try {
-    const { ten_danh_muc, mo_ta, danh_muc_cha_id, img } = req.body;
+    const { ten_danh_muc, mo_ta, danh_muc_cha_id } = req.body; // Removed img
 
     if (!ten_danh_muc) {
       return res.status(400).json({ message: "Tên danh mục là bắt buộc" });
@@ -29,8 +29,7 @@ const createCategory = async (req, res) => {
     const newCategory = await Category.create({
       ten_danh_muc,
       mo_ta,
-      danh_muc_cha_id: danh_muc_cha_id || null,
-      img,
+      danh_muc_cha_id: danh_muc_cha_id || null, // Removed img
     });
 
     res
@@ -46,7 +45,7 @@ const createCategory = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { ten_danh_muc, mo_ta, danh_muc_cha_id, img } = req.body;
+    const { ten_danh_muc, mo_ta, danh_muc_cha_id } = req.body; // Removed img
 
     const category = await Category.findByPk(id);
 
@@ -63,8 +62,7 @@ const updateCategory = async (req, res) => {
     } else {
       category.danh_muc_cha_id = danh_muc_cha_id;
     }
-
-    category.img = img !== undefined ? img : category.img;
+    // Removed img update logic
 
     await category.save();
 
