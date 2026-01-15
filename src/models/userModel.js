@@ -24,11 +24,7 @@ const User = sequelize.define(
       type: DataTypes.BIGINT,
       allowNull: false,
       defaultValue: 2, // Mặc định là 'User'
-      references: {
-        model: "roles", // Tên bảng mà nó tham chiếu đến
-        key: "id", // Tên cột khóa chính trong bảng 'roles'
-      },
-      // onUpdate và onDelete sẽ được định nghĩa trong association để rõ ràng hơn
+      // references đã được định nghĩa trong associate, bỏ tại đây để tránh lỗi syntax khi sync alter table
     },
     // ==========================================================
 
