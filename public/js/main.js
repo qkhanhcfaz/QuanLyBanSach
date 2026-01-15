@@ -5,7 +5,7 @@
  * Đây là điểm khởi đầu cho tất cả các mã JavaScript phía client.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // ====================================================================
     // PHẦN 1: CÁC HÀM LUÔN CHẠY TRÊN MỌI TRANG
     // ====================================================================
@@ -81,7 +81,7 @@ async function loadCategoriesForMenu() {
         const response = await fetch('/api/categories');
         if (!response.ok) throw new Error('Failed to fetch categories');
         const categories = await response.json();
-        
+
         menuList.innerHTML = '';
         categories.forEach(cat => {
             menuList.innerHTML += `<li><a class="dropdown-item" href="/products?category=${cat.id}">${cat.ten_danh_muc}</a></li>`;
@@ -142,7 +142,7 @@ function loadHomePageData() {
     fetchProductsAndRender('#vh-vietnam-products-wrapper', '?category=31&limit=10');
     fetchProductsAndRender('#vh-nuoc-ngoai-products-wrapper', '?category=30&limit=10');
     fetchProductsAndRender('#finance-products-wrapper', '?category=29&limit=10');
-    
+
 }
 
 /**
@@ -182,7 +182,7 @@ async function fetchProductsAndRender(wrapperId, pathAndQuery) {
         const apiUrl = `/api/products${pathAndQuery}`;
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error(`API call failed for ${apiUrl} with status ${response.status}`);
-        
+
         const result = await response.json();
         let products;
 
@@ -193,24 +193,38 @@ async function fetchProductsAndRender(wrapperId, pathAndQuery) {
         } else {
             products = [];
         }
-        
+
         if (products && products.length > 0) {
             const productsHTML = products.map(product => `
                 <div class="swiper-slide">
-                    <div class="card h-100 product-card border-0 shadow-sm">
+                    <div class="card product-card h-100">
+
                         <a href="/products/${product.id}">
-                            <img src="${product.img }" class="card-img-top" alt="${product.ten_sach}" style="height: 200px; object-fit: contain; padding: 10px;">
+                            <div class="product-image">
+                                <img src="${product.img}" alt="${product.ten_sach}">
+                            </div>
                         </a>
-                        <div class="card-body d-flex flex-column p-2">
-                            <h6 class="card-title flex-grow-1 mb-2" style="font-size: 0.9rem;">
-                                <a href="/products/${product.id}" class="text-decoration-none text-dark">${product.ten_sach}</a>
+
+                        <div class="card-body d-flex flex-column text-center">
+                            <h6 class="card-title">
+                                ${product.ten_sach}
                             </h6>
-                            <p class="card-text text-danger fw-bold mb-2">${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫</p>
-                            <button onclick="addToCart('${product.id}')" class="btn btn-sm btn-outline-primary w-100 mt-auto">Thêm vào giỏ</button>
+
+                            <p class="card-text text-danger fw-bold">
+                                ${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫
+                            </p>
+
+                            <button 
+                                onclick="addToCart('${product.id}')" 
+                                class="btn btn-sm btn-outline-primary mt-auto w-100">
+                                Thêm vào giỏ
+                            </button>
                         </div>
+
                     </div>
                 </div>
             `).join('');
+
             wrapper.innerHTML = productsHTML;
         } else {
             wrapper.innerHTML = '<div class="text-muted p-3">Không có sản phẩm nào thuộc mục này.</div>';
@@ -231,7 +245,7 @@ async function fetchNewArrivals() {
     try {
         const response = await fetch(`/api/products?sortBy=createdAt&order=DESC&limit=5`);
         if (!response.ok) throw new Error('Failed to fetch new arrivals');
-        
+
         const result = await response.json();
         const products = result.products;
 
@@ -274,9 +288,9 @@ async function fetchPostsAndRender() {
     try {
         const response = await fetch(`/api/posts/public?limit=3`);
         if (!response.ok) throw new Error('Failed to fetch posts');
-        
+
         const posts = await response.json();
-        
+
         if (posts && posts.length > 0) {
             wrapper.innerHTML = posts.map(post => `
                 <div class="card mb-3 shadow-sm">
