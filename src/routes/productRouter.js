@@ -9,24 +9,24 @@ const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 
-// Configure Multer for image upload
+// Cấu hình Multer để upload ảnh
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'public/images/');
     },
     filename: function (req, file, cb) {
-        // Use original name or timestamp to prevent duplicates
-        // Ensuring we keep the extension
+        // Sử dụng tên gốc hoặc thêm timestamp để tránh trùng lặp
+        // Đảm bảo giữ nguyên đuôi file (extension)
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
 const fileFilter = (req, file, cb) => {
-    // Accept images only
+    // Chỉ chấp nhận file ảnh
     if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/)) {
-        req.fileValidationError = 'Only image files are allowed!';
-        return cb(new Error('Only image files are allowed!'), false);
+        req.fileValidationError = 'Chỉ chấp nhận file ảnh!';
+        return cb(new Error('Chỉ chấp nhận file ảnh!'), false);
     }
     cb(null, true);
 };
@@ -419,7 +419,7 @@ router.get('/bestsellers', async (req, res) => {
             attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan', 'da_ban']
         });
 
-        // Normalize img paths
+        // Chuẩn hóa đường dẫn ảnh
         const normalizedBestsellers = bestsellers.map(p => {
             const obj = p && p.toJSON ? p.toJSON() : p;
             if (obj.img && !/^https?:\/\//i.test(obj.img) && !obj.img.startsWith('/')) {
@@ -460,7 +460,7 @@ router.get('/', async (req, res) => {
             attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan', 'danh_muc_id']
         });
 
-        // Convert to plain objects and normalize img paths
+        // Chuyển đổi sang object thuần và chuẩn hóa đường dẫn ảnh
         const productsPlain = products.map(r => r && r.toJSON ? r.toJSON() : r).map(p => {
             if (p.img && !/^https?:\/\//i.test(p.img) && !p.img.startsWith('/')) {
                 p.img = '/images/' + p.img;
@@ -480,7 +480,7 @@ router.get('/', async (req, res) => {
 router.get('/:id/stock', async (req, res) => {
     try {
         const { id } = req.params;
-        // Query nhẹ chỉ lấy số lượng
+        // Truy vấn nhẹ chỉ lấy số lượng
         const product = await Product.findByPk(id, {
             attributes: ['id', 'so_luong_ton_kho']
         });

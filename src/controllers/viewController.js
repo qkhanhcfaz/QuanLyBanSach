@@ -132,7 +132,7 @@ const renderProductDetailPage = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi Database crash
+        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi sập cơ sở dữ liệu
         if (!id || isNaN(id)) {
             return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ' });
         }
@@ -162,7 +162,7 @@ const renderProductDetailPage = async (req, res) => {
         const relatedProducts = await Product.findAll({
             where: {
                 danh_muc_id: product.danh_muc_id,
-                id: { [Op.ne]: product.id } // Loại trừ chính nó
+                id: { [Op.ne]: product.id } // Loại trừ chính sản phẩm hiện tại
             },
             limit: 4
         });

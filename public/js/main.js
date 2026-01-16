@@ -140,8 +140,8 @@ function loadHomePageData() {
     // Tải dữ liệu cho cột phải
     fetchProductsAndRender('#bestseller-products-wrapper', '/bestsellers?limit=10');
     fetchProductsAndRender('#vh-vietnam-products-wrapper', '?category=31&limit=10');
-    fetchProductsAndRender('#vh-nuoc-ngoai-products-wrapper', '?category=30&limit=10');
-    fetchProductsAndRender('#finance-products-wrapper', '?category=29&limit=10');
+    fetchProductsAndRender('#vh-nuoc-ngoai-products-wrapper', '?category=5&limit=10');
+    fetchProductsAndRender('#finance-products-wrapper', '?category=1&limit=10');
 
 }
 

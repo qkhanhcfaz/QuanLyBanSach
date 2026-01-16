@@ -1,4 +1,4 @@
-// File: /public/js/product-detail.js
+// Tệp tin: /public/js/product-detail.js
 document.addEventListener('DOMContentLoaded', function () {
     const minusBtn = document.getElementById('button-minus');
     const plusBtn = document.getElementById('button-plus');

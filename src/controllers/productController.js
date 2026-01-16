@@ -1,10 +1,10 @@
-// File: /src/controllers/productController.js
+// Tệp tin: /src/controllers/productController.js
 
 // Import các model cần thiết và các toán tử của Sequelize
 const { Product, Category, Order } = require('../models');
 const db = require('../models');
 const { Op } = require('sequelize');
-const sequelize = db.sequelize; // Op (Operators) dùng để tạo các điều kiện truy vấn phức tạp như LIKE, BETWEEN,...
+const sequelize = db.sequelize; // Op (Operators) dùng để tạo các điều kiện truy vấn phức tạp như LIKE, BETWEEN...
 // Import thư viện exceljs để xử lý file Excel
 const excel = require('exceljs');
 

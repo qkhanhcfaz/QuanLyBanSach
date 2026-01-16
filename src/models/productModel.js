@@ -1,4 +1,4 @@
-// File: /src/models/productModel.js
+// Tệp tin: /src/models/productModel.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 
