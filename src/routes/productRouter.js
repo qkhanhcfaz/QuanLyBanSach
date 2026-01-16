@@ -496,6 +496,11 @@ router.get('/:id/stock', async (req, res) => {
     }
 });
 
+// GET /api/products/:id - Lấy chi tiết sản phẩm
+// (Ưu tiên route này nằm SAU route :id/stock để tránh trùng lặp nếu có logic conflict, nhưng stock cụ thể hơn nên để trước là an toàn nhất)
+router.get('/:id', getProductById);
+
+
 // POST /api/products - Tạo sản phẩm mới (có upload ảnh)
 router.post('/', upload.single('img'), createProduct);
 

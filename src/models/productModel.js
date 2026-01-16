@@ -47,7 +47,11 @@ const Product = sequelize.define('Product', {
 
     so_trang: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: true,
+        validate: {
+            isInt: true,
+            min: 1
+        }
     },
 
     da_ban: {
@@ -56,15 +60,19 @@ const Product = sequelize.define('Product', {
         defaultValue: 0
     },
 
+    // Trường để phân biệt sách in và ebook
     product_type: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'print_book'
+        defaultValue: 'print_book', // 'print_book' hoặc 'ebook'
+        comment: 'Loại sản phẩm: sách in (print_book) hoặc ebook'
     },
 
+    // Trường để lưu link download cho ebook
     ebook_url: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true, // Chỉ có giá trị khi product_type là 'ebook'
+        comment: 'Đường dẫn gốc đến file ebook'
     },
 
     danh_muc_id: {
@@ -82,6 +90,17 @@ Product.associate = (models) => {
     Product.belongsTo(models.Category, {
         foreignKey: 'danh_muc_id',
         as: 'category'
+    });
+
+    // Thêm các quan hệ khác nếu cần thiết (được merge từ HEAD)
+    Product.hasMany(models.OrderItem, {
+        foreignKey: 'product_id',
+        as: 'orderItems'
+    });
+
+    Product.hasMany(models.Review, {
+        foreignKey: 'product_id',
+        as: 'reviews'
     });
 };
 
