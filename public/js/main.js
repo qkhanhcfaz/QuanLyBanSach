@@ -47,6 +47,7 @@ function handleAuthLinks() {
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="/profile">Thông tin tài khoản</a></li>
+                    <li><a class="dropdown-item" href="/favorites">Sách yêu thích</a></li>
                     <li><a class="dropdown-item" href="/my-orders">Lịch sử đơn hàng</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" id="logout-btn">Đăng xuất</a></li>
@@ -200,8 +201,9 @@ async function fetchProductsAndRender(wrapperId, pathAndQuery) {
                     <div class="card product-card h-100">
 
                         <a href="/products/${product.id}">
-                            <div class="product-image">
+                            <div class="product-image position-relative">
                                 <img src="${product.img}" alt="${product.ten_sach}">
+
                             </div>
                         </a>
 
@@ -214,11 +216,21 @@ async function fetchProductsAndRender(wrapperId, pathAndQuery) {
                                 ${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫
                             </p>
 
-                            <button 
-                                onclick="addToCart('${product.id}')" 
-                                class="btn btn-sm btn-outline-primary mt-auto w-100">
-                                Thêm vào giỏ
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button 
+                                    onclick="addToCart('${product.id}')" 
+                                    class="btn btn-sm btn-outline-primary mt-auto flex-grow-1">
+                                    Thêm vào giỏ
+                                </button>
+                                ${(() => {
+                    const isFav = window.favoriteProductIds && window.favoriteProductIds.includes(product.id);
+                    return `<button class="btn btn-favorite-card btn-favorite border" 
+                                            data-id="${product.id}" 
+                                            title="${isFav ? 'Bỏ thích' : 'Yêu thích'}">
+                                        <i class="${isFav ? 'fas text-danger' : 'far text-danger'} fa-heart"></i>
+                                    </button>`;
+                })()}
+                            </div>
                         </div>
 
                     </div>
@@ -254,8 +266,9 @@ async function fetchNewArrivals() {
                 <div class="card mb-3 border-0">
                     <div class="row g-0">
                         <div class="col-4">
-                            <a href="/products/${product.id}">
+                            <a href="/products/${product.id}" class="position-relative d-block">
                                 <img src="${product.img || '/images/placeholder.png'}" class="img-fluid rounded-start" alt="${product.ten_sach}">
+
                             </a>
                         </div>
                         <div class="col-8">
@@ -263,7 +276,15 @@ async function fetchNewArrivals() {
                                 <h6 class="card-title mb-1" style="font-size: 0.9rem;">
                                     <a href="/products/${product.id}" class="text-decoration-none text-dark">${product.ten_sach}</a>
                                 </h6>
-                                <p class="card-text text-danger fw-bold">${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫</p>
+                                <p class="card-text text-danger fw-bold mb-2">${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫</p>
+                                ${(() => {
+                    const isFav = window.favoriteProductIds && window.favoriteProductIds.includes(product.id);
+                    return `<button class="btn btn-favorite-card btn-favorite border float-end" 
+                                            data-id="${product.id}" 
+                                            title="${isFav ? 'Bỏ thích' : 'Yêu thích'}">
+                                        <i class="${isFav ? 'fas text-danger' : 'far text-danger'} fa-heart"></i>
+                                    </button>`;
+                })()}
                             </div>
                         </div>
                     </div>

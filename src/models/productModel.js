@@ -98,10 +98,7 @@ Product.associate = (models) => {
         as: 'orderItems'
     });
 
-    Product.hasMany(models.Review, {
-        foreignKey: 'product_id',
-        as: 'reviews'
-    });
+
 };
 
 module.exports = Product;

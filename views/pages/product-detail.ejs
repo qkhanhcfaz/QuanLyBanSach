@@ -65,12 +65,20 @@
                     </div>
                 </div>
 
-                <button onclick="addToCart('<%= product.id %>', document.getElementById('quantity-input').value)"
-                    class="btn btn-success btn-lg w-100" type="button" <%=(product.so_luong_ton_kho <=0) ? 'disabled'
-                    : '' %> >
-                    <i class="fas fa-cart-plus me-2"></i>
-                    <%= (product.so_luong_ton_kho> 0) ? 'Thêm vào giỏ hàng' : 'Đã hết hàng' %>
-                </button>
+                <% const isFav=(typeof favoriteProductIds !=='undefined' && favoriteProductIds.includes(product.id)); %>
+                    <div class="d-flex gap-2">
+                        <button
+                            onclick="addToCart('<%= product.id %>', document.getElementById('quantity-input').value)"
+                            class="btn btn-success btn-lg flex-grow-1" type="button" <%=(product.so_luong_ton_kho <=0)
+                            ? 'disabled' : '' %> >
+                            <i class="fas fa-cart-plus me-2"></i>
+                            <%= (product.so_luong_ton_kho> 0) ? 'Thêm vào giỏ hàng' : 'Đã hết hàng' %>
+                        </button>
+                        <button class="btn btn-lg btn-outline-danger btn-favorite" data-id="<%= product.id %>"
+                            title="<%= isFav ? 'Bỏ thích' : 'Yêu thích' %>">
+                            <i class="<%= isFav ? 'fas' : 'far' %> fa-heart"></i>
+                        </button>
+                    </div>
             </div>
 
             <!-- CỘT PHẢI: DỊCH VỤ & KHUYẾN MÃI -->
@@ -213,5 +221,6 @@
     <script src="https://kit.fontawesome.com/9b1e6729d6.js" crossorigin="anonymous"></script>
     <!-- Thay your-fontawesome-kit.js -->
     <script src="/js/cart.js"></script>
+    <script src="/js/favorite.js"></script>
     <script src="/js/product-detail.js"></script> <!-- File JS mới cho trang này -->
     <%- include('../partials/footer') %>

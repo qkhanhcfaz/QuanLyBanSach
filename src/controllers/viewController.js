@@ -3,7 +3,8 @@
 const { Op } = require('sequelize');
 const db = require('../models');
 
-const { Product, Category, Slideshow, Review, User } = db;
+const { Product, Category, Slideshow, Review, User, Favorite } = db;
+const { getMyFavoriteIds } = require('./favoriteController');
 
 /** Helpers */
 const toInt = (v, def = 0) => {
@@ -19,7 +20,9 @@ const clampMin = (n, min) => (n < min ? min : n);
  */
 const renderHomePage = async (req, res) => {
   try {
-    // 1) Slideshow
+    const favoriteProductIds = req.user ? await getMyFavoriteIds(req.user.id) : [];
+
+    // 1. Slideshow
     let slides = [];
     try {
       slides = await Slideshow.findAll({
@@ -27,83 +30,51 @@ const renderHomePage = async (req, res) => {
         order: [['thu_tu_hien_thi', 'ASC']],
       });
     } catch (e) {
-      // nếu chưa có bảng/Model slideshow thì vẫn render trang chủ được
+      console.warn("Slideshow table missing or empty", e.message);
       slides = [];
-        // 1. Lấy Slideshow
-        const slides = await Slideshow.findAll({
-            where: { trang_thai: true },
-            order: [['thu_tu_hien_thi', 'ASC']]
-        });
-
-        // 2. Lấy "Sách Mới Lên Kệ" (8 cuốn mới nhất)
-        const newProducts = await Product.findAll({
-            limit: 8,
-            order: [['createdAt', 'DESC']],
-            include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
-        });
-
-        // 3. Lấy "Top Sách NỔI BẬT" (tạm thời theo sản phẩm mới)
-        const bestSellers = await Product.findAll({
-            limit: 8,
-            order: [['createdAt', 'DESC']],
-            include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
-        });
-
-
-        // 4. Lấy sách cho mục "Văn Học" (Danh mục ID = 1)
-        const featuredCategoryProducts = await Product.findAll({
-            where: { danh_muc_id: 4 },
-            limit: 4,
-            order: [['createdAt', 'DESC']]
-        });
-
-        res.render('pages/home', {
-            title: 'Trang Chủ - Nhà Sách',
-            slides,
-            newProducts,
-            bestSellers,
-            featuredCategoryProducts,
-            user: req.user // Truyền thông tin user để hiển thị trên Header
-        });
-    } catch (error) {
-        console.error("Lỗi trang chủ:", error);
-        res.render('pages/error', { message: 'Lỗi tải trang chủ' });
     }
 
-    // 2) Sách mới (8)
+    // 2. Sách Mới (8 cuốn)
     const newProducts = await Product.findAll({
       limit: 8,
       order: [['createdAt', 'DESC']],
-      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }],
+      include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
     });
 
-    // 3) Nổi bật / Best sellers (tạm thời lấy mới nhất)
+    // 3. Best Sellers (Logic tạm: lấy mới nhất)
     const bestSellers = await Product.findAll({
       limit: 8,
       order: [['createdAt', 'DESC']],
-      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }],
+      include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
     });
 
-    // 4) Sách theo danh mục nổi bật (đổi ID này theo DB của bạn)
-    const featuredCategoryId = 4;
-    const featuredCategoryProducts = await Product.findAll({
-      where: { danh_muc_id: featuredCategoryId },
-      limit: 4,
-      order: [['createdAt', 'DESC']],
-      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }],
-    });
+    // 4. Danh mục nổi bật (ví dụ ID 4 - Văn Học)
+    // Lưu ý: Cần đảm bảo ID = 4 tồn tại trong bảng Categories
+    let featuredCategoryProducts = [];
+    try {
+      featuredCategoryProducts = await Product.findAll({
+        where: { danh_muc_id: 4 },
+        limit: 4,
+        order: [['createdAt', 'DESC']],
+        include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
+      });
+    } catch (err) {
+      console.warn("Featured category query failed", err.message);
+    }
 
-    return res.render('pages/home', {
+    res.render('pages/home', {
       title: 'Trang Chủ - Nhà Sách',
       slides,
       newProducts,
       bestSellers,
       featuredCategoryProducts,
-      user: req.user,
+      favoriteProductIds,
+      user: req.user
     });
+
   } catch (error) {
-    console.error('Lỗi trang chủ:', error);
-    return res.status(500).render('pages/error', { message: 'Lỗi tải trang chủ', user: req.user });
+    console.error("Lỗi trang chủ:", error);
+    res.render('pages/error', { message: 'Lỗi tải trang chủ', user: req.user });
   }
 };
 
@@ -121,109 +92,64 @@ const renderProductListPage = async (req, res) => {
     const keyword = (req.query.keyword || '').trim();
     const sortByRaw = (req.query.sortBy || 'createdAt').trim();
     const orderRaw = (req.query.order || 'DESC').toUpperCase();
+    const minPrice = toInt(req.query.minPrice, 0);
+    const maxPrice = toInt(req.query.maxPrice, 0);
 
-    // chống sort bậy gây lỗi / injection
-    const allowedSortFields = ['createdAt', 'ten_sach', 'gia_ban'];
+    const allowedSortFields = ['createdAt', 'ten_sach', 'gia_ban', 'gia_bia'];
     const sortBy = allowedSortFields.includes(sortByRaw) ? sortByRaw : 'createdAt';
     const order = orderRaw === 'ASC' ? 'ASC' : 'DESC';
 
     const where = {};
-    if (category && Number.isFinite(category) && category > 0) where.danh_muc_id = category;
-    if (keyword) where.ten_sach = { [Op.iLike]: `%${keyword}%` };
+    if (category && category > 0) where.danh_muc_id = category;
 
-    // sidebar danh mục
-    const allCategories = await Category.findAll({ order: [['ten_danh_muc', 'ASC']] });
-
-    let currentCategoryInfo = null;
-    if (category && category > 0) {
-      currentCategoryInfo = allCategories.find((c) => String(c.id) === String(category)) || null;
-    try {
-        const { page = 1, category, keyword, minPrice, maxPrice, sortBy = 'createdAt', order = 'DESC' } = req.query;
-        const limit = 12;
-        const offset = (page - 1) * limit;
-
-        let where = {};
-        if (category) where.danh_muc_id = category;
-
-        // Lọc theo giá
-        if (minPrice || maxPrice) {
-            where.gia_bia = {};
-            if (minPrice) where.gia_bia[Op.gte] = minPrice;
-            if (maxPrice) where.gia_bia[Op.lte] = maxPrice;
-        }
-
-        if (keyword) {
-            where[Op.and] = [
-                db.sequelize.where(
-                    db.sequelize.fn('unaccent', db.sequelize.col('ten_sach')),
-                    {
-                        [Op.iLike]: db.sequelize.fn('unaccent', `%${keyword}%`)
-                    }
-                )
-            ];
-        }
-
-        // Lấy thông tin danh mục hiện tại để hiển thị tiêu đề
-        const allCategories = await Category.findAll();
-        let currentCategoryInfo = null;
-        if (category) {
-            currentCategoryInfo = allCategories.find(c => c.id == category);
-        }
-
-        const { count, rows } = await Product.findAndCountAll({
-            where,
-            limit,
-            offset,
-            order: [[sortBy, order]],
-            include: [{ model: Category, as: 'category' }]
-        });
-
-        res.render('pages/products', {
-            title: currentCategoryInfo ? currentCategoryInfo.ten_danh_muc : 'Tất Cả Sản Phẩm',
-            products: rows,
-            allCategories,
-            currentCategory: currentCategoryInfo,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(count / limit),
-                limit
-            },
-            queryParams: req.query,
-            user: req.user
-        });
-
-    } catch (error) {
-        console.error("Lỗi trang sản phẩm:", error);
-        res.render('pages/error', { message: 'Không thể tải danh sách sản phẩm' });
+    if (minPrice > 0 || maxPrice > 0) {
+      where.gia_bia = {};
+      if (minPrice > 0) where.gia_bia[Op.gte] = minPrice;
+      if (maxPrice > 0) where.gia_bia[Op.lte] = maxPrice;
     }
 
-    const { rows: products, count: totalProducts } = await Product.findAndCountAll({
+    if (keyword) {
+      where[Op.and] = [
+        db.sequelize.where(
+          db.sequelize.fn('unaccent', db.sequelize.col('ten_sach')),
+          { [Op.iLike]: db.sequelize.fn('unaccent', `%${keyword}%`) }
+        )
+      ];
+    }
+
+    const allCategories = await Category.findAll({ order: [['ten_danh_muc', 'ASC']] });
+    let currentCategoryInfo = null;
+    if (category) {
+      currentCategoryInfo = allCategories.find(c => c.id === category);
+    }
+
+    const { count, rows } = await Product.findAndCountAll({
       where,
       limit,
       offset,
       order: [[sortBy, order]],
-      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }],
+      include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
     });
 
-    const totalPages = Math.max(1, Math.ceil(totalProducts / limit));
-
-    return res.render('pages/products', {
-      title: currentCategoryInfo?.ten_danh_muc || 'Sản Phẩm',
-      currentCategory: currentCategoryInfo,
+    res.render('pages/products', {
+      title: currentCategoryInfo ? currentCategoryInfo.ten_danh_muc : 'Tất Cả Sản Phẩm',
+      products: rows,
       allCategories,
-      queryParams: req.query || {},
-      products,
+      currentCategory: currentCategoryInfo,
+      favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
+      queryParams: req.query,
       pagination: {
         currentPage: page,
-        totalPages,
-        totalProducts,
+        totalPages: Math.ceil(count / limit),
         limit,
+        totalItems: count
       },
-      user: req.user,
+      user: req.user
     });
+
   } catch (error) {
-    console.error('Lỗi trang danh sách sản phẩm:', error);
-    return res.status(500).render('pages/error', { message: 'Lỗi tải danh sách sản phẩm', user: req.user });
+    console.error("Lỗi trang danh sách sản phẩm:", error);
+    res.render('pages/error', { message: 'Lỗi tải danh sách sản phẩm', user: req.user });
   }
 };
 
@@ -249,94 +175,43 @@ const renderProductDetailPage = async (req, res) => {
       return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại', user: req.user });
     }
 
-    // 2) reviews (tự dò tên field product_id / san_pham_id nếu có)
+    // 2) reviews
     let reviews = [];
     try {
-      const productFk =
-        (Review?.rawAttributes?.product_id && 'product_id') ||
-        (Review?.rawAttributes?.san_pham_id && 'san_pham_id') ||
-        'product_id';
-
-      reviews = await Review.findAll({
-        where: { [productFk]: id },
-        include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
-        order: [['createdAt', 'DESC']],
-      });
+      if (db.Review) {
+        reviews = await Review.findAll({
+          where: { product_id: id },
+          include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
+          order: [['createdAt', 'DESC']]
+        });
+      }
     } catch (err) {
-      // không có bảng review hoặc association user chưa đúng -> để rỗng
-      reviews = [];
-        const { id } = req.params;
-
-        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi sập cơ sở dữ liệu
-        if (!id || isNaN(id)) {
-            return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ' });
-        }
-
-        // 1. Tìm sản phẩm
-        const product = await Product.findByPk(id, {
-            include: [{ model: Category, as: 'category' }]
-        });
-
-        if (!product) {
-            return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại' });
-        }
-
-        // 2. Lấy danh sách đánh giá (Khắc phục lỗi reviews is not defined)
-        let reviews = [];
-        try {
-            reviews = await Review.findAll({
-                where: { product_id: id },
-                include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
-                order: [['createdAt', 'DESC']]
-            });
-        } catch (err) {
-            console.warn("Chưa có bảng reviews hoặc lỗi lấy review, trả về rỗng.");
-        }
-
-        // 3. Lấy sản phẩm liên quan (cùng danh mục)
-        const relatedProducts = await Product.findAll({
-            where: {
-                danh_muc_id: product.danh_muc_id,
-                id: { [Op.ne]: product.id } // Loại trừ chính sản phẩm hiện tại
-            },
-            limit: 4
-        });
-
-        // 4. Render view
-        res.render('pages/product-detail', {
-            title: product.ten_sach,
-            product: product,
-            reviews: reviews, // <--- BIẾN QUAN TRỌNG NHẤT
-            relatedProducts: relatedProducts,
-            user: req.user
-        });
-
-    } catch (error) {
-        console.error("Lỗi chi tiết sản phẩm:", error);
-        res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm' });
+      console.warn("Lỗi lấy review hoặc bảng Review chưa sẵn sàng", err.message);
     }
 
     // 3) sản phẩm liên quan
     const relatedProducts = await Product.findAll({
       where: {
         danh_muc_id: product.danh_muc_id,
-        id: { [Op.ne]: product.id },
+        id: { [Op.ne]: product.id }
       },
       limit: 4,
       order: [['createdAt', 'DESC']],
-      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }],
+      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }]
     });
 
-    return res.render('pages/product-detail', {
-      title: product.ten_sach || 'Chi Tiết Sản Phẩm',
+    res.render('pages/product-detail', {
+      title: product.ten_sach,
       product,
       reviews,
       relatedProducts,
-      user: req.user,
+      favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
+      user: req.user
     });
+
   } catch (error) {
-    console.error('Lỗi chi tiết sản phẩm:', error);
-    return res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm', user: req.user });
+    console.error("Lỗi chi tiết sản phẩm:", error);
+    res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm', user: req.user });
   }
 };
 
@@ -363,12 +238,12 @@ const renderMyOrdersPage = (req, res) => {
 };
 
 const renderOrderDetailPage = (req, res) => {
-    // Chỉ render khung, dữ liệu load bằng JS client hoặc update logic sau
-    res.render('pages/order-detail', {
-        title: 'Chi tiết đơn hàng',
-        orderId: req.params.id,
-        user: req.user
-    });
+  // Chỉ render khung, dữ liệu load bằng JS client hoặc update logic sau
+  res.render('pages/order-detail', {
+    title: 'Chi tiết đơn hàng',
+    orderId: req.params.id,
+    user: req.user
+  });
 };
 
 const renderProfilePage = (req, res) => {
@@ -381,6 +256,43 @@ const renderForgotPasswordPage = (req, res) => {
 
 const renderResetPasswordPage = (req, res) => {
   res.render('pages/reset-password', { title: 'Đặt Lại Mật Khẩu', user: req.user });
+};
+
+const renderFavoritesPage = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.redirect('/login');
+    }
+
+    const userId = req.user.id;
+    // Lấy danh sách yêu thích kèm thông tin sản phẩm
+    const favorites = await Favorite.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Product,
+          attributes: ['id', 'ten_sach', 'gia_bia', 'img']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    const products = favorites.map(fav => fav.Product);
+    const favoriteProductIds = products.map(p => p.id);
+
+    res.render('pages/favorites', {
+      title: 'Sách Yêu Thích',
+      products,
+      favoriteProductIds
+    });
+
+  } catch (error) {
+    console.error('Render Favorites Page Error:', error);
+    res.status(500).render('pages/error', {
+      title: 'Lỗi Server',
+      message: 'Đã có lỗi xảy ra khi tải danh sách yêu thích. Vui lòng thử lại sau.'
+    });
+  }
 };
 
 // Export (giữ đúng tên hàm để routes không bị gãy)
@@ -400,3 +312,4 @@ exports.renderOrderDetailPage = renderOrderDetailPage;
 exports.renderProfilePage = renderProfilePage;
 exports.renderForgotPasswordPage = renderForgotPasswordPage;
 exports.renderResetPasswordPage = renderResetPasswordPage;
+exports.renderFavoritesPage = renderFavoritesPage;
