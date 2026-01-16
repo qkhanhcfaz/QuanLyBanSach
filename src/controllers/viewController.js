@@ -64,12 +64,20 @@ const renderHomePage = async (req, res) => {
  */
 const renderProductListPage = async (req, res) => {
     try {
-        const { page = 1, category, keyword, sortBy = 'createdAt', order = 'DESC' } = req.query;
+        const { page = 1, category, keyword, minPrice, maxPrice, sortBy = 'createdAt', order = 'DESC' } = req.query;
         const limit = 12;
         const offset = (page - 1) * limit;
 
         let where = {};
         if (category) where.danh_muc_id = category;
+
+        // Lọc theo giá
+        if (minPrice || maxPrice) {
+            where.gia_bia = {};
+            if (minPrice) where.gia_bia[Op.gte] = minPrice;
+            if (maxPrice) where.gia_bia[Op.lte] = maxPrice;
+        }
+
         if (keyword) {
             where[Op.and] = [
                 db.sequelize.where(

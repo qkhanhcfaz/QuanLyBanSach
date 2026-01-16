@@ -50,6 +50,12 @@ const Product = sequelize.define('Product', {
         allowNull: true
     },
 
+    da_ban: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+
     product_type: {
         type: DataTypes.STRING,
         allowNull: false,

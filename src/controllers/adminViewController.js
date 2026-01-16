@@ -24,28 +24,44 @@ const renderAdminDashboard = async (req, res) => {
  * - Chưa có lọc, chưa có sort động
  * - Lấy toàn bộ danh sách (ngây thơ)
  */
+const { Op } = require('sequelize');
+
+/**
+ * Render Danh sách Sản phẩm (CÓ SEARCH, SORT, PAGINATION)
+ */
 const renderAdminProducts = async (req, res) => {
     try {
-        // Lấy hết sản phẩm, không phân trang gì cả
-        const products = await Product.findAll({
+        const { keyword, page = 1, sortBy = 'createdAt', order = 'DESC' } = req.query;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        const whereCondition = {};
+        if (keyword) {
+            whereCondition.ten_sach = { [Op.iLike]: `%${keyword}%` };
+        }
+
+        const { count, rows } = await Product.findAndCountAll({
+            where: whereCondition,
             include: [{ model: Category, as: 'category' }],
-            order: [['createdAt', 'DESC']]
+            order: [[sortBy, order]],
+            limit,
+            offset
         });
 
         res.render('admin/pages/products', {
             title: 'Quản lý Sản phẩm',
             user: req.user,
             path: '/products',
-            products: products,
-            // Truyền giá trị mặc định để View không bị lỗi undefined
-            currentPage: 1,
-            totalPages: 1,
-            keyword: '',
-            sortBy: 'createdAt',
-            order: 'DESC'
+            products: rows,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(count / limit),
+            totalProducts: count,
+            keyword,
+            sortBy,
+            order
         });
     } catch (error) {
-        console.error(error);
+        console.error("Lỗi tải sản phẩm admin:", error);
         res.status(500).send('Lỗi tải sản phẩm');
     }
 };
@@ -115,8 +131,8 @@ const renderAdminOrderDetailPage = async (req, res) => {
         const order = await Order.findByPk(req.params.id, {
             include: [
                 { model: User, as: 'user' },
-                { 
-                    model: db.OrderItem, 
+                {
+                    model: db.OrderItem,
                     as: 'orderItems',
                     include: [{ model: Product, as: 'product' }]
                 }
@@ -182,8 +198,8 @@ const renderReceiptDetailPage = async (req, res) => {
         const receipt = await Receipt.findByPk(req.params.id, {
             include: [
                 { model: User, as: 'creator' },
-                { 
-                    model: ReceiptItem, 
+                {
+                    model: ReceiptItem,
                     as: 'receiptItems',
                     include: [{ model: Product, as: 'product' }]
                 }
@@ -207,10 +223,10 @@ const renderReceiptDetailPage = async (req, res) => {
  * Render Khuyến mãi
  */
 const renderAdminPromotionsPage = (req, res) => {
-    res.render('admin/pages/promotions', { 
+    res.render('admin/pages/promotions', {
         title: 'Quản lý Khuyến mãi',
-        user: req.user, 
-        path: '/promotions' 
+        user: req.user,
+        path: '/promotions'
     });
 };
 
