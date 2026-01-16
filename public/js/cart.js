@@ -2,20 +2,19 @@
 // Điều này đảm bảo tất cả các element HTML đã sẵn sàng để JavaScript thao tác.
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Lấy token xác thực từ localStorage.
-    const token = localStorage.getItem('token');
-
-    // Nếu không có token, nghĩa là người dùng chưa đăng nhập.
-    // Chuyển hướng họ về trang đăng nhập và dừng thực thi script.
-    if (!token) {
-        window.location.href = '/login';
-        return;
-    }
-
     // === BƯỚC 1: LẤY CÁC ELEMENT HTML CẦN THIẾT ===
     const cartItemsContainer = document.getElementById('cart-items-container');
-    if (!cartItemsContainer) {
-        // Nếu không phải trang giỏ hàng, dừng thực thi ngay lập tức
+    const token = localStorage.getItem('token');
+
+    // Nếu LÀ trang giỏ hàng (có container) thì mới kiểm tra đăng nhập
+    if (cartItemsContainer) {
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+    } else {
+        // Nếu không phải trang giỏ hàng, dừng thực thi việc RENDER giỏ hàng
+        // NHƯNG vẫn giữ lại các hàm global như addToCart (được định nghĩa bên dưới)
         return;
     }
     sessionStorage.removeItem('promoCodeToCheckout');

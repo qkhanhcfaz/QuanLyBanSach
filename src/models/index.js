@@ -27,6 +27,9 @@ db.Post = Post;
 db.SiteSetting = SiteSetting;
 db.Role = Role;
 db.User = User;
+db.Cart = require('./cartModel');
+db.CartItem = require('./cartItemModel');
+db.Favorite = require('./favoriteModel');
 db.Order = Order;
 db.OrderItem = OrderItem;
 

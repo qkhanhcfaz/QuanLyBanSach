@@ -75,4 +75,34 @@ const admin = (req, res, next) => {
 };
 
 
-module.exports = { protect, admin };
+const checkUser = async (req, res, next) => {
+    let token;
+    if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
+    }
+
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await db.User.findByPk(decoded.id, {
+                attributes: { exclude: ['mat_khau'] },
+                include: {
+                    model: db.Role,
+                    as: 'role'
+                }
+            });
+            // Make user available to views
+            res.locals.user = req.user;
+        } catch (err) {
+            console.error('[Middleware] Token invalid:', err.message);
+            req.user = null;
+            res.locals.user = null;
+        }
+    } else {
+        req.user = null;
+        res.locals.user = null;
+    }
+    next();
+};
+
+module.exports = { protect, admin, checkUser };

@@ -10,6 +10,8 @@ const cookieParser = require('cookie-parser');
 // Kích hoạt dotenv ngay lập tức để đọc biến môi trường
 dotenv.config();
 
+const { checkUser } = require('./src/middlewares/authMiddleware');
+
 // Module kết nối cơ sở dữ liệu
 const { connectDB, sequelize } = require('./src/config/connectDB');
 
@@ -37,10 +39,11 @@ const promotionRouter = require('./src/routes/promotionRouter');
 const comboRouter = require('./src/routes/comboRouter');
 const dashboardRouter = require('./src/routes/dashboardRouter');
 const ebookRouter = require('./src/routes/ebookRouter');
-const roleRouter = require('./src/routes/roleRouter'); 
+const roleRouter = require('./src/routes/roleRouter');
 const receiptRouter = require('./src/routes/receiptRouter');
 const postRouter = require('./src/routes/postRouter');
 const provinceRouter = require('./src/routes/provinceRouter');
+const favoriteRouter = require('./src/routes/favoriteRouter');
 
 // --- 3. KHỞI TẠO APP ---
 const app = express();
@@ -57,6 +60,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
+// Middleware checkUser để lấy thông tin user từ token (nếu có) cho mọi request
+app.use(checkUser);
 
 // Middleware phục vụ file tĩnh (CSS, JS, Ảnh)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -69,19 +74,19 @@ app.use(async (req, res, next) => {
     // Nếu chưa có dòng cấu hình nào thì tạo 1 dòng mặc định
     if (!site) {
       site = await SiteSetting.create({
-  ten_website: 'BookZone',
-  dia_chi: 'Quận 5, TP. Hồ Chí Minh',
-  email: 'bookzone@gmail.com',
-  so_dien_thoai: '0339 945 345',
+        ten_website: 'BookZone',
+        dia_chi: 'Quận 5, TP. Hồ Chí Minh',
+        email: 'bookzone@gmail.com',
+        so_dien_thoai: '0339 945 345',
 
-  // ✅ ĐÚNG TÊN CỘT DB
-  facebook: 'https://facebook.com',
-  instagram: 'https://instagram.com',
-  twitter: 'https://twitter.com',
-  linkedin: 'https://linkedin.com',
+        // ✅ ĐÚNG TÊN CỘT DB
+        facebook: 'https://facebook.com',
+        instagram: 'https://instagram.com',
+        twitter: 'https://twitter.com',
+        linkedin: 'https://linkedin.com',
 
-  nam_ban_quyen: 2025
-});
+        nam_ban_quyen: 2025
+      });
     }
 
     // res.locals là biến “dùng chung” trong EJS (mọi trang đều truy cập được)
@@ -114,6 +119,7 @@ app.use('/api/roles', roleRouter);
 app.use('/api/receipts', receiptRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/provinces', provinceRouter);
+app.use('/api/favorites', favoriteRouter);
 
 // B. Admin Routes
 app.use('/admin', adminRouter);
