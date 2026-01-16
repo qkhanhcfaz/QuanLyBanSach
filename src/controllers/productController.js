@@ -1,10 +1,10 @@
-// File: /src/controllers/productController.js
+// Tệp tin: /src/controllers/productController.js
 
 // Import các model cần thiết và các toán tử của Sequelize
-const { Product, Category, Order  } = require('../models');
+const { Product, Category, Order } = require('../models');
 const db = require('../models');
 const { Op } = require('sequelize');
-const sequelize = db.sequelize; // Op (Operators) dùng để tạo các điều kiện truy vấn phức tạp như LIKE, BETWEEN,...
+const sequelize = db.sequelize; // Op (Operators) dùng để tạo các điều kiện truy vấn phức tạp như LIKE, BETWEEN...
 // Import thư viện exceljs để xử lý file Excel
 const excel = require('exceljs');
 
@@ -64,7 +64,7 @@ const createProduct = async (request, response) => {
 
     } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
-        
+
         // Xử lý các lỗi validation từ Sequelize
         if (error.name === 'SequelizeValidationError') {
             const messages = error.errors.map(e => e.message);
@@ -73,7 +73,7 @@ const createProduct = async (request, response) => {
                 errors: messages
             });
         }
-        
+
         // Xử lý các lỗi khác
         response.status(500).json({
             message: "Lỗi server khi tạo sản phẩm.",
@@ -91,21 +91,21 @@ const getAllProducts = async (request, response) => {
     try {
         // Lấy các tham số từ query string của URL, ví dụ: /api/products?keyword=conan&category=1&minPrice=50000
         const { keyword, category, minPrice, maxPrice, sortBy, order = 'ASC', page = 1, limit = 12 } = request.query;
-        
+
         // 1. XÂY DỰNG ĐIỀU KIỆN LỌC (WHERE)
         const whereCondition = {};
-        
+
         // Lọc theo từ khóa (tìm kiếm tên sách)
         if (keyword) {
             // Sử dụng Op.iLike để tìm kiếm không phân biệt hoa thường (chỉ hoạt động trên PostgreSQL)
             whereCondition.ten_sach = { [Op.iLike]: `%${keyword}%` };
         }
-        
+
         // Lọc theo danh mục
         if (category) {
             whereCondition.danh_muc_id = category;
         }
-        
+
         // Lọc theo khoảng giá
         if (minPrice && maxPrice) {
             whereCondition.gia_bia = { [Op.between]: [minPrice, maxPrice] };
@@ -119,12 +119,12 @@ const getAllProducts = async (request, response) => {
         const orderCondition = [];
         if (sortBy) {
             // order.toUpperCase() để đảm bảo giá trị là 'ASC' hoặc 'DESC'
-            orderCondition.push([sortBy, order.toUpperCase()]); 
+            orderCondition.push([sortBy, order.toUpperCase()]);
         } else {
             // Mặc định sắp xếp theo ngày tạo mới nhất
             orderCondition.push(['createdAt', 'DESC']);
         }
-        
+
         // 3. CẤU HÌNH PHÂN TRANG (PAGINATION)
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
@@ -191,11 +191,11 @@ const getProductById = async (request, response) => {
  * @access          Private/Admin
  */
 const updateProduct = async (request, response) => {
-     try {
+    try {
         // BƯỚC 1: TÌM SẢN PHẨM CẦN CẬP NHẬT TRONG DATABASE DỰA VÀO ID TỪ URL
         const productId = request.params.id;
         const product = await Product.findByPk(productId);
-        
+
         // Nếu không tìm thấy sản phẩm, trả về lỗi 404 (Not Found)
         if (!product) {
             return response.status(404).json({ message: "Không tìm thấy sản phẩm để cập nhật." });
@@ -219,17 +219,17 @@ const updateProduct = async (request, response) => {
         // BƯỚC 4: CẬP NHẬT SẢN PHẨM VỚI DỮ LIỆU MỚI
         // Sử dụng phương thức 'update' của đối tượng product đã tìm thấy
         const updatedProduct = await product.update(updateData);
-        
+
         // Trả về mã trạng thái 200 (OK) và thông tin sản phẩm sau khi đã cập nhật
         response.status(200).json(updatedProduct);
 
     } catch (error) {
         console.error("Lỗi trong quá trình cập nhật sản phẩm:", error);
         if (error.name === 'SequelizeValidationError') {
-            const messages = error.errors.map(function(e) { return e.message; });
-            return response.status(400).json({ 
-                message: 'Dữ liệu cập nhật không hợp lệ.', 
-                errors: messages 
+            const messages = error.errors.map(function (e) { return e.message; });
+            return response.status(400).json({
+                message: 'Dữ liệu cập nhật không hợp lệ.',
+                errors: messages
             });
         }
         response.status(500).json({ message: "Đã có lỗi xảy ra ở phía máy chủ khi cập nhật sản phẩm." });
@@ -333,7 +333,7 @@ const getBestsellerProducts = async (req, res) => {
                     where: {
                         trang_thai_don_hang: { [Op.in]: ['delivered', 'shipping'] }
                     },
-                    attributes: [] 
+                    attributes: []
                 }
             ],
             group: ['product_id', 'product.id'], // Phải group theo cả 2
@@ -342,7 +342,7 @@ const getBestsellerProducts = async (req, res) => {
             raw: true,
             nest: true,
         });
-        
+
         // Kết quả trả về từ truy vấn này đã có đủ thông tin sản phẩm
         // Ví dụ: { product_id: 10, total_sold: 5, product: { id: 10, ten_sach: '...', gia_bia: '...' } }
         // Chúng ta chỉ cần trích xuất phần 'product' ra
@@ -377,6 +377,29 @@ const getAllPublishers = async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi lấy danh sách nhà xuất bản' });
     }
 };
+
+/**
+ * API Lấy số lượng tồn kho (Realtime)
+ * GET /api/products/:id/stock
+ */
+const getProductStock = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await Product.findByPk(id, {
+            attributes: ['id', 'so_luong_ton_kho']
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+
+        res.json({ stock: product.so_luong_ton_kho });
+    } catch (error) {
+        console.error('Lỗi lấy tồn kho:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     createProduct,
     getAllProducts,
@@ -385,6 +408,5 @@ module.exports = {
     deleteProduct,
     exportProductsToExcel,
     getBestsellerProducts,
-    getAllPublishers
-    
+
 };

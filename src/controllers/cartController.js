@@ -9,34 +9,75 @@ const { Cart, CartItem, Product } = require('../models');
  * @access          Private (Yêu cầu đăng nhập)
  */
 const getCart = async (request, response) => {
-    // ID của người dùng được lấy từ `req.user` do middleware `protect` cung cấp.
     const userId = request.user.id;
+    // Lấy tham số phân trang từ query, mặc định page 1, limit 5
+    const page = parseInt(request.query.page) || 1;
+    const limit = parseInt(request.query.limit) || 5;
+    const offset = (page - 1) * limit;
 
     try {
-        // Tìm giỏ hàng của người dùng
-        const cart = await Cart.findOne({
-            where: { user_id: userId },
-            // Sử dụng `include` để lấy tất cả các `CartItem` (as: 'items') thuộc về giỏ hàng này.
+        // 1. Tìm giỏ hàng của user
+        const cart = await Cart.findOne({ where: { user_id: userId } });
+
+        if (!cart) {
+            return response.status(200).json({
+                id: null,
+                user_id: userId,
+                items: [],
+                pagination: {
+                    currentPage: 1,
+                    totalPages: 0,
+                    totalItems: 0,
+                    limit: limit
+                },
+                subtotal: 0
+            });
+        }
+
+        // 2. Đếm tổng số lượng item để tính phân trang
+        const totalItems = await CartItem.count({ where: { cart_id: cart.id } });
+
+        // 3. Lấy danh sách item theo trang
+        const items = await CartItem.findAll({
+            where: { cart_id: cart.id },
             include: {
-                model: CartItem,
-                as: 'items',
-                // Trong mỗi CartItem, lại tiếp tục `include` để lấy thông tin chi tiết của `Product`.
-                include: {
-                    model: Product,
-                    as: 'product',
-                    attributes: ['id', 'ten_sach', 'gia_bia', 'img', 'so_luong_ton_kho'] // Chỉ lấy các trường cần thiết của sản phẩm
-                }
+                model: Product,
+                as: 'product',
+                attributes: ['id', 'ten_sach', 'gia_bia', 'img', 'so_luong_ton_kho']
             },
-            // Sắp xếp các sản phẩm trong giỏ hàng theo thời gian được thêm vào
-            order: [[{ model: CartItem, as: 'items' }, 'id', 'DESC']]
+            order: [['id', 'DESC']],
+            limit: limit,
+            offset: offset
         });
 
-        // Nếu người dùng chưa có giỏ hàng (chưa từng thêm sản phẩm nào), trả về một giỏ hàng rỗng.
-        if (!cart) {
-            return response.status(200).json({ id: null, user_id: userId, items: [] });
-        }
-        
-        response.status(200).json(cart);
+        // 4. Tính tống tiền của TOÀN BỘ giỏ hàng (không chỉ trang hiện tại)
+        // Cần query riêng hoặc dùng sum aggregate
+        const allItems = await CartItem.findAll({
+            where: { cart_id: cart.id },
+            include: {
+                model: Product,
+                as: 'product',
+                attributes: ['gia_bia']
+            }
+        });
+
+        const subtotal = allItems.reduce((sum, item) => {
+            return sum + (item.so_luong * parseFloat(item.product.gia_bia));
+        }, 0);
+
+        response.status(200).json({
+            id: cart.id,
+            user_id: userId,
+            items: items,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalItems / limit),
+                totalItems: totalItems,
+                limit: limit
+            },
+            subtotal: subtotal
+        });
+
     } catch (error) {
         console.error("Lỗi khi lấy thông tin giỏ hàng:", error);
         response.status(500).json({ message: "Lỗi server khi lấy thông tin giỏ hàng.", error: error.message });
@@ -84,7 +125,7 @@ const addToCart = async (request, response) => {
                 so_luong: quantity
             });
         }
-        
+
         // Trả về thông tin của mục vừa được thêm/cập nhật.
         response.status(201).json(cartItem);
     } catch (error) {
@@ -111,9 +152,9 @@ const updateCartItem = async (request, response) => {
         if (!cartItem) {
             return response.status(404).json({ message: "Không tìm thấy sản phẩm trong giỏ hàng." });
         }
-        
+
         // Xác thực: Kiểm tra xem CartItem này có thực sự thuộc về giỏ hàng của người dùng đang đăng nhập không.
-        const cart = await Cart.findOne({ where: { id: cartItem.cart_id, user_id: request.user.id }});
+        const cart = await Cart.findOne({ where: { id: cartItem.cart_id, user_id: request.user.id } });
         if (!cart) {
             return response.status(403).json({ message: "Bạn không có quyền thực hiện hành động này." });
         }
@@ -121,7 +162,7 @@ const updateCartItem = async (request, response) => {
         // Cập nhật số lượng và lưu lại
         cartItem.so_luong = parseInt(soLuong);
         await cartItem.save();
-        
+
         response.status(200).json(cartItem);
     } catch (error) {
         console.error("Lỗi khi cập nhật sản phẩm trong giỏ hàng:", error);
@@ -143,14 +184,14 @@ const removeCartItem = async (request, response) => {
         }
 
         // Tương tự như update, cần xác thực quyền sở hữu
-        const cart = await Cart.findOne({ where: { id: cartItem.cart_id, user_id: request.user.id }});
+        const cart = await Cart.findOne({ where: { id: cartItem.cart_id, user_id: request.user.id } });
         if (!cart) {
             return response.status(403).json({ message: "Bạn không có quyền thực hiện hành động này." });
         }
-        
+
         // Xóa bản ghi CartItem
         await cartItem.destroy();
-        
+
         response.status(200).json({ message: "Xóa sản phẩm khỏi giỏ hàng thành công." });
     } catch (error) {
         console.error("Lỗi khi xóa sản phẩm khỏi giỏ hàng:", error);
@@ -158,9 +199,9 @@ const removeCartItem = async (request, response) => {
     }
 };
 
-module.exports = { 
-    getCart, 
-    addToCart, 
-    updateCartItem, 
-    removeCartItem 
+module.exports = {
+    getCart,
+    addToCart,
+    updateCartItem,
+    removeCartItem
 };

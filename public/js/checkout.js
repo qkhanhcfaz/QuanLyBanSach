@@ -1,4 +1,4 @@
-// File: /public/js/checkout.js (Phiên bản nâng cấp)
+// Tệp tin: /public/js/checkout.js (Phiên bản nâng cấp)
 
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // === LẤY CÁC ELEMENT HTML ===
     const checkoutForm = document.getElementById('checkoutForm');
     const alertBox = document.getElementById('alertBox');
-     
+
     // Form inputs
     const hoTenInput = document.getElementById('ten_nguoi_nhan');
     const emailInput = document.getElementById('email_nguoi_nhan');
@@ -30,15 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const shippingElement = document.getElementById('shipping');
     const totalElement = document.getElementById('total');
 
-      // === PHẦN LOGIC XỬ LÝ ĐỊA CHỈ 3 CẤP (TỈNH - HUYỆN - XÃ) ===
+    // === PHẦN LOGIC XỬ LÝ ĐỊA CHỈ 3 CẤP (TỈNH - HUYỆN - XÃ) ===
     const apiHost = "/api/provinces";
 
     // Hàm gọi API
-     async function callApi(endpoint) {
+    async function callApi(endpoint) {
         try {
             // endpoint bây giờ sẽ là 'provinces', 'districts/1', 'wards/1'
             const response = await fetch(`/api/${endpoint}`); // <<< Sửa lại URL ở đây
-            
+
             // Thêm kiểm tra nếu response không OK (ví dụ 404, 500) thì báo lỗi ngay
             if (!response.ok) {
                 throw new Error(`Lỗi mạng: ${response.status} ${response.statusText}`);
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Hàm render dữ liệu ra select
-     function renderData(data, selectElement) {
+    function renderData(data, selectElement) {
         selectElement.innerHTML = `<option value="" selected disabled>Chọn...</option>`;
         if (!data || !Array.isArray(data)) return; // Kiểm tra data hợp lệ
         for (const item of data) {
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) return; // Không làm gì nếu không lấy được profile
-            
+
             const user = await response.json();
             hoTenInput.value = user.ho_ten || '';
             emailInput.value = user.email || '';
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Không thể tải thông tin giỏ hàng.');
-            
+
             const cart = await response.json();
 
             if (!cart.items || cart.items.length === 0) {
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const discountAmount = parseFloat(sessionStorage.getItem('discountAmountApplied')) || 0;
             renderSummary(cart, discountAmount);
-            
+
         } catch (error) {
             console.error('Lỗi:', error);
             orderSummaryContainer.innerHTML = `<p class="text-danger">${error.message}</p>`;
@@ -161,17 +161,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hiển thị dòng giảm giá nếu có
         const discountRowCheckout = document.getElementById('discount-row-checkout');
         const discountAmountCheckout = document.getElementById('discount-amount-checkout');
-       if (discountAmount > 0) {
-        discountAmountCheckout.textContent = `- ${discountAmount.toLocaleString('vi-VN')}đ`;
-        discountRowCheckout.style.display = 'flex';
-    } else {
-        discountRowCheckout.style.display = 'none';
-    }
+        if (discountAmount > 0) {
+            discountAmountCheckout.textContent = `- ${discountAmount.toLocaleString('vi-VN')}đ`;
+            discountRowCheckout.style.display = 'flex';
+        } else {
+            discountRowCheckout.style.display = 'none';
+        }
 
-    // <<< TÍNH LẠI TỔNG CỘNG CUỐI CÙNG >>>
-    const finalTotal = subtotal + shipping - discountAmount;
-    totalElement.textContent = `${finalTotal.toLocaleString('vi-VN')}đ`;
-}
+        // <<< TÍNH LẠI TỔNG CỘNG CUỐI CÙNG >>>
+        const finalTotal = subtotal + shipping - discountAmount;
+        totalElement.textContent = `${finalTotal.toLocaleString('vi-VN')}đ`;
+    }
     /**
      * Lắng nghe sự kiện submit form thanh toán
      */
@@ -187,11 +187,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const wardText = wardSelect.options[wardSelect.selectedIndex].text;
         const addressDetailValue = addressDetailInput.value.trim();
 
-         if (!addressDetailValue || provinceSelect.value === "" || districtSelect.value === "" || wardSelect.value === "") {
+        if (!addressDetailValue || provinceSelect.value === "" || districtSelect.value === "" || wardSelect.value === "") {
             alert("Vui lòng điền đầy đủ thông tin địa chỉ.");
             return;
         }
-        
+
         // Ghép thành một chuỗi duy nhất, ví dụ: "123 Đường ABC, Phường Bến Nghé, Quận 1, Thành phố Hồ Chí Minh"
         const dia_chi_giao_hang = `${addressDetailValue}, ${wardText}, ${districtText}, ${provinceText}`;
         const phuong_thuc_thanh_toan = document.querySelector('input[name="paymentMethod"]:checked').value;
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dia_chi_giao_hang,
                     email_nguoi_nhan,
                     ghi_chu_khach_hang,
-                    phuong_thuc_thanh_toan,  
+                    phuong_thuc_thanh_toan,
                     ma_khuyen_mai
                 })
             });
@@ -227,22 +227,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 sessionStorage.removeItem('promoCodeToCheckout');
                 sessionStorage.removeItem('discountAmountApplied');
-                 if (data.payUrl) {
-                // Nếu server trả về payUrl (trường hợp thanh toán MoMo)
-                // Chuyển hướng người dùng đến trang thanh toán của MoMo
-                window.location.href = data.payUrl;
+                if (data.payUrl) {
+                    // Nếu server trả về payUrl (trường hợp thanh toán MoMo)
+                    // Chuyển hướng người dùng đến trang thanh toán của MoMo
+                    window.location.href = data.payUrl;
+                } else {
+                    // Nếu không có payUrl (trường hợp COD)
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Đặt hàng thành công!',
+                        text: 'Cảm ơn bạn đã mua hàng. Chúng tôi sẽ xử lý đơn hàng của bạn sớm nhất.',
+                        allowOutsideClick: false,
+                    }).then(() => {
+                        window.location.href = `/orders/${data.id}`; // Chuyển đến trang chi tiết đơn hàng vừa tạo
+                    });
+                }
             } else {
-                // Nếu không có payUrl (trường hợp COD)
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Đặt hàng thành công!',
-                    text: 'Cảm ơn bạn đã mua hàng. Chúng tôi sẽ xử lý đơn hàng của bạn sớm nhất.',
-                    allowOutsideClick: false,
-                }).then(() => {
-                    window.location.href = `/orders/${data.id}`; // Chuyển đến trang chi tiết đơn hàng vừa tạo
-                });
-            }
-        } else {
                 alertBox.className = 'alert alert-danger';
                 alertBox.textContent = data.message || 'Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.';
                 alertBox.style.display = 'block';

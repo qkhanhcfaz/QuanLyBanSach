@@ -18,9 +18,9 @@ const register = async (req, res) => {
         const user = await User.create({
             ho_ten,
             email,
-            mat_khau, // Hook beforeCreate sẽ tự động hash password
+            mat_khau, // Hook beforeCreate sẽ tự động mã hóa mật khẩu
             ten_dang_nhap,
-            role_id: 2 // Mặc định là user thường
+            role_id: 2 // Mặc định là người dùng thường
         });
 
         if (user) {
@@ -63,13 +63,13 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
         }
 
-        // Kiểm tra mật khẩu (hỗ trợ cả hash và plain text cũ)
+        // Kiểm tra mật khẩu (hỗ trợ cả mã hóa và văn bản thuần cũ)
         let isMatch = await user.matchPassword(mat_khau);
 
-        // Fallback cho password cũ chưa hash
+        // Fallback cho mật khẩu cũ chưa mã hóa
         if (!isMatch && mat_khau === user.mat_khau) {
             isMatch = true;
-            // Tùy chọn: Hash lại và lưu (update) để bảo mật cho lần sau
+            // Tùy chọn: Mã hóa lại và cập nhật để bảo mật cho lần sau
             user.mat_khau = mat_khau;
             await user.save();
         }

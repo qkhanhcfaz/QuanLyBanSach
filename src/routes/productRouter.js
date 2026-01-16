@@ -6,6 +6,36 @@ const router = express.Router();
 // Import models
 const { Product, Category, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const multer = require('multer');
+const path = require('path');
+
+// Cấu hình Multer để upload ảnh
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/images/');
+    },
+    filename: function (req, file, cb) {
+        // Sử dụng tên gốc hoặc thêm timestamp để tránh trùng lặp
+        // Đảm bảo giữ nguyên đuôi file (extension)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    // Chỉ chấp nhận file ảnh
+    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/)) {
+        req.fileValidationError = 'Chỉ chấp nhận file ảnh!';
+        return cb(new Error('Chỉ chấp nhận file ảnh!'), false);
+    }
+    cb(null, true);
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter
+});
+
 
 /**
  * @description     Admin: Tạo một sản phẩm mới.
@@ -63,7 +93,7 @@ const createProduct = async (request, response) => {
 
     } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
-        
+
         // Xử lý các lỗi validation từ Sequelize
         if (error.name === 'SequelizeValidationError') {
             const messages = error.errors.map(e => e.message);
@@ -72,7 +102,7 @@ const createProduct = async (request, response) => {
                 errors: messages
             });
         }
-        
+
         // Xử lý các lỗi khác
         response.status(500).json({
             message: "Lỗi server khi tạo sản phẩm.",
@@ -90,21 +120,21 @@ const getAllProducts = async (request, response) => {
     try {
         // Lấy các tham số từ query string của URL, ví dụ: /api/products?keyword=conan&category=1&minPrice=50000
         const { keyword, category, minPrice, maxPrice, sortBy, order = 'ASC', page = 1, limit = 12 } = request.query;
-        
+
         // 1. XÂY DỰNG ĐIỀU KIỆN LỌC (WHERE)
         const whereCondition = {};
-        
+
         // Lọc theo từ khóa (tìm kiếm tên sách)
         if (keyword) {
             // Sử dụng Op.iLike để tìm kiếm không phân biệt hoa thường (chỉ hoạt động trên PostgreSQL)
             whereCondition.ten_sach = { [Op.iLike]: `%${keyword}%` };
         }
-        
+
         // Lọc theo danh mục
         if (category) {
             whereCondition.danh_muc_id = category;
         }
-        
+
         // Lọc theo khoảng giá
         if (minPrice && maxPrice) {
             whereCondition.gia_bia = { [Op.between]: [minPrice, maxPrice] };
@@ -118,12 +148,12 @@ const getAllProducts = async (request, response) => {
         const orderCondition = [];
         if (sortBy) {
             // order.toUpperCase() để đảm bảo giá trị là 'ASC' hoặc 'DESC'
-            orderCondition.push([sortBy, order.toUpperCase()]); 
+            orderCondition.push([sortBy, order.toUpperCase()]);
         } else {
             // Mặc định sắp xếp theo ngày tạo mới nhất
             orderCondition.push(['createdAt', 'DESC']);
         }
-        
+
         // 3. CẤU HÌNH PHÂN TRANG (PAGINATION)
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
@@ -190,11 +220,11 @@ const getProductById = async (request, response) => {
  * @access          Private/Admin
  */
 const updateProduct = async (request, response) => {
-     try {
+    try {
         // BƯỚC 1: TÌM SẢN PHẨM CẦN CẬP NHẬT TRONG DATABASE DỰA VÀO ID TỪ URL
         const productId = request.params.id;
         const product = await Product.findByPk(productId);
-        
+
         // Nếu không tìm thấy sản phẩm, trả về lỗi 404 (Not Found)
         if (!product) {
             return response.status(404).json({ message: "Không tìm thấy sản phẩm để cập nhật." });
@@ -218,17 +248,17 @@ const updateProduct = async (request, response) => {
         // BƯỚC 4: CẬP NHẬT SẢN PHẨM VỚI DỮ LIỆU MỚI
         // Sử dụng phương thức 'update' của đối tượng product đã tìm thấy
         const updatedProduct = await product.update(updateData);
-        
+
         // Trả về mã trạng thái 200 (OK) và thông tin sản phẩm sau khi đã cập nhật
         response.status(200).json(updatedProduct);
 
     } catch (error) {
         console.error("Lỗi trong quá trình cập nhật sản phẩm:", error);
         if (error.name === 'SequelizeValidationError') {
-            const messages = error.errors.map(function(e) { return e.message; });
-            return response.status(400).json({ 
-                message: 'Dữ liệu cập nhật không hợp lệ.', 
-                errors: messages 
+            const messages = error.errors.map(function (e) { return e.message; });
+            return response.status(400).json({
+                message: 'Dữ liệu cập nhật không hợp lệ.',
+                errors: messages
             });
         }
         response.status(500).json({ message: "Đã có lỗi xảy ra ở phía máy chủ khi cập nhật sản phẩm." });
@@ -332,7 +362,7 @@ const getBestsellerProducts = async (req, res) => {
                     where: {
                         trang_thai_don_hang: { [Op.in]: ['delivered', 'shipping'] }
                     },
-                    attributes: [] 
+                    attributes: []
                 }
             ],
             group: ['product_id', 'product.id'], // Phải group theo cả 2
@@ -341,7 +371,7 @@ const getBestsellerProducts = async (req, res) => {
             raw: true,
             nest: true,
         });
-        
+
         // Kết quả trả về từ truy vấn này đã có đủ thông tin sản phẩm
         // Ví dụ: { product_id: 10, total_sold: 5, product: { id: 10, ten_sach: '...', gia_bia: '...' } }
         // Chúng ta chỉ cần trích xuất phần 'product' ra
@@ -382,14 +412,14 @@ const getAllPublishers = async (req, res) => {
 router.get('/bestsellers', async (req, res) => {
     try {
         const { limit = 10 } = req.query;
-        
+
         const bestsellers = await Product.findAll({
             limit: parseInt(limit),
-            order: [['createdAt', 'DESC']], // Sắp xếp theo mới nhất
-            attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan']
+            order: [['da_ban', 'DESC']], // Sắp xếp theo số lượng bán (bán chạy)
+            attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan', 'da_ban']
         });
-        
-        // Normalize img paths
+
+        // Chuẩn hóa đường dẫn ảnh
         const normalizedBestsellers = bestsellers.map(p => {
             const obj = p && p.toJSON ? p.toJSON() : p;
             if (obj.img && !/^https?:\/\//i.test(obj.img) && !obj.img.startsWith('/')) {
@@ -409,14 +439,14 @@ router.get('/bestsellers', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { limit = 10, offset = 0, category, sortBy = 'id', order = 'ASC' } = req.query;
-        
+
         let where = {};
-        
+
         // Nếu có filter theo danh mục
         if (category) {
             where.danh_muc_id = category;
         }
-        
+
         const products = await Product.findAll({
             where,
             limit: parseInt(limit),
@@ -429,8 +459,8 @@ router.get('/', async (req, res) => {
             }],
             attributes: ['id', 'ten_sach', 'tac_gia', 'gia_bia', 'img', 'mo_ta_ngan', 'danh_muc_id']
         });
-        
-        // Convert to plain objects and normalize img paths
+
+        // Chuyển đổi sang object thuần và chuẩn hóa đường dẫn ảnh
         const productsPlain = products.map(r => r && r.toJSON ? r.toJSON() : r).map(p => {
             if (p.img && !/^https?:\/\//i.test(p.img) && !p.img.startsWith('/')) {
                 p.img = '/images/' + p.img;
@@ -445,10 +475,39 @@ router.get('/', async (req, res) => {
     }
 });
 
+// API Lấy số lượng tồn kho (Realtime)
+// GET /api/products/:id/stock
+router.get('/:id/stock', async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Truy vấn nhẹ chỉ lấy số lượng
+        const product = await Product.findByPk(id, {
+            attributes: ['id', 'so_luong_ton_kho']
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+
+        res.json({ stock: product.so_luong_ton_kho });
+    } catch (error) {
+        console.error('Lỗi lấy tồn kho:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+});
+
 // GET /api/products/:id - Lấy chi tiết sản phẩm
+// (Ưu tiên route này nằm SAU route :id/stock để tránh trùng lặp nếu có logic conflict, nhưng stock cụ thể hơn nên để trước là an toàn nhất)
 router.get('/:id', getProductById);
 
-// PUT /api/products/:id - Cập nhật sản phẩm
-router.put('/:id', updateProduct);
+
+// POST /api/products - Tạo sản phẩm mới (có upload ảnh)
+router.post('/', upload.single('img'), createProduct);
+
+// PUT /api/products/:id - Cập nhật sản phẩm (có upload ảnh)
+router.put('/:id', upload.single('img'), updateProduct);
+
+// DELETE /api/products/:id
+router.delete('/:id', deleteProduct);
 
 module.exports = router;

@@ -138,12 +138,20 @@ const renderProductListPage = async (req, res) => {
     if (category && category > 0) {
       currentCategoryInfo = allCategories.find((c) => String(c.id) === String(category)) || null;
     try {
-        const { page = 1, category, keyword, sortBy = 'createdAt', order = 'DESC' } = req.query;
+        const { page = 1, category, keyword, minPrice, maxPrice, sortBy = 'createdAt', order = 'DESC' } = req.query;
         const limit = 12;
         const offset = (page - 1) * limit;
 
         let where = {};
         if (category) where.danh_muc_id = category;
+
+        // Lọc theo giá
+        if (minPrice || maxPrice) {
+            where.gia_bia = {};
+            if (minPrice) where.gia_bia[Op.gte] = minPrice;
+            if (maxPrice) where.gia_bia[Op.lte] = maxPrice;
+        }
+
         if (keyword) {
             where[Op.and] = [
                 db.sequelize.where(
@@ -259,7 +267,7 @@ const renderProductDetailPage = async (req, res) => {
       reviews = [];
         const { id } = req.params;
 
-        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi Database crash
+        // [QUAN TRỌNG] Kiểm tra ID phải là số để tránh lỗi sập cơ sở dữ liệu
         if (!id || isNaN(id)) {
             return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ' });
         }
@@ -289,7 +297,7 @@ const renderProductDetailPage = async (req, res) => {
         const relatedProducts = await Product.findAll({
             where: {
                 danh_muc_id: product.danh_muc_id,
-                id: { [Op.ne]: product.id } // Loại trừ chính nó
+                id: { [Op.ne]: product.id } // Loại trừ chính sản phẩm hiện tại
             },
             limit: 4
         });
