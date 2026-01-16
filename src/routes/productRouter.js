@@ -475,6 +475,27 @@ router.get('/', async (req, res) => {
     }
 });
 
+// API Lấy số lượng tồn kho (Realtime)
+// GET /api/products/:id/stock
+router.get('/:id/stock', async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Query nhẹ chỉ lấy số lượng
+        const product = await Product.findByPk(id, {
+            attributes: ['id', 'so_luong_ton_kho']
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+
+        res.json({ stock: product.so_luong_ton_kho });
+    } catch (error) {
+        console.error('Lỗi lấy tồn kho:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+});
+
 // POST /api/products - Tạo sản phẩm mới (có upload ảnh)
 router.post('/', upload.single('img'), createProduct);
 
