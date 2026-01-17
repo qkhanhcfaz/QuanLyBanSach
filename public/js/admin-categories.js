@@ -134,6 +134,53 @@ document.addEventListener('DOMContentLoaded', function () {
     // ======================= CÁC HÀM XỬ LÝ SỰ KIỆN ======================
     // ====================================================================
 
+    // Xử lý tìm kiếm
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const keyword = document.getElementById('search-keyword').value.trim().toLowerCase();
+
+            if (!keyword) {
+                // Nếu không có từ khóa, render lại dạng cây ban đầu
+                renderCategoryTable(allCategories);
+                return;
+            }
+
+            // Tìm kiếm (Flat filter)
+            const matches = allCategories.filter(cat =>
+                cat.ten_danh_muc.toLowerCase().includes(keyword)
+            );
+
+            renderCategoryTableFlat(matches);
+        });
+
+        // Optional: Live search
+        document.getElementById('search-keyword').addEventListener('input', (e) => {
+            const keyword = e.target.value.trim().toLowerCase();
+            if (!keyword) renderCategoryTable(allCategories);
+        });
+    }
+
+    /**
+     * Render danh sách danh mục dạng phẳng (cho kết quả tìm kiếm)
+     */
+    function renderCategoryTableFlat(categories) {
+        tableBody.innerHTML = '';
+        if (!categories || categories.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Không tìm thấy danh mục nào phù hợp.</td></tr>';
+            return;
+        }
+
+        // Sắp xếp theo tên A-Z
+        categories.sort((a, b) => a.ten_danh_muc.localeCompare(b.ten_danh_muc));
+
+        categories.forEach(cat => {
+            // Render level 0 (không thụt đầu dòng)
+            tableBody.insertAdjacentHTML('beforeend', createCategoryRowHTML(cat, 0));
+        });
+    }
+
     async function loadCategories() {
         tableBody.innerHTML = `<tr><td colspan="5" class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>`;
         try {
