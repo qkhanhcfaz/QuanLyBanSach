@@ -10,12 +10,16 @@ const cookieParser = require('cookie-parser');
 // Kích hoạt dotenv ngay lập tức để đọc biến môi trường
 dotenv.config();
 
+const { checkUser } = require('./src/middlewares/authMiddleware');
+
 // Module kết nối cơ sở dữ liệu
 const { connectDB, sequelize } = require('./src/config/connectDB');
 
 // [QUAN TRỌNG] Import file models/index.js để thiết lập mối quan hệ giữa các bảng
 // Nếu thiếu dòng này, các lệnh include: [{ model: Category }] sẽ bị lỗi
-require('./src/models'); 
+const db = require('./src/models');
+const { SiteSetting } = db;
+
 
 // --- 2. IMPORT TẤT CẢ CÁC ROUTER ---
 // Routers cho Giao diện (Views)
@@ -35,10 +39,11 @@ const promotionRouter = require('./src/routes/promotionRouter');
 const comboRouter = require('./src/routes/comboRouter');
 const dashboardRouter = require('./src/routes/dashboardRouter');
 const ebookRouter = require('./src/routes/ebookRouter');
-const roleRouter = require('./src/routes/roleRouter'); 
+const roleRouter = require('./src/routes/roleRouter');
 const receiptRouter = require('./src/routes/receiptRouter');
 const postRouter = require('./src/routes/postRouter');
 const provinceRouter = require('./src/routes/provinceRouter');
+const favoriteRouter = require('./src/routes/favoriteRouter');
 
 // --- 3. KHỞI TẠO APP ---
 const app = express();
@@ -55,9 +60,45 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
+// Middleware checkUser để lấy thông tin user từ token (nếu có) cho mọi request
+app.use(checkUser);
 
 // Middleware phục vụ file tĩnh (CSS, JS, Ảnh)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Middleware: gắn thông tin website dùng chung cho EJS
+app.use(async (req, res, next) => {
+  try {
+    let site = await SiteSetting.findOne();
+
+    // Nếu chưa có dòng cấu hình nào thì tạo 1 dòng mặc định
+    if (!site) {
+      site = await SiteSetting.create({
+        ten_website: 'BookZone',
+        dia_chi: 'Quận 7, TP. Hồ Chí Minh',
+        email: 'bookzonestore07@gmail.com',
+        so_dien_thoai: '0969 671 344',
+
+        // ✅ ĐÚNG TÊN CỘT DB
+        facebook: 'https://facebook.com',
+        instagram: 'https://instagram.com',
+        twitter: 'https://twitter.com',
+        linkedin: 'https://linkedin.com',
+
+        nam_ban_quyen: 2026
+      });
+    }
+
+    // res.locals là biến “dùng chung” trong EJS (mọi trang đều truy cập được)
+    res.locals.site = site;
+    next();
+  } catch (err) {
+    console.error('Lỗi load SiteSetting:', err);
+    // Nếu lỗi DB thì vẫn cho chạy trang (footer sẽ fallback)
+    res.locals.site = null;
+    next();
+  }
+});
 
 // --- 5. GẮN (MOUNT) ROUTER ---
 
@@ -78,23 +119,39 @@ app.use('/api/roles', roleRouter);
 app.use('/api/receipts', receiptRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/provinces', provinceRouter);
+app.use('/api/favorites', favoriteRouter);
 
 // B. Admin Routes
 app.use('/admin', adminRouter);
 
+
+
+
+
 // C. View Routes (Trang chủ, sản phẩm...) - Đặt cuối cùng
 app.use('/', viewRouter);
+
+
 
 // --- 6. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 8080;
 
-// Sử dụng { alter: true } để tự động cập nhật cấu trúc bảng nếu có thay đổi
-// (Ví dụ: thêm cột mới vào bảng products, tạo bảng receipts mới...)
-sequelize.sync({ alter: true }).then(() => {
+// 👉 IMPORT SEED (chỉ dùng khi cần)
+// const seedProducts = require('./src/seeders/seedProducts');
+// const seedOrders = require('./src/seeders/seedOrders');
+
+sequelize.sync()
+  .then(async () => {
+    // ⚠️ CHỈ CHẠY SEED 1 LẦN, SAU ĐÓ COMMENT DÒNG NÀY
+    // await seedProducts();
+    // await seedOrders();
+
     app.listen(PORT, () => {
-        console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
-        console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
+      console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+      console.log(`✅ Đã cập nhật tính năng: /about`);
+      console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
     });
-}).catch((err) => {
+  })
+  .catch((err) => {
     console.error('❌ Lỗi đồng bộ Database:', err);
-});
+  });

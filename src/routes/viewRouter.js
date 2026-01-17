@@ -16,11 +16,18 @@ const {
     renderOrderDetailPage,
     renderProfilePage,
     renderForgotPasswordPage,
-    renderResetPasswordPage
+    renderResetPasswordPage,
+    renderFavoritesPage,
+    renderAboutPage,
+    renderRecruitmentPage,
+    renderTermsPage,
+    renderGuidePage,
+    renderReturnPolicyPage,
+    renderFAQPage
 } = require('../controllers/viewController');
 
 router.get('/', renderHomePage);
-router.get('/products', renderProductListPage); 
+router.get('/products', renderProductListPage);
 router.get('/products/:id', renderProductDetailPage);
 router.get('/login', renderLoginPage);
 router.get('/register', renderRegisterPage);
@@ -29,6 +36,13 @@ router.get('/checkout', renderCheckoutPage);
 router.get('/my-orders', renderMyOrdersPage);
 router.get('/orders/:id', renderOrderDetailPage);
 router.get('/profile', renderProfilePage);
+router.get('/favorites', renderFavoritesPage);
+router.get('/about', renderAboutPage);
+router.get('/careers', renderRecruitmentPage);
+router.get('/terms', renderTermsPage);
+router.get('/guide', renderGuidePage);
+router.get('/return-policy', renderReturnPolicyPage);
+router.get('/faq', renderFAQPage);
 
 router.get('/forgot-password', renderForgotPasswordPage);
 router.get('/reset-password/:token', renderResetPasswordPage);

@@ -1,13 +1,108 @@
-// Auth Middleware
+const jwt = require('jsonwebtoken');
+const db = require('../models');
 
-// Middleware để bảo vệ các route (yêu cầu đăng nhập)
-exports.protect = (req, res, next) => {
-    // Placeholder - kiểm tra nếu user đã đăng nhập
+const protect = async (req, res, next) => {
+    let token;
+
+    if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
+    } else if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+        if (req.originalUrl.startsWith('/admin')) {
+            return res.redirect('/login');
+        }
+        return res.status(401).json({ message: 'Chưa đăng nhập' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = await db.User.findByPk(decoded.id, {
+            attributes: { exclude: ['mat_khau'] },
+            include: {
+                model: db.Role,
+                as: 'role'
+            }
+        });
+
+        if (!req.user) {
+            return res.redirect('/login');
+        }
+
+        next();
+    } catch (err) {
+        console.error('Lỗi xác thực token:', err.message);
+        return res.redirect('/login');
+    }
+};
+
+const admin = (req, res, next) => {
+    /**
+     * CHỐT LOGIC:
+     * - user phải tồn tại
+     * - role phải được include
+     * - role_id === 1 (ADMIN)
+     * => CÁCH NÀY KHÔNG PHỤ THUỘC TÊN CỘT roles
+     */
+    // DEBUG LOG
+    if (req.user) {
+        console.log(`[AUTH DEBUG] User: ${req.user.email}, Role ID: ${req.user.role_id}`);
+    } else {
+        console.log('[AUTH DEBUG] No user found in request');
+    }
+
+    if (req.user && req.user.role_id == 1) {
+        return next();
+    }
+
+    // Không phải admin
+    if (req.originalUrl.startsWith('/admin')) {
+        return res.status(403).render('pages/error', {
+            title: '403 - Không có quyền',
+            message: 'Bạn không có quyền Admin để truy cập trang này'
+        });
+    }
+
+    return res.status(403).json({
+        message: 'Không có quyền Admin'
+    });
+};
+
+
+const checkUser = async (req, res, next) => {
+    let token;
+    if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
+    }
+
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await db.User.findByPk(decoded.id, {
+                attributes: { exclude: ['mat_khau'] },
+                include: {
+                    model: db.Role,
+                    as: 'role'
+                }
+            });
+            // Make user available to views
+            res.locals.user = req.user;
+        } catch (err) {
+            console.error('[Middleware] Token invalid:', err.message);
+            req.user = null;
+            res.locals.user = null;
+        }
+    } else {
+        req.user = null;
+        res.locals.user = null;
+    }
     next();
 };
 
-// Middleware để kiểm tra quyền admin
-exports.admin = (req, res, next) => {
-    // Placeholder - kiểm tra nếu user là admin
-    next();
-};
+module.exports = { protect, admin, checkUser };

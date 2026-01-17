@@ -1,18 +1,12 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
-const User = require('./userModel');
 
 const Cart = sequelize.define('Cart', {
-    id: {
+    user_id: {
         type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    userId: {
-        type: DataTypes.INTEGER,
-        allowNull: true, // Allow null for guest carts (potentially)
+        allowNull: false,
         references: {
-            model: User,
+            model: 'users', // Tên bảng users
             key: 'id'
         }
     }
@@ -21,4 +15,10 @@ const Cart = sequelize.define('Cart', {
     timestamps: true
 });
 
+Cart.associate = (models) => {
+    Cart.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+    Cart.hasMany(models.CartItem, { foreignKey: 'cart_id', as: 'items' });
+};
+
 module.exports = Cart;
+

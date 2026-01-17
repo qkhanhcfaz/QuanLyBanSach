@@ -1,168 +1,42 @@
+// File: /src/routes/cartRouter.js
+
+// 1. Import thư viện Express
 const express = require('express');
+
+// 2. Import các hàm controller từ cartController
+const {
+    getCart,
+    addToCart,
+    updateCartItem,
+    removeCartItem
+} = require('../controllers/cartController');
+
+// 3. Import middleware bảo vệ
+const { protect } = require('../middlewares/authMiddleware');
+
+// 4. Tạo một đối tượng router mới
 const router = express.Router();
-const { Cart, CartDetail, Product, User } = require('../models');
 
-// Helper function to get or create a default user for the demo
-async function getOrCreateDefaultUser() {
-    let user = await User.findByPk(1);
-    if (!user) {
-        user = await User.create({
-            username: 'demo_user',
-            password: 'password123', // In real app, hash this!
-            email: 'demo@example.com',
-            role: 'user'
-        });
-    }
-    return user;
-}
+// 5. Áp dụng middleware `protect` cho TẤT CẢ các routes trong file này.
+//    Điều này đảm bảo rằng chỉ người dùng đã đăng nhập mới có thể truy cập các API giỏ hàng.
+router.use(protect);
 
-// === LẤY GIỎ HÀNG (GET) ===
-router.get('/', async (req, res) => {
-    try {
-        const user = await getOrCreateDefaultUser();
+// 6. Định nghĩa các tuyến đường
 
-        const cart = await Cart.findOne({
-            where: { userId: user.id },
-            include: [
-                {
-                    model: CartDetail,
-                    as: 'items',
-                    include: [
-                        {
-                            model: Product,
-                            as: 'product'
-                        }
-                    ]
-                }
-            ]
-        });
+// Định nghĩa route cho đường dẫn gốc ('/'), tức là '/api/cart'
+router.route('/')
+    // Phương thức GET sẽ được xử lý bởi `getCart` để lấy thông tin giỏ hàng hiện tại.
+    .get(getCart)
+    // Phương thức POST sẽ được xử lý bởi `addToCart` để thêm sản phẩm vào giỏ.
+    .post(addToCart);
 
-        if (!cart) {
-            return res.json({ items: [] });
-        }
+// Định nghĩa route cho đường dẫn '/items/:itemId', ví dụ: '/api/cart/items/15'
+// `:itemId` là ID của một mục trong giỏ hàng (một bản ghi trong bảng `cart_items`).
+router.route('/items/:itemId')
+    // Phương thức PUT sẽ được xử lý bởi `updateCartItem` để cập nhật số lượng.
+    .put(updateCartItem)
+    // Phương thức DELETE sẽ được xử lý bởi `removeCartItem` để xóa sản phẩm khỏi giỏ.
+    .delete(removeCartItem);
 
-        return res.json(cart);
-    } catch (error) {
-        console.error("Lỗi lấy giỏ hàng:", error);
-        return res.status(500).json({ message: "Lỗi server khi lấy giỏ hàng" });
-    }
-});
-
-// === THÊM SẢN PHẨM VÀO GIỎ HÀNG (POST) ===
-router.post('/', async (req, res) => {
-    try {
-        const { productId, quantity } = req.body;
-
-        // Validation cơ bản
-        if (!productId || !quantity) {
-            return res.status(400).json({ message: "Thiếu productId hoặc quantity" });
-        }
-
-        const user = await getOrCreateDefaultUser();
-
-        // 1. Tìm hoặc tạo giỏ hàng cho user
-        let [cart] = await Cart.findOrCreate({
-            where: { userId: user.id },
-            defaults: { userId: user.id }
-        });
-
-        // 2. Kiểm tra xem sản phẩm đã có trong giỏ chưa
-        let cartItem = await CartDetail.findOne({
-            where: {
-                cartId: cart.id,
-                productId: productId
-            }
-        });
-
-        if (cartItem) {
-            // Nếu có rồi thì cộng thêm số lượng
-            cartItem.quantity += parseInt(quantity);
-            await cartItem.save();
-        } else {
-            // Nếu chưa có thì tạo mới
-            await CartDetail.create({
-                cartId: cart.id,
-                productId: productId,
-                quantity: parseInt(quantity)
-            });
-        }
-
-        return res.status(200).json({
-            message: "Đã thêm vào giỏ hàng thành công!",
-            productId,
-            quantity
-        });
-
-    } catch (error) {
-        console.error("Lỗi thêm giỏ hàng:", error);
-        return res.status(500).json({ message: "Lỗi server khi thêm giỏ hàng" });
-    }
-});
-
-// === CẬP NHẬT SỐ LƯỢNG (PUT) ===
-router.put('/items/:id', async (req, res) => {
-    try {
-        const itemId = req.params.id;
-        const { quantity } = req.body;
-
-        if (!quantity || quantity < 1) {
-            return res.status(400).json({ message: "Số lượng không hợp lệ" });
-        }
-
-        const user = await getOrCreateDefaultUser();
-
-        // Tìm item trong giỏ hàng của user này (để đảm bảo bảo mật)
-        const cartItem = await CartDetail.findOne({
-            where: { id: itemId },
-            include: [{
-                model: Cart,
-                as: 'cart',
-                where: { userId: user.id }
-            }]
-        });
-
-        if (!cartItem) {
-            return res.status(404).json({ message: "Sản phẩm không tồn tại trong giỏ hàng" });
-        }
-
-        cartItem.quantity = parseInt(quantity);
-        await cartItem.save();
-
-        return res.json({ message: "Cập nhật thành công!" });
-
-    } catch (error) {
-        console.error("Lỗi cập nhật giỏ hàng:", error);
-        return res.status(500).json({ message: "Lỗi server" });
-    }
-});
-
-// === XÓA SẢN PHẨM (DELETE) ===
-router.delete('/items/:id', async (req, res) => {
-    try {
-        const itemId = req.params.id;
-        const user = await getOrCreateDefaultUser();
-
-        const cartItem = await CartDetail.findOne({
-            where: { id: itemId },
-            include: [{
-                model: Cart,
-                as: 'cart',
-                where: { userId: user.id }
-            }]
-        });
-
-        if (!cartItem) {
-            return res.status(404).json({ message: "Sản phẩm không tìm thấy" });
-        }
-
-        await cartItem.destroy();
-
-        return res.json({ message: "Đã xóa sản phẩm khỏi giỏ hàng" });
-
-    } catch (error) {
-        console.error("Lỗi xóa sản phẩm:", error);
-        return res.status(500).json({ message: "Lỗi server" });
-    }
-});
-
+// 7. Export đối tượng router
 module.exports = router;

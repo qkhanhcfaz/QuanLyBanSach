@@ -2,20 +2,19 @@
 // Điều này đảm bảo tất cả các element HTML đã sẵn sàng để JavaScript thao tác.
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Lấy token xác thực từ localStorage.
-    const token = localStorage.getItem('token');
-
-    // Nếu không có token, nghĩa là người dùng chưa đăng nhập.
-    // Chuyển hướng họ về trang đăng nhập và dừng thực thi script.
-    if (!token) {
-        window.location.href = '/login';
-        return;
-    }
-
     // === BƯỚC 1: LẤY CÁC ELEMENT HTML CẦN THIẾT ===
     const cartItemsContainer = document.getElementById('cart-items-container');
-    if (!cartItemsContainer) {
-        // Nếu không phải trang giỏ hàng, dừng thực thi ngay lập tức
+    const token = localStorage.getItem('token');
+
+    // Nếu LÀ trang giỏ hàng (có container) thì mới kiểm tra đăng nhập
+    if (cartItemsContainer) {
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+    } else {
+        // Nếu không phải trang giỏ hàng, dừng thực thi việc RENDER giỏ hàng
+        // NHƯNG vẫn giữ lại các hàm global như addToCart (được định nghĩa bên dưới)
         return;
     }
     sessionStorage.removeItem('promoCodeToCheckout');
@@ -37,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Biến để lưu trữ trạng thái của giỏ hàng và khuyến mãi trên toàn trang.
     let currentCart = null;
     let currentDiscountAmount = 0; // Số tiền được giảm
+    let serverSubtotal = 0; // MỚI: Lưu tổng tiền tạm tính từ server
+
 
     // Hàm helper để định dạng số thành chuỗi tiền tệ Việt Nam (vd: 50000 -> 50.000 ₫)
     const formatCurrency = (amount) => {
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         items.forEach(item => {
-            const itemTotal = item.quantity * item.product.gia_bia;
+            const itemTotal = item.so_luong * item.product.gia_bia;
             const cartItemHTML = `
                 <div class="row mb-4 d-flex justify-content-between align-items-center">
                     <div class="col-md-2 col-lg-2 col-xl-2">
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h6 class="text-black mb-0">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</h6>
                     </div>
                     <div class="col-md-3 col-lg-3 col-xl-2 d-flex">
-                        <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.quantity}" type="number"
+                        <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.so_luong}" type="number"
                             class="form-control form-control-sm item-quantity" data-item-id="${item.id}" />
                     </div>
                     
@@ -105,7 +106,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Tính toán các giá trị
-        const subtotal = currentCart.items.reduce((sum, item) => sum + (item.quantity * item.product.gia_bia), 0);
+        // CŨ: const subtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
+        // MỚI: Sử dụng tổng tiền (subtotal) từ server trả về (đã tính cho toàn bộ giỏ hàng)
+        const subtotal = serverSubtotal;
+
         const shippingFee = (subtotal > 0) ? 30000 : 0; // Chỉ tính phí ship khi có hàng.
 
         // Cập nhật giao diện
@@ -130,9 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Hàm chính: Lấy dữ liệu giỏ hàng từ server và khởi chạy quá trình render.
      */
-    async function fetchAndRenderCart() {
+    async function fetchAndRenderCart(page = 1) { // MỚI: Thêm tham số trang
         try {
-            const response = await fetch('/api/cart', {
+            const response = await fetch(`/api/cart?page=${page}&limit=5`, { // MỚI: Gọi API với phân trang
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -144,16 +148,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Không thể tải giỏ hàng từ server.');
             }
 
-            const cartData = await response.json();
-            currentCart = cartData; // Lưu lại dữ liệu giỏ hàng
+            const cartResponse = await response.json(); // Data struct: { items, pagination, subtotal, ... }
 
-            renderCartItems(currentCart.items);
+            // Xử lý response format mới
+            // Vì API trả về { items: [], pagination: {}, subtotal: ... } thay vì cart object trực tiếp
+            // Ta cần mapping lại để code cũ (nếu có dùng currentCart) không bị gãy quá nhiều, 
+            // tuy nhiên quan trọng nhất là list items để render.
+
+            currentCart = { items: cartResponse.items };
+            serverSubtotal = parseFloat(cartResponse.subtotal || 0); // Lưu subtotal từ server
+
+            renderCartItems(cartResponse.items);
             updateOrderSummary();
+
+            // MỚI: Render phân trang
+            renderPagination(cartResponse.pagination);
 
         } catch (error) {
             console.error('Lỗi khi fetch giỏ hàng:', error);
             cartItemsContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
         }
+    }
+
+    /**
+     * Hàm render thanh phân trang
+     */
+    function renderPagination(pagination) {
+        const paginationContainer = document.getElementById('cart-pagination');
+        if (!paginationContainer) return; // Cần thêm element này vào HTML sau
+
+        if (!pagination || pagination.totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+
+        // Nút Previous
+        html += `<li class="page-item ${pagination.currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${pagination.currentPage - 1}">&laquo;</a>
+                 </li>`;
+
+        // Các trang
+        for (let i = 1; i <= pagination.totalPages; i++) {
+            html += `<li class="page-item ${i === pagination.currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                     </li>`;
+        }
+
+        // Nút Next
+        html += `<li class="page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${pagination.currentPage + 1}">&raquo;</a>
+                 </li>`;
+
+        paginationContainer.innerHTML = html;
+
+        // Gắn sự kiện click
+        paginationContainer.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newPage = parseInt(e.target.dataset.page);
+                if (newPage > 0 && newPage <= pagination.totalPages && newPage !== pagination.currentPage) {
+                    fetchAndRenderCart(newPage);
+                }
+            });
+        });
     }
 
     /**
@@ -189,41 +248,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ quantity: quantity })
+                body: JSON.stringify({ soLuong: quantity })
             });
-
             if (response.ok) {
-                // 1. Cập nhật dữ liệu trong biến currentCart
-                const itemIndex = currentCart.items.findIndex(item => item.id == itemId);
-                if (itemIndex > -1) {
-                    currentCart.items[itemIndex].quantity = quantity;
-
-                    // 2. Tính lại thành tiền của item đó (Frontend update)
-                    const item = currentCart.items[itemIndex];
-                    const newItemTotal = item.quantity * item.product.gia_bia;
-
-                    // Tìm element hiển thị thành tiền của item này và cập nhật
-                    // Lưu ý: Cần thêm class hoặc id cho element thành tiền trong renderCartItems để dễ tìm
-                    // Tạm thời tìm theo cấu trúc DOM (cách chữa cháy nếu ko muốn sửa HTML string nhiều)
-                    const quantityInput = document.querySelector(`.item-quantity[data-item-id="${itemId}"]`);
-                    if (quantityInput) {
-                        const row = quantityInput.closest('.row');
-                        const totalEl = row.querySelector('.col-md-3.col-lg-2 h6'); // Element chứa thành tiền
-                        if (totalEl) {
-                            totalEl.textContent = newItemTotal.toLocaleString('vi-VN') + 'đ';
-                        }
-                    }
-
-                    // 3. Cập nhật lại Tổng quan đơn hàng (Subtotal, Total...)
-                    updateOrderSummary();
-                }
+                fetchAndRenderCart(); // Tải lại toàn bộ giỏ hàng
             } else {
                 alert('Cập nhật số lượng thất bại. Vui lòng thử lại.');
-                fetchAndRenderCart(); // Fallback: Tải lại nếu lỗi
+                fetchAndRenderCart(); // Tải lại để trả về số lượng cũ
             }
         } catch (error) {
             console.error('Lỗi API khi cập nhật số lượng:', error);
-            fetchAndRenderCart(); // Fallback
         }
     }
 
@@ -290,7 +324,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             // Tính toán tổng tiền hàng ngay tại thời điểm áp dụng
-            const cartSubtotal = currentCart.items.reduce((sum, item) => sum + (item.quantity * item.product.gia_bia), 0);
+            // OLD: const cartSubtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
+            // NEW: Sử dụng subtotal từ server
+            const cartSubtotal = serverSubtotal;
+
 
             // Vô hiệu hóa nút và hiển thị spinner để người dùng biết đang xử lý
             applyBtn.disabled = true;
@@ -493,7 +530,7 @@ async function addToCart(productId, quantity = 1) {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ productId: productId, quantity: quantity })
+            body: JSON.stringify({ productId: productId, soLuong: quantity })
         });
 
         if (response.ok) {

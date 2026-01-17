@@ -1,33 +1,58 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
+const bcrypt = require('bcryptjs');
 
 const User = sequelize.define('User', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true
     },
-    username: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        unique: true
-    },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: true
+    role_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        defaultValue: 2
     },
     email: {
         type: DataTypes.STRING,
-        allowNull: true,
-        validate: { isEmail: true }
+        allowNull: false,
+        unique: true
     },
-    role: {
-        type: DataTypes.STRING, // 'admin', 'user'
-        defaultValue: 'user'
-    }
+    mat_khau: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    ho_ten: DataTypes.STRING
 }, {
     tableName: 'users',
-    timestamps: true
+    timestamps: true,
+    hooks: {
+        beforeCreate: async (user) => {
+            if (user.mat_khau) {
+                const salt = await bcrypt.genSalt(10);
+                user.mat_khau = await bcrypt.hash(user.mat_khau, salt);
+            }
+        },
+        beforeUpdate: async (user) => {
+            if (user.changed('mat_khau')) {
+                const salt = await bcrypt.genSalt(10);
+                user.mat_khau = await bcrypt.hash(user.mat_khau, salt);
+            }
+        }
+    }
 });
 
+// Method kiểm tra mật khẩu
+User.prototype.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.mat_khau);
+};
+
+User.associate = (models) => {
+    User.belongsTo(models.Role, {
+        foreignKey: 'role_id',
+        as: 'role'
+    });
+};
+
 module.exports = User;
+

@@ -1,40 +1,29 @@
-// File: /src/models/productModel.js
+// Tệp tin: /src/models/productModel.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 
-// Định nghĩa model 'Product' tương ứng với bảng 'products' trong CSDL
+// Định nghĩa model Product
 const Product = sequelize.define('Product', {
-    // Sequelize sẽ tự động tạo cột 'id' làm khóa chính (primary key)
-    
     ten_sach: {
-        type: DataTypes.STRING, 
-        allowNull: false 
+        type: DataTypes.STRING,
+        allowNull: false
     },
 
     mo_ta_ngan: {
-        type: DataTypes.TEXT, 
-        allowNull: true 
+        type: DataTypes.TEXT,
+        allowNull: true
     },
 
     gia_bia: {
-        type: DataTypes.DECIMAL(12, 2), 
+        type: DataTypes.DECIMAL(12, 2),
         allowNull: false
     },
 
     so_luong_ton_kho: {
-        type: DataTypes.INTEGER, 
-        allowNull: false,
-        defaultValue: 0 
-    },
-
-    // --- [MỚI] THÊM CỘT NÀY ĐỂ TÍNH BEST SELLER ---
-    da_ban: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0, // Mặc định là 0 khi tạo mới
-        comment: 'Số lượng sản phẩm đã bán (Dùng để sắp xếp Top Bán Chạy)'
+        defaultValue: 0
     },
-    // ----------------------------------------------
 
     tac_gia: {
         type: DataTypes.STRING,
@@ -53,29 +42,42 @@ const Product = sequelize.define('Product', {
 
     img: {
         type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'URL đến hình ảnh đại diện của sản phẩm'
+        allowNull: true
     },
 
     so_trang: {
-        type: DataTypes.INTEGER, 
+        type: DataTypes.INTEGER,
         allowNull: true,
         validate: {
-            isInt: true,      
-            min: 1            
+            isInt: true,
+            min: 1
         }
     },
 
+    da_ban: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+
+    views: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+
+    // Trường để phân biệt sách in và ebook
     product_type: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'print_book', 
+        defaultValue: 'print_book', // 'print_book' hoặc 'ebook'
         comment: 'Loại sản phẩm: sách in (print_book) hoặc ebook'
     },
 
+    // Trường để lưu link download cho ebook
     ebook_url: {
         type: DataTypes.STRING,
-        allowNull: true, 
+        allowNull: true, // Chỉ có giá trị khi product_type là 'ebook'
         comment: 'Đường dẫn gốc đến file ebook'
     },
 
@@ -85,42 +87,29 @@ const Product = sequelize.define('Product', {
     }
 
 }, {
-    tableName: 'products', 
-    timestamps: true, 
+    tableName: 'products',
+    timestamps: true
 });
 
-// Định nghĩa các mối quan hệ (associations)
+// ✅ CHỈ GIỮ QUAN HỆ TỐI THIỂU – AN TOÀN – CHẠY ĐƯỢC
 Product.associate = (models) => {
-
     Product.belongsTo(models.Category, {
         foreignKey: 'danh_muc_id',
-        as: 'category' 
+        as: 'category'
     });
 
+    // Thêm các quan hệ khác nếu cần thiết (được merge từ HEAD)
     Product.hasMany(models.OrderItem, {
         foreignKey: 'product_id',
-        as: 'orderItems',
-        onDelete: 'CASCADE', 
-        hooks: true 
-    });
-
-    Product.hasMany(models.CartItem, {
-         foreignKey: 'product_id', 
-         onDelete: 'CASCADE', 
-         hooks: true 
+        as: 'orderItems'
     });
 
     Product.hasMany(models.Review, {
         foreignKey: 'product_id',
-        as: 'reviews',
-        onDelete: 'CASCADE', 
-        hooks: true 
+        as: 'reviews'
     });
-    
-    Product.hasMany(models.ReceiptItem, {
-        foreignKey: 'product_id',
-        as: 'receiptHistory' 
-    });
+
+
 };
 
 module.exports = Product;

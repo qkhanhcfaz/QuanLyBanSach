@@ -1,185 +1,359 @@
 // File: /src/controllers/viewController.js
+
 const { Op } = require('sequelize');
-// [QUAN TRỌNG] Thêm 'Review' vào danh sách import
-const { Product, Category, Slideshow, Order, OrderItem, User, Review } = require('../models');
+const db = require('../models');
+
+const { Product, Category, Slideshow, Review, User, Favorite } = db;
+const { getMyFavoriteIds } = require('./favoriteController');
+
+/** Helpers */
+const toInt = (v, def = 0) => {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : def;
+};
+
+const clampMin = (n, min) => (n < min ? min : n);
 
 /**
- * Render Trang Chủ
+ * @description     Render Trang Chủ
+ * @route           GET /
  */
 const renderHomePage = async (req, res) => {
+  try {
+    const favoriteProductIds = req.user ? await getMyFavoriteIds(req.user.id) : [];
+
+    // 1. Slideshow
+    let slides = [];
     try {
-        const slides = await Slideshow.findAll({
-            where: { trang_thai: true },
-            order: [['thu_tu_hien_thi', 'ASC']]
-        });
-
-        const newProducts = await Product.findAll({
-            limit: 8,
-            order: [['createdAt', 'DESC']],
-            include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc'] }]
-        });
-
-        res.render('pages/home', { 
-            title: 'Trang Chủ',
-            slides,
-            newProducts,
-            user: req.user
-        });
-    } catch (error) {
-        console.error("Lỗi trang chủ:", error);
-        res.render('pages/error', { message: 'Lỗi tải trang chủ' });
+      slides = await Slideshow.findAll({
+        where: { trang_thai: true },
+        order: [['thu_tu_hien_thi', 'ASC']],
+      });
+    } catch (e) {
+      console.warn("Slideshow table missing or empty", e.message);
+      slides = [];
     }
+
+    // 2. Sách Mới (8 cuốn)
+    const newProducts = await Product.findAll({
+      limit: 8,
+      order: [['createdAt', 'DESC']],
+      include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
+    });
+
+    // 3. Best Sellers (Logic tạm: lấy mới nhất)
+    const bestSellers = await Product.findAll({
+      limit: 8,
+      order: [['createdAt', 'DESC']],
+      include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
+    });
+
+    // 4. Danh mục nổi bật (ví dụ ID 4 - Văn Học)
+    // Lưu ý: Cần đảm bảo ID = 4 tồn tại trong bảng Categories
+    let featuredCategoryProducts = [];
+    try {
+      featuredCategoryProducts = await Product.findAll({
+        where: { danh_muc_id: 4 },
+        limit: 4,
+        order: [['createdAt', 'DESC']],
+        include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
+      });
+    } catch (err) {
+      console.warn("Featured category query failed", err.message);
+    }
+
+    res.render('pages/home', {
+      title: 'Trang Chủ - Nhà Sách',
+      slides,
+      newProducts,
+      bestSellers,
+      featuredCategoryProducts,
+      favoriteProductIds,
+      user: req.user
+    });
+
+  } catch (error) {
+    console.error("Lỗi trang chủ:", error);
+    res.render('pages/error', { message: 'Lỗi tải trang chủ', user: req.user });
+  }
 };
 
 /**
- * Render Danh sách Sản phẩm
+ * @description     Render Danh sách Sản phẩm
+ * @route           GET /products
  */
 const renderProductListPage = async (req, res) => {
-    try {
-        const { page = 1, category, keyword, sortBy = 'createdAt', order = 'DESC' } = req.query;
-        const limit = 12;
-        const offset = (page - 1) * limit;
+  try {
+    const page = clampMin(toInt(req.query.page, 1), 1);
+    const limit = 12;
+    const offset = (page - 1) * limit;
 
-        let where = {};
-        if (category) where.danh_muc_id = category;
-        if (keyword) where.ten_sach = { [Op.iLike]: `%${keyword}%` };
+    const category = req.query.category ? toInt(req.query.category, 0) : null;
+    const keyword = (req.query.keyword || '').trim();
+    const sortByRaw = (req.query.sortBy || 'createdAt').trim();
+    const orderRaw = (req.query.order || 'DESC').toUpperCase();
+    const minPrice = toInt(req.query.minPrice, 0);
+    const maxPrice = toInt(req.query.maxPrice, 0);
 
-        const allCategories = await Category.findAll();
-        let currentCategoryInfo = null;
-        if (category) {
-            currentCategoryInfo = allCategories.find(c => c.id == category);
-        }
+    const allowedSortFields = ['createdAt', 'ten_sach', 'gia_ban', 'gia_bia'];
+    const sortBy = allowedSortFields.includes(sortByRaw) ? sortByRaw : 'createdAt';
+    const order = orderRaw === 'ASC' ? 'ASC' : 'DESC';
 
-        const { count, rows } = await Product.findAndCountAll({
-            where,
-            limit,
-            offset,
-            order: [[sortBy, order]],
-            include: [{ model: Category, as: 'category' }]
-        });
+    const where = {};
+    if (category && category > 0) where.danh_muc_id = category;
 
-        res.render('pages/products', {
-            title: currentCategoryInfo ? currentCategoryInfo.ten_danh_muc : 'Tất Cả Sản Phẩm',
-            products: rows,
-            allCategories,
-            currentCategory: currentCategoryInfo,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(count / limit),
-                limit
-            },
-            queryParams: req.query,
-            user: req.user
-        });
-
-    } catch (error) {
-        console.error("Lỗi trang sản phẩm:", error);
-        res.render('pages/error', { message: 'Không thể tải danh sách sản phẩm' });
+    if (minPrice > 0 || maxPrice > 0) {
+      where.gia_bia = {};
+      if (minPrice > 0) where.gia_bia[Op.gte] = minPrice;
+      if (maxPrice > 0) where.gia_bia[Op.lte] = maxPrice;
     }
+
+    if (keyword) {
+      where[Op.and] = [
+        db.sequelize.where(
+          db.sequelize.fn('unaccent', db.sequelize.col('ten_sach')),
+          { [Op.iLike]: db.sequelize.fn('unaccent', `%${keyword}%`) }
+        )
+      ];
+    }
+
+    const allCategories = await Category.findAll({ order: [['ten_danh_muc', 'ASC']] });
+    let currentCategoryInfo = null;
+    if (category) {
+      currentCategoryInfo = allCategories.find(c => c.id === category);
+    }
+
+    const { count, rows } = await Product.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order: [[sortBy, order]],
+      include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
+    });
+
+    res.render('pages/products', {
+      title: currentCategoryInfo ? currentCategoryInfo.ten_danh_muc : 'Tất Cả Sản Phẩm',
+      products: rows,
+      allCategories,
+      currentCategory: currentCategoryInfo,
+      favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
+      queryParams: req.query,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(count / limit),
+        limit,
+        totalItems: count
+      },
+      user: req.user
+    });
+
+  } catch (error) {
+    console.error("Lỗi trang danh sách sản phẩm:", error);
+    res.render('pages/error', { message: 'Lỗi tải danh sách sản phẩm', user: req.user });
+  }
 };
 
 /**
- * Render Chi tiết Sản phẩm (ĐÃ SỬA LỖI REVIEWS)
+ * @description     Render Chi tiết Sản phẩm
+ * @route           GET /products/:id
  */
 const renderProductDetailPage = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const id = toInt(req.params.id, NaN);
 
-        // 1. Tìm sản phẩm
-        const product = await Product.findByPk(id, {
-            include: [{ model: Category, as: 'category' }]
-        });
-
-        if (!product) {
-            return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại' });
-        }
-
-        // 2. [CODE MỚI] Lấy danh sách đánh giá của sản phẩm này
-        // Nếu chưa có bảng reviews thì nó sẽ trả về mảng rỗng [] -> Không bị lỗi nữa
-        let reviews = [];
-        try {
-            reviews = await Review.findAll({
-                where: { product_id: id },
-                include: [{ model: User, as: 'user', attributes: ['ho_ten'] }], // Lấy tên người review
-                order: [['createdAt', 'DESC']]
-            });
-        } catch (err) {
-            console.warn("Chưa thể tải đánh giá (có thể do thiếu bảng Review), bỏ qua.");
-        }
-
-        // 3. Lấy sản phẩm liên quan
-        const relatedProducts = await Product.findAll({
-            where: { 
-                danh_muc_id: product.danh_muc_id,
-                id: { [Op.ne]: product.id }
-            },
-            limit: 4
-        });
-
-        // 4. Render và TRUYỀN ĐỦ BIẾN
-        res.render('pages/product-detail', {
-            title: product.ten_sach,
-            product: product,
-            reviews: reviews, // <--- Đây là biến "thuốc giải" cho lỗi của bạn
-            relatedProducts: relatedProducts,
-            user: req.user
-        });
-
-    } catch (error) {
-        console.error("Lỗi chi tiết sản phẩm:", error);
-        res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm' });
+    // check id hợp lệ
+    if (!Number.isFinite(id)) {
+      return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ', user: req.user });
     }
+
+    // 1) sản phẩm
+    const product = await Product.findByPk(id, {
+      include: [{ model: Category, as: 'category' }],
+    });
+
+    if (!product) {
+      return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại', user: req.user });
+    }
+
+    // 2) reviews
+    let reviews = [];
+    try {
+      if (db.Review) {
+        reviews = await Review.findAll({
+          where: { product_id: id },
+          include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
+          order: [['createdAt', 'DESC']]
+        });
+      }
+    } catch (err) {
+      console.warn("Lỗi lấy review hoặc bảng Review chưa sẵn sàng", err.message);
+    }
+
+    // 3) INCREMENT VIEW COUNT
+    await product.increment('views');
+
+    // 4) STATS: Favorite Count & Avg Rating
+    const favoriteCount = await Favorite.count({ where: { product_id: id } });
+
+    let avgRating = 0;
+    if (reviews.length > 0) {
+      const totalStars = reviews.reduce((sum, r) => sum + r.rating, 0);
+      avgRating = (totalStars / reviews.length).toFixed(1);
+    }
+
+    // 5) sản phẩm liên quan
+    const relatedProducts = await Product.findAll({
+      where: {
+        danh_muc_id: product.danh_muc_id,
+        id: { [Op.ne]: product.id }
+      },
+      limit: 4,
+      order: [['createdAt', 'DESC']],
+      include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }]
+    });
+
+    res.render('pages/product-detail', {
+      title: product.ten_sach,
+      product,
+      reviews,
+      relatedProducts,
+      favoriteCount,
+      avgRating,
+      favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
+      user: req.user
+    });
+
+  } catch (error) {
+    console.error("Lỗi chi tiết sản phẩm:", error);
+    res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm', user: req.user });
+  }
 };
 
-// --- Các trang tĩnh khác ---
+// --- Các trang tĩnh / Auth ---
 
 const renderLoginPage = (req, res) => {
-    res.render('pages/login', { title: 'Đăng Nhập', user: req.user });
+  res.render('pages/login', { title: 'Đăng Nhập', user: req.user });
 };
 
 const renderRegisterPage = (req, res) => {
-    res.render('pages/register', { title: 'Đăng Ký', user: req.user });
+  res.render('pages/register', { title: 'Đăng Ký', user: req.user });
 };
 
 const renderCartPage = (req, res) => {
-    res.render('pages/cart', { title: 'Giỏ Hàng', user: req.user });
+  res.render('pages/cart', { title: 'Giỏ Hàng', user: req.user });
 };
 
 const renderCheckoutPage = (req, res) => {
-    res.render('pages/checkout', { title: 'Thanh toán', user: req.user });
+  res.render('pages/checkout', { title: 'Thanh Toán', user: req.user });
 };
 
 const renderMyOrdersPage = (req, res) => {
-    res.render('pages/my-orders', { title: 'Lịch Sử Đơn Hàng', user: req.user });
+  res.render('pages/my-orders', { title: 'Đơn Hàng Của Tôi', user: req.user });
 };
 
 const renderOrderDetailPage = (req, res) => {
-    res.render('pages/order-detail', { title: 'Chi tiết đơn hàng', user: req.user });
+  // Chỉ render khung, dữ liệu load bằng JS client hoặc update logic sau
+  res.render('pages/order-detail', {
+    title: 'Chi tiết đơn hàng',
+    orderId: req.params.id,
+    user: req.user
+  });
 };
 
 const renderProfilePage = (req, res) => {
-    res.render('pages/profile', { title: 'Thông Tin Tài Khoản', user: req.user });
+  res.render('pages/profile', { title: 'Hồ Sơ', user: req.user });
 };
 
 const renderForgotPasswordPage = (req, res) => {
-    res.render('pages/forgot-password', { title: 'Quên Mật Khẩu', user: req.user });
+  res.render('pages/forgot-password', { title: 'Quên Mật Khẩu', user: req.user });
 };
 
 const renderResetPasswordPage = (req, res) => {
-    res.render('pages/reset-password', { title: 'Đặt Lại Mật Khẩu', user: req.user });
+  res.render('pages/reset-password', { title: 'Đặt Lại Mật Khẩu', user: req.user });
 };
 
-module.exports = {
-    renderHomePage,
-    renderProductListPage,
-    renderProductDetailPage,
-    renderLoginPage,
-    renderRegisterPage,
-    renderCartPage,
-    renderCheckoutPage,
-    renderMyOrdersPage,
-    renderOrderDetailPage,
-    renderProfilePage,
-    renderForgotPasswordPage,
-    renderResetPasswordPage
+const renderAboutPage = (req, res) => {
+  res.render('pages/about', { title: 'Về Chúng Tôi', user: req.user });
 };
+
+const renderRecruitmentPage = (req, res) => {
+  res.render('pages/careers', { title: 'Tuyển Dụng', user: req.user });
+};
+
+const renderTermsPage = (req, res) => {
+  res.render('pages/terms', { title: 'Điều Khoản', user: req.user });
+};
+
+const renderGuidePage = (req, res) => {
+  res.render('pages/guide', { title: 'Hướng Dẫn Mua Hàng', user: req.user });
+};
+
+const renderReturnPolicyPage = (req, res) => {
+  res.render('pages/return-policy', { title: 'Chính Sách Đổi Trả', user: req.user });
+};
+
+const renderFAQPage = (req, res) => {
+  res.render('pages/faq', { title: 'Câu Hỏi Thường Gặp', user: req.user });
+};
+
+const renderFavoritesPage = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.redirect('/login');
+    }
+
+    const userId = req.user.id;
+    // Lấy danh sách yêu thích kèm thông tin sản phẩm
+    const favorites = await Favorite.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Product,
+          attributes: ['id', 'ten_sach', 'gia_bia', 'img']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    const products = favorites.map(fav => fav.Product);
+    const favoriteProductIds = products.map(p => p.id);
+
+    res.render('pages/favorites', {
+      title: 'Sách Yêu Thích',
+      products,
+      favoriteProductIds
+    });
+
+  } catch (error) {
+    console.error('Render Favorites Page Error:', error);
+    res.status(500).render('pages/error', {
+      title: 'Lỗi Server',
+      message: 'Đã có lỗi xảy ra khi tải danh sách yêu thích. Vui lòng thử lại sau.'
+    });
+  }
+};
+
+// Export (giữ đúng tên hàm để routes không bị gãy)
+exports.renderHomePage = renderHomePage;
+exports.renderProductListPage = renderProductListPage;
+exports.renderProductDetailPage = renderProductDetailPage;
+
+exports.renderLoginPage = renderLoginPage;
+exports.renderRegisterPage = renderRegisterPage;
+
+exports.renderCartPage = renderCartPage;
+exports.renderCheckoutPage = renderCheckoutPage;
+
+exports.renderMyOrdersPage = renderMyOrdersPage;
+exports.renderOrderDetailPage = renderOrderDetailPage;
+
+exports.renderProfilePage = renderProfilePage;
+exports.renderForgotPasswordPage = renderForgotPasswordPage;
+exports.renderResetPasswordPage = renderResetPasswordPage;
+exports.renderFavoritesPage = renderFavoritesPage;
+exports.renderAboutPage = renderAboutPage;
+exports.renderRecruitmentPage = renderRecruitmentPage;
+exports.renderTermsPage = renderTermsPage;
+exports.renderGuidePage = renderGuidePage;
+exports.renderReturnPolicyPage = renderReturnPolicyPage;
+exports.renderFAQPage = renderFAQPage;
