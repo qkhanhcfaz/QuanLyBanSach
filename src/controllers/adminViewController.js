@@ -345,6 +345,17 @@ const renderOrderStatisticsPage = (req, res) => {
     });
 };
 
+/**
+ * Render Thống kê Sản phẩm bán chạy
+ */
+const renderBestSellingStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-best-selling', {
+        title: 'Sản phẩm bán chạy',
+        user: req.user,
+        path: '/statistics/best-selling'
+    });
+};
+
 module.exports = {
     renderAdminDashboard,
     renderAdminProducts,
@@ -360,5 +371,6 @@ module.exports = {
     renderSiteSettings,
     updateSiteSettings,
     renderRevenueStatisticsPage,
-    renderOrderStatisticsPage
+    renderOrderStatisticsPage,
+    renderBestSellingStatisticsPage
 };

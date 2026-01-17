@@ -128,6 +128,69 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+
+
+/**
+ * API Lấy danh sách sản phẩm bán chạy theo khoảng thời gian
+ */
+const getBestSellingProducts = async (req, res) => {
+    try {
+        let { startDate, endDate } = req.query;
+
+        // Default: 30 days
+        if (!startDate || !endDate) {
+            const today = new Date();
+            endDate = new Date();
+            startDate = new Date(new Date().setDate(today.getDate() - 30));
+        } else {
+            endDate = new Date(endDate);
+            endDate.setHours(23, 59, 59, 999);
+        }
+
+        const dateRangeWhere = {
+            createdAt: {
+                [Op.gte]: new Date(startDate),
+                [Op.lte]: new Date(endDate),
+            },
+        };
+
+        const completedStatus = 'delivered';
+
+        // Query: Sum quantity & revenue from OrderItems of completed Orders
+        const bestSelling = await db.OrderItem.findAll({
+            attributes: [
+                'product_id',
+                [sequelize.fn('SUM', sequelize.col('so_luong_dat')), 'total_sold'],
+                // Lưu ý: tổng doanh thu ở đây tính theo giá bán * số lượng
+                [sequelize.fn('SUM', sequelize.literal('"OrderItem"."so_luong_dat" * "OrderItem"."don_gia"')), 'total_revenue']
+            ],
+            include: [
+                { model: db.Product, as: 'product', attributes: ['ten_sach'] },
+                {
+                    model: db.Order, as: 'order',
+                    where: {
+                        trang_thai_don_hang: completedStatus,
+                        ...dateRangeWhere
+                    },
+                    attributes: []
+                }
+            ],
+            group: ['product_id', 'product.id'],
+            order: [[sequelize.fn('SUM', sequelize.col('so_luong_dat')), 'DESC']],
+            limit: 50, // Limit top 50
+            raw: true,
+            nest: true
+        });
+
+        res.status(200).json(bestSelling);
+
+    } catch (error) {
+        console.error("Lỗi lấy danh sách bán chạy:", error);
+        res.status(500).json({ message: "Lỗi server" });
+    }
+};
+
 module.exports = {
-    getDashboardStats
+    getDashboardStats,
+    getBestSellingProducts
 };
