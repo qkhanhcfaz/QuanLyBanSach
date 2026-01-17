@@ -129,9 +129,8 @@ app.use("/", viewRouter);
 // --- 6. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 8080;
 
-// Sử dụng { alter: true } để tự động cập nhật cấu trúc bảng nếu có thay đổi
-// (Ví dụ: thêm cột mới vào bảng products, tạo bảng receipts mới...)
-// TẠM THỜI TẮT alter: true ĐỂ TRÁNH LỖI SYNTAX POSTGRES
+// Tạm thời tắt alter: true để tránh lỗi syntax khi sync với bảng Users (Postgres)
+// Chúng ta sẽ dùng script riêng để update DB nếu cần.
 sequelize
   .sync()
   .then(() => {

@@ -60,11 +60,7 @@ const Product = sequelize.define(
         min: 1,
       },
     },
-    da_ban: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
+    // da_ban đã được định nghĩa ở trên, xóa bỏ dòng trùng lặp này
     views: {
       type: DataTypes.INTEGER,
       allowNull: false,

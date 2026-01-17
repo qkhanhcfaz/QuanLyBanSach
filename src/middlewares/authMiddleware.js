@@ -102,5 +102,45 @@ const admin = (req, res, next) => {
   }
 };
 
+// Middleware checkUser: Kiểm tra user đã đăng nhập chưa (cho các views) nhưng KHÔNG chặn request nếu chưa đăng nhập.
+const checkUser = async (req, res, next) => {
+  let token;
+
+  // 1. Kiểm tra cookie (ưu tiên cho Views)
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  // 2. Kiểm tra header (cho API nếu cần dùng chung middleware này)
+  else if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await db.User.findByPk(decoded.id, {
+        attributes: { exclude: ["mat_khau"] },
+        include: { model: db.Role, as: "role" },
+      });
+
+      if (user) {
+        req.user = user;
+        res.locals.user = user; // Để EJS có thể truy cập biến `user`
+      } else {
+        res.locals.user = null;
+      }
+    } catch (error) {
+      console.error("Check user error:", error.message);
+      res.locals.user = null;
+    }
+  } else {
+    res.locals.user = null;
+  }
+  next();
+};
+
 // Export các middleware để các file router có thể sử dụng.
-module.exports = { protect, admin };
+module.exports = { protect, admin, checkUser };

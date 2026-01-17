@@ -10,6 +10,7 @@ const {
   User,
   Review,
   Post,
+  Favorite,
 } = require("../models");
 
 /**
@@ -141,12 +142,34 @@ const renderProductDetailPage = async (req, res) => {
       limit: 4,
     });
 
-    // 4. Render và TRUYỀN ĐỦ BIẾN
+    // 4. [CODE MỚI] Đếm số lượt yêu thích
+    let favoriteCount = 0;
+    try {
+      favoriteCount = await Favorite.count({ where: { product_id: id } });
+    } catch (err) {
+      console.warn(
+        "Chưa thể đếm lượt thích (có thể do thiếu bảng Favorites), bỏ qua.",
+      );
+    }
+
+    // 5. Tính điểm đánh giá trung bình
+    let avgRating = 0;
+    if (reviews && reviews.length > 0) {
+      const totalRating = reviews.reduce(
+        (sum, review) => sum + (review.rating || 0),
+        0,
+      );
+      avgRating = (totalRating / reviews.length).toFixed(1);
+    }
+
+    // 6. Render và TRUYỀN ĐỦ BIẾN
     res.render("pages/product-detail", {
       title: product.ten_sach,
       product: product,
-      reviews: reviews, // <--- Đây là biến "thuốc giải" cho lỗi của bạn
+      reviews: reviews,
       relatedProducts: relatedProducts,
+      favoriteCount: favoriteCount,
+      avgRating: avgRating, // <--- Đã thêm biến này
       user: req.user,
     });
   } catch (error) {
