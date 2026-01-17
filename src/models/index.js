@@ -10,16 +10,16 @@ const Product = require('./productModel');
 const Category = require('./categoryModel');
 const Slideshow = require('./slideshowModel');
 const Post = require('./postModel');
-const SiteSetting = require('./siteSettingModel')(sequelize);
+const SiteSetting = require('./siteSettingModel');
 const Role = require('./roleModel');
 const User = require('./userModel');
 const Order = require('./orderModel');
 const OrderItem = require('./orderItemModel');
-const Comment = require('./commentModel'); // Assuming this exists or might be Review
-const Review = require('./reviewModel'); // Adding Review if it was missed
-const Receipt = require('./receiptModel');
-const ReceiptItem = require('./receiptItemModel');
-const Promotion = require('./promotionModel');
+// const Comment = require('./commentModel'); 
+const Review = require('./reviewModel');
+// const Receipt = require('./receiptModel');
+// const ReceiptItem = require('./receiptItemModel');
+// const Promotion = require('./promotionModel');
 
 const db = {};
 
