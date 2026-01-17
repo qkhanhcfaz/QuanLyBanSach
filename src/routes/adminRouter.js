@@ -14,7 +14,9 @@ const {
     renderReceiptsListPage,
     renderReceiptDetailPage,
     renderAdminPromotionsPage,
-    renderPromotionFormPage
+    renderPromotionFormPage,
+    renderSiteSettings,
+    updateSiteSettings
 } = require('../controllers/adminViewController');
 
 // TẤT CẢ CÁC ROUTE TRONG FILE NÀY SẼ TỰ ĐỘNG CÓ TIỀN TỐ /admin
@@ -43,6 +45,10 @@ router.get('/receipts/:id', protect, admin, renderReceiptDetailPage);
 router.get('/promotions', protect, admin, renderAdminPromotionsPage);
 router.get('/promotions/add', protect, admin, renderPromotionFormPage);
 router.get('/promotions/edit/:id', protect, admin, renderPromotionFormPage);
+
+// Quản lý Cấu hình Website
+router.get('/settings', protect, admin, renderSiteSettings);
+router.post('/settings', protect, admin, updateSiteSettings);
 
 // Quản lý Người dùng
 router.get('/users', protect, admin, renderAdminUsersPage);

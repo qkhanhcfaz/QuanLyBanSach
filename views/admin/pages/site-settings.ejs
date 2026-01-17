@@ -1,0 +1,86 @@
+<%- include('../partials/header') %>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông Tin Website</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/admin/settings">
+                        <div class="mb-3">
+                            <label class="form-label">Tên Website</label>
+                            <input type="text" class="form-control" name="ten_website" value="<%= site.ten_website %>"
+                                required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Liên Hệ</label>
+                                <input type="email" class="form-control" name="email" value="<%= site.email %>"
+                                    required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số Điện Thoại</label>
+                                <input type="text" class="form-control" name="so_dien_thoai"
+                                    value="<%= site.so_dien_thoai %>" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Địa Chỉ</label>
+                            <input type="text" class="form-control" name="dia_chi" value="<%= site.dia_chi %>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Năm Bản Quyền Footer</label>
+                            <input type="number" class="form-control" name="nam_ban_quyen"
+                                value="<%= site.nam_ban_quyen %>" required>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3 text-primary">Mạng Xã Hội (Link)</h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Facebook</label>
+                                <input type="text" class="form-control" name="facebook" value="<%= site.facebook %>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Instagram</label>
+                                <input type="text" class="form-control" name="instagram" value="<%= site.instagram %>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Twitter (X)</label>
+                                <input type="text" class="form-control" name="twitter" value="<%= site.twitter %>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">LinkedIn</label>
+                                <input type="text" class="form-control" name="linkedin" value="<%= site.linkedin %>">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Lưu Thay
+                            Đổi</button>
+                        <a href="/admin" class="btn btn-secondary">Quay lại</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('status') === 'success') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Đã cập nhật thông tin website.',
+                confirmButtonColor: '#4e73df'
+            }).then(() => {
+                // Xóa param khỏi URL để không hiện lại khi reload
+                window.history.replaceState({}, document.title, window.location.pathname);
+            });
+        }
+    </script>
+    <%- include('../partials/footer') %>
