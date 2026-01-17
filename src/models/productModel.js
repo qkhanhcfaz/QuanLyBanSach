@@ -49,14 +49,11 @@ const Product = sequelize.define('Product', {
         allowNull: false,
         defaultValue: 0
     },
-
     views: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0
     },
-
-    // Trường để phân biệt sách in và ebook
     product_type: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -84,7 +81,6 @@ Product.associate = (models) => {
         as: 'category'
     });
 
-    // Thêm các quan hệ khác nếu cần thiết (được merge từ HEAD)
     Product.hasMany(models.OrderItem, {
         foreignKey: 'product_id',
         as: 'orderItems'
