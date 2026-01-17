@@ -32,15 +32,15 @@ db.SiteSetting = SiteSetting;
 db.Role = Role;
 db.User = User;
 // Safe require for Cart/Favorite which might be new
-try { db.Cart = require('./cartModel'); } catch (e) { }
-try { db.CartItem = require('./cartItemModel'); } catch (e) { }
-try { db.Favorite = require('./favoriteModel'); } catch (e) { }
+try { db.Cart = require('./cartModel'); } catch (e) { console.warn('Cart model not available:', e.message); }
+try { db.CartItem = require('./cartItemModel'); } catch (e) { console.warn('CartItem model not available:', e.message); }
+try { db.Favorite = require('./favoriteModel'); } catch (e) { console.warn('Favorite model not available:', e.message); }
 db.Order = Order;
 db.OrderItem = OrderItem;
-db.Review = require('./reviewModel');
-try { db.Receipt = require('./receiptModel'); } catch (e) { }
-try { db.ReceiptItem = require('./receiptItemModel'); } catch (e) { }
-try { db.Promotion = require('./promotionModel'); } catch (e) { }
+try { db.Review = require('./reviewModel'); } catch (e) { console.warn('Review model not available:', e.message); }
+try { db.Receipt = require('./receiptModel'); } catch (e) { console.warn('Receipt model not available:', e.message); }
+try { db.ReceiptItem = require('./receiptItemModel'); } catch (e) { console.warn('ReceiptItem model not available:', e.message); }
+try { db.Promotion = require('./promotionModel'); } catch (e) { console.warn('Promotion model not available:', e.message); }
 
 // Call associate if it exists
 Object.keys(db).forEach(modelName => {

@@ -6,6 +6,9 @@ const db = require('../models');
 const { Product, Category, Slideshow, Review, User, Favorite } = db;
 const { getMyFavoriteIds } = require('./favoriteController');
 
+// Configuration for model relationships
+const REVIEW_FOREIGN_KEY = 'product_id'; // Standard foreign key for Review model
+
 /** Helpers */
 const toInt = (v, def = 0) => {
   const n = parseInt(v, 10);
@@ -178,14 +181,9 @@ const renderProductDetailPage = async (req, res) => {
     // 2) reviews
     let reviews = [];
     try {
-      const productFk =
-        (Review && Review.rawAttributes && Review.rawAttributes.product_id && 'product_id') ||
-        (Review && Review.rawAttributes && Review.rawAttributes.san_pham_id && 'san_pham_id') ||
-        'product_id';
-
       if (Review) {
         reviews = await Review.findAll({
-          where: { [productFk]: id },
+          where: { [REVIEW_FOREIGN_KEY]: id },
           include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
           order: [['createdAt', 'DESC']],
         });
