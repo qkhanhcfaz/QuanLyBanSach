@@ -116,11 +116,13 @@ const renderProductListPage = async (req, res) => {
         )
       ];
     }
-
+    
+    // sidebar danh mục
     const allCategories = await Category.findAll({ order: [['ten_danh_muc', 'ASC']] });
+
     let currentCategoryInfo = null;
-    if (category) {
-      currentCategoryInfo = allCategories.find(c => c.id === category);
+    if (category && category > 0) {
+      currentCategoryInfo = allCategories.find((c) => String(c.id) === String(category)) || null;
     }
 
     const { count, rows } = await Product.findAndCountAll({
@@ -161,35 +163,38 @@ const renderProductDetailPage = async (req, res) => {
   try {
     const id = toInt(req.params.id, NaN);
 
-    // check id hợp lệ
     if (!Number.isFinite(id)) {
-      return res.status(404).render('pages/error', { message: 'Đường dẫn sản phẩm không hợp lệ', user: req.user });
+      return res.status(404).render('pages/error', { message: 'Product not found', user: req.user });
     }
 
-    // 1) sản phẩm
     const product = await Product.findByPk(id, {
       include: [{ model: Category, as: 'category' }],
     });
 
     if (!product) {
-      return res.status(404).render('pages/error', { message: 'Sản phẩm không tồn tại', user: req.user });
+      return res.status(404).render('pages/error', { message: 'Product not found', user: req.user });
     }
 
     // 2) reviews
     let reviews = [];
     try {
-      if (db.Review) {
-        reviews = await Review.findAll({
-          where: { product_id: id },
-          include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
-          order: [['createdAt', 'DESC']]
-        });
+      const productFk =
+        (Review && Review.rawAttributes && Review.rawAttributes.product_id && 'product_id') ||
+        (Review && Review.rawAttributes && Review.rawAttributes.san_pham_id && 'san_pham_id') ||
+        'product_id';
+
+      if (Review) {
+          reviews = await Review.findAll({
+            where: { [productFk]: id },
+            include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
+            order: [['createdAt', 'DESC']],
+          });
       }
     } catch (err) {
-      console.warn("Lỗi lấy review hoặc bảng Review chưa sẵn sàng", err.message);
+      console.warn("Lỗi lấy review:", err.message);
+      reviews = [];
     }
 
-    // 3) sản phẩm liên quan
     const relatedProducts = await Product.findAll({
       where: {
         danh_muc_id: product.danh_muc_id,
@@ -200,8 +205,8 @@ const renderProductDetailPage = async (req, res) => {
       include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }]
     });
 
-    res.render('pages/product-detail', {
-      title: product.ten_sach,
+    return res.render('pages/product-detail', {
+      title: product.ten_sach || 'Product Detail',
       product,
       reviews,
       relatedProducts,
@@ -210,12 +215,10 @@ const renderProductDetailPage = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Lỗi chi tiết sản phẩm:", error);
-    res.status(500).render('pages/error', { message: 'Lỗi server khi tải sản phẩm', user: req.user });
+    console.error('Product detail error:', error);
+    return res.status(500).render('pages/error', { message: 'Server error', user: req.user });
   }
 };
-
-// --- Các trang tĩnh / Auth ---
 
 const renderLoginPage = (req, res) => {
   res.render('pages/login', { title: 'Đăng Nhập', user: req.user });
