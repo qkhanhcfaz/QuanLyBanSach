@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const dashboardController = require('../controllers/dashboardController');
 
-router.get('/', (req, res) => {
-    res.json({ message: 'Dashboard routes' });
-});
+// GET /api/dashboard/stats?startDate=...&endDate=...
+router.get('/stats', dashboardController.getDashboardStats);
 
 module.exports = router;

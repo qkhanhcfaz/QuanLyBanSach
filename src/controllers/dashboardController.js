@@ -49,8 +49,24 @@ const getDashboardStats = async (req, res) => {
             raw: true
         });
 
+        // Kết quả sẽ là một mảng các object: [{ year: 2025, month: 6, count: 120 }]
+        const ordersByMonth = await db.Order.findAll({
+            attributes: [
+                [sequelize.fn('EXTRACT', sequelize.literal('YEAR FROM "createdAt"')), 'year'],
+                [sequelize.fn('EXTRACT', sequelize.literal('MONTH FROM "createdAt"')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+            ],
+            where: {
+                trang_thai_don_hang: completedStatus,
+                ...dateRangeWhere
+            },
+            group: ['year', 'month'],
+            order: [[sequelize.col('year'), 'ASC'], [sequelize.col('month'), 'ASC']],
+            raw: true
+        });
+
         // --- BƯỚC 3: LẤY CÁC DỮ LIỆU THỐNG KÊ KHÁC ---
-        
+
         // Tạo điều kiện WHERE cho các câu lệnh JOIN phức tạp
         const joinWhereCondition = {
             trang_thai_don_hang: completedStatus,
@@ -99,6 +115,7 @@ const getDashboardStats = async (req, res) => {
         // --- BƯỚC 4: GỬI PHẢN HỒI VỀ CHO CLIENT ---
         res.status(200).json({
             revenueByMonth,
+            ordersByMonth,
             topSellingProducts,
             topCustomers
         });

@@ -323,6 +323,28 @@ const updateSiteSettings = async (req, res) => {
     }
 };
 
+/**
+ * Render Thống kê Doanh thu
+ */
+const renderRevenueStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-revenue', {
+        title: 'Thống kê Doanh thu',
+        user: req.user,
+        path: '/statistics/revenue'
+    });
+};
+
+/**
+ * Render Thống kê Đơn hàng
+ */
+const renderOrderStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-orders', {
+        title: 'Thống kê Đơn hàng',
+        user: req.user,
+        path: '/statistics/orders'
+    });
+};
+
 module.exports = {
     renderAdminDashboard,
     renderAdminProducts,
@@ -336,5 +358,7 @@ module.exports = {
     renderAdminPromotionsPage,
     renderPromotionFormPage,
     renderSiteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    renderRevenueStatisticsPage,
+    renderOrderStatisticsPage
 };
