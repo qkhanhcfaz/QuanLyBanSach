@@ -258,6 +258,30 @@ const renderResetPasswordPage = (req, res) => {
   res.render('pages/reset-password', { title: 'Đặt Lại Mật Khẩu', user: req.user });
 };
 
+const renderAboutPage = (req, res) => {
+  res.render('pages/about', { title: 'Về Chúng Tôi', user: req.user });
+};
+
+const renderRecruitmentPage = (req, res) => {
+  res.render('pages/careers', { title: 'Tuyển Dụng', user: req.user });
+};
+
+const renderTermsPage = (req, res) => {
+  res.render('pages/terms', { title: 'Điều Khoản', user: req.user });
+};
+
+const renderGuidePage = (req, res) => {
+  res.render('pages/guide', { title: 'Hướng Dẫn Mua Hàng', user: req.user });
+};
+
+const renderReturnPolicyPage = (req, res) => {
+  res.render('pages/return-policy', { title: 'Chính Sách Đổi Trả', user: req.user });
+};
+
+const renderFAQPage = (req, res) => {
+  res.render('pages/faq', { title: 'Câu Hỏi Thường Gặp', user: req.user });
+};
+
 const renderFavoritesPage = async (req, res) => {
   try {
     if (!req.user) {
@@ -313,3 +337,9 @@ exports.renderProfilePage = renderProfilePage;
 exports.renderForgotPasswordPage = renderForgotPasswordPage;
 exports.renderResetPasswordPage = renderResetPasswordPage;
 exports.renderFavoritesPage = renderFavoritesPage;
+exports.renderAboutPage = renderAboutPage;
+exports.renderRecruitmentPage = renderRecruitmentPage;
+exports.renderTermsPage = renderTermsPage;
+exports.renderGuidePage = renderGuidePage;
+exports.renderReturnPolicyPage = renderReturnPolicyPage;
+exports.renderFAQPage = renderFAQPage;
