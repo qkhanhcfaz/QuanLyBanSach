@@ -75,9 +75,9 @@ app.use(async (req, res, next) => {
     if (!site) {
       site = await SiteSetting.create({
         ten_website: 'BookZone',
-        dia_chi: 'Quận 5, TP. Hồ Chí Minh',
-        email: 'bookzone@gmail.com',
-        so_dien_thoai: '0339 945 345',
+        dia_chi: 'Quận 7, TP. Hồ Chí Minh',
+        email: 'bookzonestore07@gmail.com',
+        so_dien_thoai: '0969 671 344',
 
         // ✅ ĐÚNG TÊN CỘT DB
         facebook: 'https://facebook.com',
@@ -85,7 +85,7 @@ app.use(async (req, res, next) => {
         twitter: 'https://twitter.com',
         linkedin: 'https://linkedin.com',
 
-        nam_ban_quyen: 2025
+        nam_ban_quyen: 2026
       });
     }
 
@@ -148,6 +148,7 @@ sequelize.sync()
 
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+      console.log(`✅ Đã cập nhật tính năng: /about`);
       console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
     });
   })

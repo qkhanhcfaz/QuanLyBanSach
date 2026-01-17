@@ -1,0 +1,160 @@
+<%- include('../partials/header') %>
+
+    <div class="container my-5">
+        <div class="row">
+            <!-- Cột Thông tin chính -->
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h1 class="card-title text-primary mb-4">Về Chúng Tôi</h1>
+
+                        <div class="mb-4">
+                            <h4><i class="fas fa-building me-2"></i>
+                                <%= site ? site.ten_website : 'BookZone' %>
+                            </h4>
+                            <p class="text-muted">
+                                Chào mừng bạn đến với <strong>
+                                    <%= site ? site.ten_website : 'BookZone' %>
+                                </strong> - nơi khơi nguồn tri thức và đam mê đọc sách.
+                                Chúng tôi tự hào là đơn vị cung cấp các đầu sách đa dạng, phong phú từ văn học, kinh tế,
+                                kỹ năng sống đến sách thiếu nhi.
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-4">
+                            <h5 class="text-dark">Lĩnh Vực Kinh Doanh</h5>
+                            <ul class="list-unstyled mt-3">
+                                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Mua bán sách in,
+                                    sách điện tử (Ebook).</li>
+                                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Cung cấp văn phòng
+                                    phẩm và quà tặng.</li>
+                                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Tổ chức sự kiện ra
+                                    mắt sách, giao lưu tác giả.</li>
+                            </ul>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-4">
+                            <h5 class="text-dark">Chính Sách & Cam Kết</h5>
+                            <div class="accordion" id="accordionPolicies">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingOne">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapseOne" aria-expanded="true"
+                                            aria-controls="collapseOne">
+                                            Chính Sách Đổi Trả
+                                        </button>
+                                    </h2>
+                                    <div id="collapseOne" class="accordion-collapse collapse show"
+                                        aria-labelledby="headingOne" data-bs-parent="#accordionPolicies">
+                                        <div class="accordion-body">
+                                            Hỗ trợ đổi trả trong vòng <strong>7 ngày</strong> nếu sách có lỗi từ nhà sản
+                                            xuất (hư hỏng, thiếu trang, in mờ). Sản phẩm phải còn nguyên vẹn, chưa qua
+                                            sử dụng.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingTwo">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseTwo"
+                                            aria-expanded="false" aria-controls="collapseTwo">
+                                            Chính Sách Vận Chuyển
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTwo" class="accordion-collapse collapse"
+                                        aria-labelledby="headingTwo" data-bs-parent="#accordionPolicies">
+                                        <div class="accordion-body">
+                                            Miễn phí vận chuyển cho đơn hàng từ <strong>300.000đ</strong>. Thời gian
+                                            giao hàng tiêu chuẩn từ 2-5 ngày làm việc tùy khu vực.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingThree">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseThree"
+                                            aria-expanded="false" aria-controls="collapseThree">
+                                            Bảo Mật Thông Tin
+                                        </button>
+                                    </h2>
+                                    <div id="collapseThree" class="accordion-collapse collapse"
+                                        aria-labelledby="headingThree" data-bs-parent="#accordionPolicies">
+                                        <div class="accordion-body">
+                                            Chúng tôi cam kết bảo mật tuyệt đối thông tin cá nhân của khách hàng. Thông
+                                            tin chỉ được sử dụng cho mục đích xử lý đơn hàng và chăm sóc khách hàng.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Liên hệ bên phải -->
+            <div class="col-md-4">
+                <div class="card shadow-sm sticky-top" style="top: 80px; z-index: 1;">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Thông Tin Liên Hệ</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3 d-flex text-break">
+                                <i class="fas fa-map-marker-alt text-primary mt-1 me-3"
+                                    style="width: 20px; text-align: center;"></i>
+                                <span>
+                                    <%= site ? site.dia_chi : 'Quận 5, TP. Hồ Chí Minh' %>
+                                </span>
+                            </li>
+                            <li class="mb-3 d-flex text-break">
+                                <i class="fas fa-envelope text-primary mt-1 me-3"
+                                    style="width: 20px; text-align: center;"></i>
+                                <a href="mailto:<%= site ? site.email : 'contact@bookzone.com' %>"
+                                    class="text-decoration-none text-dark">
+                                    <%= site ? site.email : 'contact@bookzone.com' %>
+                                </a>
+                            </li>
+                            <li class="mb-3 d-flex text-break">
+                                <i class="fas fa-phone text-primary mt-1 me-3"
+                                    style="width: 20px; text-align: center;"></i>
+                                <a href="tel:<%= site ? site.so_dien_thoai : '' %>"
+                                    class="text-decoration-none text-dark">
+                                    <%= site ? site.so_dien_thoai : '0123 456 789' %>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <hr>
+
+                        <h6 class="mb-3">Kết nối với chúng tôi</h6>
+                        <div class="d-flex gap-3 justify-content-center">
+                            <% if (site && site.facebook) { %>
+                                <a href="<%= site.facebook %>" class="text-primary fs-4" target="_blank"><i
+                                        class="fab fa-facebook"></i></a>
+                                <% } %>
+                                    <% if (site && site.instagram) { %>
+                                        <a href="<%= site.instagram %>" class="text-danger fs-4" target="_blank"><i
+                                                class="fab fa-instagram"></i></a>
+                                        <% } %>
+                                            <% if (site && site.twitter) { %>
+                                                <a href="<%= site.twitter %>" class="text-info fs-4" target="_blank"><i
+                                                        class="fab fa-twitter"></i></a>
+                                                <% } %>
+                                                    <% if (site && site.linkedin) { %>
+                                                        <a href="<%= site.linkedin %>" class="text-primary fs-4"
+                                                            target="_blank"><i class="fab fa-linkedin"></i></a>
+                                                        <% } %>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>

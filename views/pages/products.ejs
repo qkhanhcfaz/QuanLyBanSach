@@ -68,7 +68,7 @@
                     </h1>
                     <form id="sortForm" class="ms-auto">
 
-                        <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()"
+                        <select name="sort" class="form-select form-select-sm" onchange="this.form.requestSubmit()"
                             style="width: 200px;">
                             <option value="createdAt-DESC" <% if (queryParams.sortBy==='createdAt' &&
                                 queryParams.order==='DESC' ) { %>selected<% } %>>Mới nhất</option>

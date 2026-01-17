@@ -49,6 +49,14 @@ const Product = sequelize.define('Product', {
         allowNull: false,
         defaultValue: 0
     },
+
+    views: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+
+    // Trường để phân biệt sách in và ebook
     product_type: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -71,29 +79,21 @@ const Product = sequelize.define('Product', {
 
 // Associations
 Product.associate = (models) => {
-    if (models.Category) {
-        Product.belongsTo(models.Category, {
-            foreignKey: 'danh_muc_id',
-            as: 'category'
-        });
-    }
-    
-    if (models.OrderItem) {
-        Product.hasMany(models.OrderItem, {
-            foreignKey: 'product_id',
-            as: 'orderItems'
-        });
-    }
-    
-    // Support for Reviews if the model exists
-    if (models.Review) {
-        // Try to handle potentially different FK names based on previous conflicts
-        // Standardize on product_id if possible
-        Product.hasMany(models.Review, {
-            foreignKey: 'product_id',
-            as: 'reviews'
-        });
-    }
+    Product.belongsTo(models.Category, {
+        foreignKey: 'danh_muc_id',
+        as: 'category'
+    });
+
+    // Thêm các quan hệ khác nếu cần thiết (được merge từ HEAD)
+    Product.hasMany(models.OrderItem, {
+        foreignKey: 'product_id',
+        as: 'orderItems'
+    });
+
+    Product.hasMany(models.Review, {
+        foreignKey: 'product_id',
+        as: 'reviews'
+    });
 };
 
 module.exports = Product;
