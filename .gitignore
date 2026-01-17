@@ -6,3 +6,4 @@ node_modules/
 
 # Lock files - we want to track these to ensure consistent dependencies
 # Removing package-lock.json from gitignore
+QuanLyBanSach.code-workspace
