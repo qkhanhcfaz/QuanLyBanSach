@@ -55,34 +55,40 @@ document.addEventListener('DOMContentLoaded', () => {
         cartItemsContainer.innerHTML = ''; // Luôn xóa nội dung cũ trước khi vẽ lại.
 
         if (!items || items.length === 0) {
-            cartItemsContainer.innerHTML = '<div class="text-center p-5"><p>Giỏ hàng của bạn đang trống.</p><a href="/products" class="btn btn-primary">Tiếp tục mua sắm</a></div>';
+            cartItemsContainer.innerHTML = '<tr><td colspan="5" class="text-center p-5"><p>Giỏ hàng của bạn đang trống.</p><a href="/products" class="btn btn-primary">Tiếp tục mua sắm</a></td></tr>';
             return;
         }
 
         items.forEach(item => {
             const itemTotal = item.so_luong * item.product.gia_bia;
             const cartItemHTML = `
-                <div class="row mb-4 d-flex justify-content-between align-items-center">
-                    <div class="col-md-2 col-lg-2 col-xl-2">
-                        <img src="${item.product.img || '/images/placeholder.png'}" class="img-fluid rounded-3" alt="${item.product.ten_sach}">
-                    </div>
-                    <div class="col-md-3 col-lg-3 col-xl-3">
-                        <h6 class="text-muted">${item.product.ten_sach}</h6>
-                        <h6 class="text-black mb-0">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</h6>
-                    </div>
-                    <div class="col-md-3 col-lg-3 col-xl-2 d-flex">
-                        <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.so_luong}" type="number"
-                            class="form-control form-control-sm item-quantity" data-item-id="${item.id}" />
-                    </div>
-                    
-                    <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
-                        <h6 class="mb-0">${itemTotal.toLocaleString('vi-VN')}đ</h6>
-                    </div>
-                    <div class="col-md-1 col-lg-1 col-xl-1 text-end">
-                        <button class="btn btn-link text-muted remove-item-btn" data-item-id="${item.id}"><i class="fas fa-times"></i> Xóa</button>
-                    </div>
-                </div>
-                <hr class="my-4">
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="${item.product.img || '/images/placeholder.png'}" alt="" style="width: 70px; height: 100px; object-fit: cover" class="rounded-3"/>
+                            <div class="ms-3">
+                                <p class="fw-bold mb-1">${item.product.ten_sach}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <p class="fw-normal mb-1">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</p>
+                    </td>
+                    <td>
+                        <div class="d-flex" style="max-width: 150px">
+                             <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.so_luong}" type="number"
+                                class="form-control form-control-sm item-quantity" data-item-id="${item.id}" />
+                        </div>
+                    </td>
+                    <td>
+                        <p class="fw-bold mb-1">${itemTotal.toLocaleString('vi-VN')}đ</p>
+                    </td>
+                    <td>
+                        <button class="btn btn-link text-danger p-0 remove-item-btn" data-item-id="${item.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
             `;
             cartItemsContainer.insertAdjacentHTML('beforeend', cartItemHTML);
         });
