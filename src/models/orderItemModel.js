@@ -23,6 +23,16 @@ const OrderItem = sequelize.define('OrderItem', {
     don_gia: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+        allowNull: false
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+        allowNull: false
     }
 }, {
     tableName: 'order_items',

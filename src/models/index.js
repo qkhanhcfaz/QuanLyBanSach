@@ -10,16 +10,11 @@ const Product = require('./productModel');
 const Category = require('./categoryModel');
 const Slideshow = require('./slideshowModel');
 const Post = require('./postModel');
-const SiteSetting = require('./siteSettingModel')(sequelize);
+const SiteSetting = require('./siteSettingModel');
 const Role = require('./roleModel');
 const User = require('./userModel');
 const Order = require('./orderModel');
 const OrderItem = require('./orderItemModel');
-const Comment = require('./commentModel'); // Assuming this exists or might be Review
-const Review = require('./reviewModel'); // Adding Review if it was missed
-const Receipt = require('./receiptModel');
-const ReceiptItem = require('./receiptItemModel');
-const Promotion = require('./promotionModel');
 
 const db = {};
 
@@ -37,10 +32,6 @@ try { db.CartItem = require('./cartItemModel'); } catch(e) {}
 try { db.Favorite = require('./favoriteModel'); } catch(e) {}
 db.Order = Order;
 db.OrderItem = OrderItem;
-try { db.Review = require('./reviewModel'); } catch(e) {}
-try { db.Receipt = require('./receiptModel'); } catch(e) {}
-try { db.ReceiptItem = require('./receiptItemModel'); } catch(e) {}
-try { db.Promotion = require('./promotionModel'); } catch(e) {}
 
 // Call associate if it exists
 Object.keys(db).forEach(modelName => {
@@ -50,6 +41,4 @@ Object.keys(db).forEach(modelName => {
 });
 
 db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
 module.exports = db;
