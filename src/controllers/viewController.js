@@ -13,7 +13,8 @@ const {
 } = require("../models");
 
 /**
- * Render Trang Chủ
+ * @description     Render Trang Chủ
+ * @route           GET /
  */
 const renderHomePage = async (req, res) => {
   try {
@@ -43,7 +44,8 @@ const renderHomePage = async (req, res) => {
 };
 
 /**
- * Render Danh sách Sản phẩm
+ * @description     Render Danh sách Sản phẩm
+ * @route           GET /products
  */
 const renderProductListPage = async (req, res) => {
   try {
@@ -97,7 +99,8 @@ const renderProductListPage = async (req, res) => {
 };
 
 /**
- * Render Chi tiết Sản phẩm (ĐÃ SỬA LỖI REVIEWS)
+ * @description     Render Chi tiết Sản phẩm
+ * @route           GET /products/:id
  */
 const renderProductDetailPage = async (req, res) => {
   try {
@@ -174,8 +177,6 @@ const renderBlogPage = async (req, res) => {
     res.render("pages/error", { message: "Lỗi tải danh sách bài viết" });
   }
 };
-
-// --- Các trang tĩnh khác ---
 
 const renderLoginPage = (req, res) => {
   res.render("pages/login", { title: "Đăng Nhập", user: req.user });

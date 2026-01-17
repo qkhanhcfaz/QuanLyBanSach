@@ -12,17 +12,14 @@ const Product = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-
     mo_ta_ngan: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
-
     gia_bia: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
     },
-
     so_luong_ton_kho: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -42,23 +39,19 @@ const Product = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-
     nha_xuat_ban: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-
     nam_xuat_ban: {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-
     img: {
       type: DataTypes.STRING,
       allowNull: true,
       comment: "URL đến hình ảnh đại diện của sản phẩm",
     },
-
     so_trang: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -67,20 +60,27 @@ const Product = sequelize.define(
         min: 1,
       },
     },
-
+    da_ban: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    views: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     product_type: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "print_book",
       comment: "Loại sản phẩm: sách in (print_book) hoặc ebook",
     },
-
     ebook_url: {
       type: DataTypes.STRING,
       allowNull: true,
       comment: "Đường dẫn gốc đến file ebook",
     },
-
     danh_muc_id: {
       type: DataTypes.BIGINT,
       allowNull: false,
@@ -92,7 +92,7 @@ const Product = sequelize.define(
   },
 );
 
-// Định nghĩa các mối quan hệ (associations)
+// Associations
 Product.associate = (models) => {
   if (models.Category) {
     Product.belongsTo(models.Category, {

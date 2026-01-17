@@ -145,12 +145,10 @@ const forgotPassword = async (req, res) => {
     // Gửi email
     await sendPasswordResetEmail(user.email, resetUrl);
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Email đã được gửi. Vui lòng kiểm tra hộp thư của bạn.",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Email đã được gửi. Vui lòng kiểm tra hộp thư của bạn.",
+    });
   } catch (error) {
     console.error("Lỗi ở forgotPassword:", error);
     // Nếu có lỗi, xóa token đã tạo để người dùng có thể thử lại

@@ -2,21 +2,25 @@
 // Điều này đảm bảo tất cả các element HTML đã sẵn sàng để JavaScript thao tác.
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Lấy token xác thực từ localStorage.
-    const token = localStorage.getItem('token');
-    
-    // Nếu không có token, nghĩa là người dùng chưa đăng nhập.
-    // Chuyển hướng họ về trang đăng nhập và dừng thực thi script.
-    if (!token) {
-        window.location.href = '/login';
-        return;
-    }
-
+    // === BƯỚC 1: LẤY CÁC ELEMENT HTML CẦN THIẾT ===
     // === BƯỚC 1: LẤY CÁC ELEMENT HTML CẦN THIẾT ===
     const cartItemsContainer = document.getElementById('cart-items-container');
-      if (!cartItemsContainer) {
-        // Nếu không phải trang giỏ hàng, dừng thực thi ngay lập tức
-        return; 
+    const token = localStorage.getItem('token');
+
+    // Các element cho bulk actions
+    const selectAllCheckbox = document.getElementById('select-all-cart');
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+
+    // Nếu LÀ trang giỏ hàng (có container) thì mới kiểm tra đăng nhập
+    if (cartItemsContainer) {
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+    } else {
+        // Nếu không phải trang giỏ hàng, dừng thực thi việc RENDER giỏ hàng
+        // NHƯNG vẫn giữ lại các hàm global như addToCart (được định nghĩa bên dưới)
+        return;
     }
     sessionStorage.removeItem('promoCodeToCheckout');
     sessionStorage.removeItem('discountAmountApplied');
@@ -37,7 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Biến để lưu trữ trạng thái của giỏ hàng và khuyến mãi trên toàn trang.
     let currentCart = null;
     let currentDiscountAmount = 0; // Số tiền được giảm
-    
+    // let serverSubtotal = 0; // KHÔNG DÙNG SERVER SUBTOTAL NỮA, TÍNH THEO SELECTION
+
+    // Set lưu trữ các ID sản phẩm đang được chọn
+    let selectedItemsSet = new Set();
+
     // Hàm helper để định dạng số thành chuỗi tiền tệ Việt Nam (vd: 50000 -> 50.000 ₫)
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -53,41 +61,92 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCartItems(items) {
         cartItemsContainer.innerHTML = ''; // Luôn xóa nội dung cũ trước khi vẽ lại.
 
-         if (!items || items.length === 0) {
-            cartItemsContainer.innerHTML = '<div class="text-center p-5"><p>Giỏ hàng của bạn đang trống.</p><a href="/products" class="btn btn-primary">Tiếp tục mua sắm</a></div>';
+        if (!items || items.length === 0) {
+            cartItemsContainer.innerHTML = '<tr><td colspan="6" class="text-center p-5"><p>Giỏ hàng của bạn đang trống.</p><a href="/products" class="btn btn-primary">Tiếp tục mua sắm</a></td></tr>';
+            // Disable bulk controls
+            if (selectAllCheckbox) selectAllCheckbox.disabled = true;
+            if (deleteSelectedBtn) deleteSelectedBtn.disabled = true;
             return;
         }
 
+        // Enable bulk controls
+        if (selectAllCheckbox) {
+            selectAllCheckbox.disabled = false;
+            // Kiểm tra xem tất cả items trong trang này có được chọn hết không
+            const allSelected = items.every(item => selectedItemsSet.has(item.id.toString()));
+            selectAllCheckbox.checked = items.length > 0 && allSelected;
+        }
+        if (deleteSelectedBtn) deleteSelectedBtn.disabled = true;
+
         items.forEach(item => {
             const itemTotal = item.so_luong * item.product.gia_bia;
+            const isChecked = selectedItemsSet.has(item.id.toString()); // Convert id to string for consistency
+
             const cartItemHTML = `
-                <div class="row mb-4 d-flex justify-content-between align-items-center">
-                    <div class="col-md-2 col-lg-2 col-xl-2">
-                        <img src="${item.product.img || '/images/placeholder.png'}" class="img-fluid rounded-3" alt="${item.product.ten_sach}">
-                    </div>
-                    <div class="col-md-3 col-lg-3 col-xl-3">
-                        <h6 class="text-muted">${item.product.ten_sach}</h6>
-                        <h6 class="text-black mb-0">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</h6>
-                    </div>
-                    <div class="col-md-3 col-lg-3 col-xl-2 d-flex">
-                        <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.so_luong}" type="number"
-                            class="form-control form-control-sm item-quantity" data-item-id="${item.id}" />
-                    </div>
-                    
-                    <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
-                        <h6 class="mb-0">${itemTotal.toLocaleString('vi-VN')}đ</h6>
-                    </div>
-                    <div class="col-md-1 col-lg-1 col-xl-1 text-end">
-                        <button class="btn btn-link text-muted remove-item-btn" data-item-id="${item.id}"><i class="fas fa-times"></i> Xóa</button>
-                    </div>
-                </div>
-                <hr class="my-4">
+                <tr class="cart-item-row" data-id="${item.id}" data-price="${item.product.gia_bia}" data-quantity="${item.so_luong}">
+                    <td class="text-center">
+                        <input class="form-check-input item-checkbox" type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} ${item.product.so_luong_ton_kho <= 0 ? 'disabled' : ''}>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="${item.product.img || '/images/placeholder.png'}" alt="" style="width: 70px; height: 100px; object-fit: cover" class="rounded-3"/>
+                            <div class="ms-3">
+                                <p class="fw-bold mb-1">${item.product.ten_sach}</p>
+                                <small class="text-muted">Kho: ${item.product.so_luong_ton_kho}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <p class="fw-normal mb-1">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</p>
+                    </td>
+                    <td>
+                        ${item.product.so_luong_ton_kho > 0 ? `
+                        <div class="input-group input-group-sm" style="width: 120px;">
+                            <button class="btn btn-outline-secondary btn-decrease-qty" type="button" data-item-id="${item.id}">-</button>
+                            <input type="number" class="form-control text-center item-quantity" value="${item.so_luong}" 
+                                min="1" max="${item.product.so_luong_ton_kho}" data-item-id="${item.id}">
+                            <button class="btn btn-outline-secondary btn-increase-qty" type="button" data-item-id="${item.id}">+</button>
+                        </div>
+                        ` : `<span class="text-danger fw-bold">Hết hàng</span>`}
+                    </td>
+                    <td>
+                        <p class="fw-bold mb-1 item-total-display">${itemTotal.toLocaleString('vi-VN')}đ</p>
+                    </td>
+                    <td>
+                        <button class="btn btn-link text-danger p-0 remove-item-btn" data-item-id="${item.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
             `;
             cartItemsContainer.insertAdjacentHTML('beforeend', cartItemHTML);
         });
-        
+
         // Sau khi vẽ xong, gắn lại các event listener cho các nút vừa tạo.
         addEventListenersToCartItems();
+        updateBulkActionState(); // Cập nhật trạng thái nút xóa
+        updateOrderSummary();   // Tính toán lại tiền
+    }
+
+    /**
+     * Hàm tính tổng tiền dựa trên các item ĐANG ĐƯỢC CHỌN (checked)
+     */
+    function calculateSelectedSubtotal() {
+        let subtotal = 0;
+        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+
+        checkboxes.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            const price = parseFloat(row.dataset.price);
+            // Lấy quantity từ input vì nó có thể thay đổi (dù user chưa reload) 
+            // Tuy nhiên logic hiện tại input change -> gọi API update -> reload cart. 
+            // Nên lấy từ dataset cũng ok, hoặc lấy từ input value cho chính xác visual.
+            const quantityInput = row.querySelector('.item-quantity');
+            const quantity = parseInt(quantityInput.value);
+
+            subtotal += price * quantity;
+        });
+        return subtotal;
     }
 
     /**
@@ -95,34 +154,33 @@ document.addEventListener('DOMContentLoaded', () => {
      * Nó sẽ được gọi mỗi khi có thay đổi trong giỏ hàng hoặc áp dụng khuyến mãi.
      */
     function updateOrderSummary() {
-        if (!currentCart || !currentCart.items|| currentCart.items.length === 0)  {
-            // Nếu không có giỏ hàng, reset mọi thứ về 0.
-            subtotalEl.textContent = formatCurrency(0);
-            shippingFeeEl.textContent = formatCurrency(0);
-            finalTotalEl.textContent = formatCurrency(0);
-            discountRow.style.display = 'none';
-            return;
-        }
-        
-        // Tính toán các giá trị
-        const subtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
-        const shippingFee = (subtotal > 0) ? 30000 : 0; // Chỉ tính phí ship khi có hàng.
+        // Tính Subtotal dựa trên SELECTION
+        const subtotal = calculateSelectedSubtotal();
+
+        const shippingFee = (subtotal > 0) ? 30000 : 0; // Chỉ tính phí ship khi có hàng được chọn.
 
         // Cập nhật giao diện
         subtotalEl.textContent = formatCurrency(subtotal);
         shippingFeeEl.textContent = formatCurrency(shippingFee);
 
         // Xử lý hiển thị dòng giảm giá
-        if (currentDiscountAmount > 0) {
+        if (currentDiscountAmount > 0 && subtotal > 0) {
+            // Nếu subtotal < discount thì sao? Thường discount ko được quá subtotal
+            // Ở đây cứ hiển thị, việc tính toán fix âm ở dưới
             discountAmountEl.textContent = `- ${formatCurrency(currentDiscountAmount)}`;
-            discountRow.style.display = 'flex'; // Hiện dòng giảm giá
+            discountRow.style.display = 'flex';
         } else {
-            discountRow.style.display = 'none'; // Ẩn dòng giảm giá
+            discountRow.style.display = 'none';
         }
-        
+
         // Tính tổng tiền cuối cùng và đảm bảo không bị âm
-        const finalTotal = subtotal - currentDiscountAmount + shippingFee;
-        finalTotalEl.textContent = formatCurrency(finalTotal > 0 ? finalTotal : 0);
+        let finalTotal = subtotal + shippingFee - currentDiscountAmount;
+        if (finalTotal < 0) finalTotal = 0;
+
+        // Nếu không chọn gì cả, final = 0
+        if (subtotal === 0) finalTotal = 0;
+
+        finalTotalEl.textContent = formatCurrency(finalTotal);
     }
 
     // === BƯỚC 3: CÁC HÀM GỌI API (TƯƠNG TÁC VỚI SERVER) ===
@@ -130,25 +188,30 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Hàm chính: Lấy dữ liệu giỏ hàng từ server và khởi chạy quá trình render.
      */
-    async function fetchAndRenderCart() {
+    async function fetchAndRenderCart(page = 1) {
         try {
-            const response = await fetch('/api/cart', {
+            const response = await fetch(`/api/cart?page=${page}&limit=5`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (!response.ok) {
-                if (response.status === 401) { // Xử lý trường hợp token hết hạn
+                if (response.status === 401) {
                     localStorage.removeItem('token');
                     window.location.href = '/login';
                 }
                 throw new Error('Không thể tải giỏ hàng từ server.');
             }
-            
-            const cartData = await response.json();
-            currentCart = cartData; // Lưu lại dữ liệu giỏ hàng
-            
-            renderCartItems(currentCart.items);
-            updateOrderSummary();
+
+            const cartResponse = await response.json();
+
+            currentCart = { items: cartResponse.items };
+            // serverSubtotal = parseFloat(cartResponse.subtotal || 0); // Không dùng nữa
+
+            renderCartItems(cartResponse.items);
+            // updateOrderSummary(); // Đã gọi trong renderCartItems
+
+            // MỚI: Render phân trang
+            renderPagination(cartResponse.pagination);
 
         } catch (error) {
             console.error('Lỗi khi fetch giỏ hàng:', error);
@@ -157,29 +220,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Hàm render thanh phân trang
+     */
+    function renderPagination(pagination) {
+        const paginationContainer = document.getElementById('cart-pagination');
+        if (!paginationContainer) return;
+
+        if (!pagination || pagination.totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+
+        // Nút Previous
+        html += `<li class="page-item ${pagination.currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${pagination.currentPage - 1}">&laquo;</a>
+                 </li>`;
+
+        // Các trang
+        for (let i = 1; i <= pagination.totalPages; i++) {
+            html += `<li class="page-item ${i === pagination.currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                     </li>`;
+        }
+
+        // Nút Next
+        html += `<li class="page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${pagination.currentPage + 1}">&raquo;</a>
+                 </li>`;
+
+        paginationContainer.innerHTML = html;
+
+        // Gắn sự kiện click
+        paginationContainer.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newPage = parseInt(e.target.dataset.page);
+                if (newPage > 0 && newPage <= pagination.totalPages && newPage !== pagination.currentPage) {
+                    fetchAndRenderCart(newPage);
+                }
+            });
+        });
+    }
+
+    /**
      * Gọi API để xóa một sản phẩm khỏi giỏ hàng.
      * @param {string|number} itemId - ID của sản phẩm trong giỏ hàng.
+     * @param {boolean} reload - Có reload lại giỏ hay không (mặc định có)
      */
-    async function removeItemFromCart(itemId) {
+    async function removeItemFromCart(itemId, reload = true) {
         try {
             const response = await fetch(`/api/cart/items/${itemId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
-                fetchAndRenderCart(); // Tải lại toàn bộ giỏ hàng để cập nhật
+                if (reload) fetchAndRenderCart();
+                return true;
             } else {
-                alert('Xóa sản phẩm thất bại. Vui lòng thử lại.');
+                if (reload) alert('Xóa sản phẩm thất bại. Vui lòng thử lại.');
+                return false;
             }
         } catch (error) {
             console.error('Lỗi API khi xóa sản phẩm:', error);
+            return false;
         }
     }
 
     /**
      * Gọi API để cập nhật số lượng của một sản phẩm.
-     * @param {string|number} itemId - ID của sản phẩm.
-     * @param {number} quantity - Số lượng mới.
      */
     async function updateCartItemQuantity(itemId, quantity) {
         try {
@@ -192,10 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ soLuong: quantity })
             });
             if (response.ok) {
-                fetchAndRenderCart(); // Tải lại toàn bộ giỏ hàng
+                // Sau khi update quantity, giá tiền thay đổi -> gọi lại render để update UI và subtotal
+                fetchAndRenderCart();
             } else {
                 alert('Cập nhật số lượng thất bại. Vui lòng thử lại.');
-                fetchAndRenderCart(); // Tải lại để trả về số lượng cũ
+                fetchAndRenderCart();
             }
         } catch (error) {
             console.error('Lỗi API khi cập nhật số lượng:', error);
@@ -205,45 +316,178 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === BƯỚC 4: GẮN CÁC BỘ LẮNG NGHE SỰ KIỆN (EVENT LISTENERS) ===
 
+    function updateBulkActionState() {
+        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.disabled = checkedCount === 0;
+            deleteSelectedBtn.innerHTML = `<i class="fas fa-trash-alt me-1"></i> Xóa đã chọn (${checkedCount})`;
+        }
+
+        // Kiểm tra xem đã check hết chưa để update Select All checkbox
+        const totalItems = document.querySelectorAll('.item-checkbox').length;
+        if (selectAllCheckbox && totalItems > 0) {
+            selectAllCheckbox.checked = checkedCount === totalItems;
+        }
+    }
+
     /**
-     * Gắn các sự kiện 'click' và 'change' cho các nút trong giỏ hàng.
-     * Hàm này phải được gọi lại mỗi khi giỏ hàng được render.
+     * Gắn các sự kiện cho các nút trong giỏ hàng.
      */
     function addEventListenersToCartItems() {
-        // Gắn sự kiện cho tất cả các nút "Xóa"
+        // 1. Sự kiện xóa từng món
         document.querySelectorAll('.remove-item-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
-        const buttonElement = event.target.closest('button');
-        const itemId = buttonElement.dataset.itemId;
+            button.addEventListener('click', (event) => {
+                const buttonElement = event.target.closest('button');
+                const itemId = buttonElement.dataset.itemId;
 
-        // SỬ DỤNG SWEETALERT2 ĐỂ THAY THẾ CONFIRM
-        Swal.fire({
-            title: 'Bạn chắc chắn?',
-            text: "Bạn sẽ không thể hoàn tác hành động này!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33', // Màu đỏ cho nút xóa
-            cancelButtonColor: '#3085d6', // Màu xanh cho nút hủy
-            confirmButtonText: 'Vâng, xóa nó!',
-            cancelButtonText: 'Hủy'
-        }).then((result) => {
-            // Nếu người dùng nhấn vào nút "Vâng, xóa nó!"
-            if (result.isConfirmed) {
-                // Gọi hàm để xóa sản phẩm
-                removeItemFromCart(itemId);
-            }
-        })
-    });
-});
+                Swal.fire({
+                    title: 'Bạn chắc chắn?',
+                    text: "Bạn sẽ không thể hoàn tác hành động này!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Vâng, xóa nó!',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        removeItemFromCart(itemId);
+                    }
+                })
+            });
+        });
 
 
-        // Gắn sự kiện cho tất cả các ô input số lượng
+        // 2. Sự kiện thay đổi số lượng (Input nhập trực tiếp)
         document.querySelectorAll('.item-quantity').forEach(input => {
             input.addEventListener('change', (event) => {
                 const itemId = event.target.dataset.itemId;
-                const newQuantity = parseInt(event.target.value, 10);
-                if (newQuantity > 0) {
-                    updateCartItemQuantity(itemId, newQuantity);
+                let newQuantity = parseInt(event.target.value, 10);
+                const maxStock = parseInt(event.target.getAttribute('max'), 10);
+
+                // Validate
+                if (isNaN(newQuantity) || newQuantity < 1) {
+                    newQuantity = 1;
+                } else if (newQuantity > maxStock) {
+                    newQuantity = maxStock;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Số lượng vượt quá tồn kho',
+                        text: `Sản phẩm này chỉ còn ${maxStock} sản phẩm trong kho.`,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+
+                // Cập nhật lại giá trị vào input trươc khi gửi (để UX đúng)
+                event.target.value = newQuantity;
+
+                // updateCartItemQuantity sẽ render lại nên không cần lo lắng quá về UI state ở đây
+                updateCartItemQuantity(itemId, newQuantity);
+            });
+        });
+
+        // 2b. Sự kiện nút Tăng/Giảm
+        document.querySelectorAll('.btn-decrease-qty').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemId = e.target.dataset.itemId;
+                const row = e.target.closest('tr'); // Hoặc tìm input bằng cách khác
+                // Vì cấu trúc HTML là button -> input -> button trong cùng div, ta có thể tìm sibling
+                const input = e.target.parentElement.querySelector('.item-quantity');
+                let currentQty = parseInt(input.value, 10);
+
+                if (currentQty > 1) {
+                    updateCartItemQuantity(itemId, currentQty - 1);
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-increase-qty').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemId = e.target.dataset.itemId;
+                const input = e.target.parentElement.querySelector('.item-quantity');
+                let currentQty = parseInt(input.value, 10);
+                const maxStock = parseInt(input.getAttribute('max'), 10);
+
+                if (currentQty < maxStock) {
+                    updateCartItemQuantity(itemId, currentQty + 1);
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Đạt giới hạn tồn kho',
+                        text: `Bạn chỉ có thể mua tối đa ${maxStock} sản phẩm.`,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            });
+        });
+
+        // 3. Sự kiện check từng item
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                // Update Select All checkbox state
+                updateBulkActionState();
+                // Update Total Money
+                updateOrderSummary();
+
+                // Disable/Enable input quantity nếu cần? (Yêu cầu nói: "nếu sản phẩm đó không được chọn thì các trường trong đó không được select")
+                // User requirement: "user muốn mỗi sản phẩm trong giỏ hàng sẽ có một nút select chọn trước sản phẩm, chỉ khi được chọn thì sản phẩm đó mới được tính vào hóa đơn, nếu sản phẩm đó không được chọn thì các trường trong đó không được select"
+                // "không được select" -> có thể hiểu là disabled input?
+                const row = checkbox.closest('tr');
+                const qtyInput = row.querySelector('.item-quantity');
+                if (qtyInput) {
+                    // qtyInput.disabled = !checkbox.checked; // Nếu muốn disable thật
+                    // Tạm thời ko disable input vì logic update quantity -> reload page -> mất check state.
+                    // Nếu disable input thì user phải check mới sửa được quantity.
+                }
+            });
+        });
+    }
+
+    // LISTENER CHO BULK ACTIONS (Footer)
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = isChecked;
+            });
+            updateBulkActionState();
+            updateOrderSummary();
+        });
+    }
+
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', () => {
+            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+
+            Swal.fire({
+                title: 'Xóa nhiều sản phẩm?',
+                text: `Bạn có chắc muốn xóa ${selectedIds.length} sản phẩm đã chọn?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonText: 'Hủy',
+                confirmButtonText: 'Xóa tất cả'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // Xóa lần lượt (hoặc dùng API bulk delete nếu có)
+                    // Hiện tại chưa có API bulk delete, loop xóa từng cái
+                    // Để tránh reload nhiều lần, ta sẽ set reload=false và reload cuối cùng
+                    let successCount = 0;
+                    for (const id of selectedIds) {
+                        const success = await removeItemFromCart(id, false);
+                        if (success) successCount++;
+                    }
+                    // Reload cart
+                    fetchAndRenderCart();
+                    Swal.fire('Đã xóa!', `Đã xóa ${successCount} sản phẩm.`, 'success');
                 }
             });
         });
@@ -254,31 +498,33 @@ document.addEventListener('DOMContentLoaded', () => {
         applyBtn.addEventListener('click', async () => {
             const promoCode = promoInput.value.trim().toUpperCase();
             if (!promoCode) {
-                promoTextMessage.textContent = 'Vui lòng nhập mã khuyến mãi.'; 
+                promoTextMessage.textContent = 'Vui lòng nhập mã khuyến mãi.';
                 promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
                 removePromoBtn.style.display = 'none';
                 return;
             }
-    if (!currentCart || !currentCart.items || currentCart.items.length === 0) {
-                promoTextMessage.textContent = 'Giỏ hàng của bạn đang trống để áp dụng mã.'; // Sửa lại thông báo lỗi
+
+            // Validate: Phải có ít nhất 1 sản phẩm được chọn mới cho áp dụng
+            const selectedSubtotal = calculateSelectedSubtotal();
+            if (selectedSubtotal === 0) {
+                promoTextMessage.textContent = 'Vui lòng chọn ít nhất một sản phẩm để áp dụng mã.';
                 promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
                 return;
-    }
-        // Tính toán tổng tiền hàng ngay tại thời điểm áp dụng
-        const cartSubtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
+            }
 
             // Vô hiệu hóa nút và hiển thị spinner để người dùng biết đang xử lý
             applyBtn.disabled = true;
             applyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
 
             try {
+                // Gửi subtotal của CÁC ITEM ĐƯỢC CHỌN lên server để tính discount
                 const response = await fetch('/api/promotions/apply', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ 
-                    ma_khuyen_mai: promoCode,
-                    currentSubtotal: cartSubtotal 
-                })
+                    body: JSON.stringify({
+                        ma_khuyen_mai: promoCode,
+                        currentSubtotal: selectedSubtotal
+                    })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Có lỗi không xác định.');
@@ -297,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 promoTextMessage.textContent = error.message;
                 promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
                 removePromoBtn.style.display = 'none'; // ẨN NÚT HỦY
-                
+
                 currentDiscountAmount = 0;
                 sessionStorage.removeItem('discountAmountApplied');
                 updateOrderSummary();
@@ -308,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
- // <<< THÊM SỰ KIỆN CLICK CHO NÚT HỦY MỚI >>>
+    // <<< THÊM SỰ KIỆN CLICK CHO NÚT HỦY MỚI >>>
     if (removePromoBtn) {
         removePromoBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -329,6 +575,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkoutButton = document.querySelector('a[href="/checkout"]');
     if (checkoutButton) {
         checkoutButton.addEventListener('click', (e) => {
+            // Validate: Phải chọn ít nhất 1 sản phẩm
+            const selectedCount = document.querySelectorAll('.item-checkbox:checked').length;
+            if (selectedCount === 0) {
+                e.preventDefault(); // Chặn chuyển trang
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Chưa chọn sản phẩm',
+                    text: 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.'
+                });
+                return;
+            }
+
             const promoCode = promoInput.value.trim().toUpperCase();
             if (promoCode && currentDiscountAmount > 0) { // Thêm điều kiện: phải có giảm giá thực tế
                 sessionStorage.setItem('promoCodeToCheckout', promoCode);
@@ -338,52 +596,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.removeItem('promoCodeToCheckout');
                 sessionStorage.removeItem('discountAmountApplied');
             }
+
+            // LƯU Ý: Ở bước này, code backend checkout cần biết user mua những item nào.
+            // Hiện tại code backend có thể lấy TOÀN BỘ item trong cart.
+            // Để hỗ trợ partial checkout, ta nên lưu list selected item IDs vào sessionStorage 
+            // và sửa backend checkout để chỉ xử lý các item đó.
+            // Tuy nhiên user request không yêu cầu sửa backend checkout.
+            // "chỉ khi được chọn thì sản phẩm đó mới được tính vào hóa đơn" -> Hàm ý quan trọng.
+            // Nếu backend checkout lấy tất cả item, thì việc chọn ở frontend chỉ là ảo.
+            // Tạm thời ta cứ lưu vào session storage, nếu backend chưa hỗ trợ thì đây là limit của scope hiện tại.
+            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedIds));
         });
     }
 
     const promoModal = document.getElementById('promo-modal');
     if (promoModal) {
-    const promoListContainer = document.getElementById('promo-list-container');
-    const selectPromoBtn = document.getElementById('select-promo-btn');
-    const promoCodeInput = document.getElementById('promo-code-input');
-    const applyPromoBtn = document.getElementById('apply-promo-btn');
-     const token = localStorage.getItem('token');
-    // Biến để lưu mã KM đang được chọn trong modal
-    let selectedPromoCode = null;
+        const promoListContainer = document.getElementById('promo-list-container');
+        const selectPromoBtn = document.getElementById('select-promo-btn');
+        const promoCodeInput = document.getElementById('promo-code-input');
+        const applyPromoBtn = document.getElementById('apply-promo-btn');
+        const token = localStorage.getItem('token');
+        // Biến để lưu mã KM đang được chọn trong modal
+        let selectedPromoCode = null;
 
-    // Sự kiện được kích hoạt ngay khi modal bắt đầu mở ra
-    promoModal.addEventListener('show.bs.modal', async () => {
-        // Reset trạng thái
-        selectedPromoCode = null;
-        promoListContainer.innerHTML = '<p class="text-center">Đang tìm các ưu đãi tốt nhất...</p>';
-        
-        // Lấy tổng tiền tạm tính hiện tại của giỏ hàng
-        const subtotalText = document.getElementById('cart-subtotal').textContent;
-        const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, ''));
-        
-        try {
-            // Gọi API mới để lấy các mã KM hợp lệ
-            const response = await fetch(`/api/promotions/available?subtotal=${subtotal}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Không thể tải ưu đãi.');
-            
-            const promos = await response.json();
-            
-            // Render danh sách KM vào modal
-            promoListContainer.innerHTML = '';
-            if (promos.length === 0) {
-                promoListContainer.innerHTML = '<p class="text-center text-muted">Rất tiếc, chưa có ưu đãi nào phù hợp cho giỏ hàng của bạn.</p>';
-                return;
-            }
+        // Sự kiện được kích hoạt ngay khi modal bắt đầu mở ra
+        promoModal.addEventListener('show.bs.modal', async () => {
+            // Reset trạng thái
+            selectedPromoCode = null;
+            promoListContainer.innerHTML = '<p class="text-center">Đang tìm các ưu đãi tốt nhất...</p>';
 
-            promos.forEach(promo => {
-                const discountText = promo.loai_giam_gia === 'percentage'
-                    ? `Giảm ${parseInt(promo.gia_tri_giam)}%`
-                    : `Giảm ${parseInt(promo.gia_tri_giam).toLocaleString('vi-VN')}đ`;
+            // Lấy tổng tiền tạm tính hiện tại của giỏ hàng (THEO SELECTION)
+            const subtotalText = document.getElementById('cart-subtotal').textContent;
+            const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, ''));
 
-                // Tạo từng item khuyến mãi
-                const promoItemHTML = `
+            try {
+                // Gọi API mới để lấy các mã KM hợp lệ
+                const response = await fetch(`/api/promotions/available?subtotal=${subtotal}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Không thể tải ưu đãi.');
+
+                const promos = await response.json();
+
+                // Render danh sách KM vào modal
+                promoListContainer.innerHTML = '';
+                if (promos.length === 0) {
+                    promoListContainer.innerHTML = '<p class="text-center text-muted">Rất tiếc, chưa có ưu đãi nào phù hợp cho giỏ hàng của bạn.</p>';
+                    return;
+                }
+
+                promos.forEach(promo => {
+                    const discountText = promo.loai_giam_gia === 'percentage'
+                        ? `Giảm ${parseInt(promo.gia_tri_giam)}%`
+                        : `Giảm ${parseInt(promo.gia_tri_giam).toLocaleString('vi-VN')}đ`;
+
+                    // Tạo từng item khuyến mãi
+                    const promoItemHTML = `
                     <div class="promo-item border rounded p-3 mb-2" style="cursor: pointer;" data-code="${promo.ma_khuyen_mai}">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -394,46 +663,46 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 `;
-                promoListContainer.insertAdjacentHTML('beforeend', promoItemHTML);
-            });
+                    promoListContainer.insertAdjacentHTML('beforeend', promoItemHTML);
+                });
 
-        } catch (error) {
-            promoListContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
-        }
-    });
-
-    // Xử lý sự kiện khi click chọn một mã KM trong modal
-    promoListContainer.addEventListener('click', (e) => {
-        const selectedItem = e.target.closest('.promo-item');
-        if (!selectedItem) return;
-
-        // Bỏ chọn tất cả các item khác (reset giao diện)
-        document.querySelectorAll('.promo-item').forEach(item => {
-            item.classList.remove('border-primary', 'bg-light');
-            item.querySelector('.promo-check-icon').className = 'far fa-circle promo-check-icon fs-4 text-muted';
+            } catch (error) {
+                promoListContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
+            }
         });
 
-        // Đánh dấu item được chọn
-        selectedItem.classList.add('border-primary', 'bg-light');
-        selectedItem.querySelector('.promo-check-icon').className = 'fas fa-check-circle promo-check-icon fs-4 text-primary';
-        
-        // Lưu lại mã đã chọn
-        selectedPromoCode = selectedItem.dataset.code;
-    });
+        // Xử lý sự kiện khi click chọn một mã KM trong modal
+        promoListContainer.addEventListener('click', (e) => {
+            const selectedItem = e.target.closest('.promo-item');
+            if (!selectedItem) return;
 
-    // Xử lý sự kiện khi nhấn nút "Áp dụng mã đã chọn"
-    selectPromoBtn.addEventListener('click', () => {
-        if (selectedPromoCode) {
-            // Điền mã đã chọn vào ô input
-            promoCodeInput.value = selectedPromoCode;
-            // Tự động nhấn nút "Áp dụng" để tái sử dụng logic có sẵn
-            applyPromoBtn.click();
-        }
-        // Đóng modal
-        const modalInstance = bootstrap.Modal.getInstance(promoModal);
-        modalInstance.hide();
-    });
-}
+            // Bỏ chọn tất cả các item khác (reset giao diện)
+            document.querySelectorAll('.promo-item').forEach(item => {
+                item.classList.remove('border-primary', 'bg-light');
+                item.querySelector('.promo-check-icon').className = 'far fa-circle promo-check-icon fs-4 text-muted';
+            });
+
+            // Đánh dấu item được chọn
+            selectedItem.classList.add('border-primary', 'bg-light');
+            selectedItem.querySelector('.promo-check-icon').className = 'fas fa-check-circle promo-check-icon fs-4 text-primary';
+
+            // Lưu lại mã đã chọn
+            selectedPromoCode = selectedItem.dataset.code;
+        });
+
+        // Xử lý sự kiện khi nhấn nút "Áp dụng mã đã chọn"
+        selectPromoBtn.addEventListener('click', () => {
+            if (selectedPromoCode) {
+                // Điền mã đã chọn vào ô input
+                promoCodeInput.value = selectedPromoCode;
+                // Tự động nhấn nút "Áp dụng" để tái sử dụng logic có sẵn
+                applyPromoBtn.click();
+            }
+            // Đóng modal
+            const modalInstance = bootstrap.Modal.getInstance(promoModal);
+            modalInstance.hide();
+        });
+    }
 
     // === BƯỚC 5: KHỞI CHẠY ===
     // Gọi hàm này lần đầu tiên để tải và hiển thị giỏ hàng khi người dùng truy cập trang.

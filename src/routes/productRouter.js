@@ -206,12 +206,10 @@ const getAllProducts = async (request, response) => {
     });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-    response
-      .status(500)
-      .json({
-        message: "Lỗi server khi lấy danh sách sản phẩm.",
-        error: error.message,
-      });
+    response.status(500).json({
+      message: "Lỗi server khi lấy danh sách sản phẩm.",
+      error: error.message,
+    });
   }
 };
 
@@ -290,11 +288,9 @@ const updateProduct = async (request, response) => {
         errors: messages,
       });
     }
-    response
-      .status(500)
-      .json({
-        message: "Đã có lỗi xảy ra ở phía máy chủ khi cập nhật sản phẩm.",
-      });
+    response.status(500).json({
+      message: "Đã có lỗi xảy ra ở phía máy chủ khi cập nhật sản phẩm.",
+    });
   }
 };
 
@@ -423,12 +419,10 @@ const getBestsellerProducts = async (req, res) => {
     res.status(200).json(bestsellerProducts);
   } catch (error) {
     console.error("LỖI CHI TIẾT KHI LẤY SẢN PHẨM BÁN CHẠY:", error);
-    res
-      .status(500)
-      .json({
-        message: "Lỗi server khi lấy sản phẩm bán chạy.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Lỗi server khi lấy sản phẩm bán chạy.",
+      error: error.message,
+    });
   }
 };
 /**
@@ -487,12 +481,10 @@ router.get("/bestsellers", async (req, res) => {
     res.json(normalizedBestsellers);
   } catch (error) {
     console.error("Lỗi sản phẩm bán chạy:", error);
-    res
-      .status(500)
-      .json({
-        error: "Lỗi khi lấy sản phẩm bán chạy",
-        chi_tiet: error.message,
-      });
+    res.status(500).json({
+      error: "Lỗi khi lấy sản phẩm bán chạy",
+      chi_tiet: error.message,
+    });
   }
 });
 
