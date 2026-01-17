@@ -1,3 +1,4 @@
+
 // Tệp tin: /public/js/product-detail.js
 document.addEventListener('DOMContentLoaded', function () {
     const minusBtn = document.getElementById('button-minus');

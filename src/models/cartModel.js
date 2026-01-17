@@ -21,3 +21,4 @@ Cart.associate = (models) => {
 };
 
 module.exports = Cart;
+

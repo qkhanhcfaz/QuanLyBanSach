@@ -64,3 +64,4 @@ const Slideshow = sequelize.define('Slideshow', {
 
 // Export model Slideshow để các file khác có thể sử dụng.
 module.exports = Slideshow;
+
