@@ -8,6 +8,7 @@ const {
   CartItem,
 } = require("../models");
 const { Op } = require("sequelize");
+const { createPaymentUrl } = require("../services/momoService");
 
 /**
  * @description     Tạo đơn hàng mới (Checkout)
@@ -103,11 +104,48 @@ const createOrder = async (req, res) => {
     // Xóa giỏ hàng
     await CartItem.destroy({ where: { cart_id: cart.id } });
 
-    res.status(201).json({
+    // === XỬ LÝ THANH TOÁN (COD hoặc ONLINE) ===
+    let responseData = {
       message: "Đặt hàng thành công",
       id: newOrder.id,
-      // Nếu có thanh toán online trả về url ở đây
-    });
+    };
+
+    // Nếu chọn thanh toán qua MoMo
+    if (phuong_thuc_thanh_toan === "momo") {
+      try {
+        // Thêm timestamp vào orderId để tránh trùng lặp trên môi trường Test của MoMo
+        // Ví dụ: 55_1705501234567
+        const momoOrderId = `${newOrder.id}_${new Date().getTime()}`;
+
+        const momoResult = await createPaymentUrl({
+          orderId: momoOrderId,
+          amount: tong_thanh_toan,
+          orderInfo: `Thanh toan don hang #${newOrder.id} tai BookStore`,
+        });
+
+        console.log("Momo Result:", momoResult); // Log để debug
+
+        if (momoResult && momoResult.payUrl) {
+          responseData.payUrl = momoResult.payUrl;
+          // Có thể cập nhật lại trạng thái đơn hàng là 'pending_payment' nếu muốn
+        } else {
+          // Nếu lỗi MoMo thì báo lỗi về client
+          console.error("MoMo Create Error:", momoResult);
+          return res.status(500).json({
+            message:
+              "Lỗi tạo link thanh toán MoMo. Vui lòng thử lại hoặc chọn 'Thanh toán khi nhận hàng'.",
+            detail: momoResult,
+          });
+        }
+      } catch (err) {
+        console.error("MoMo Service Error:", err);
+        return res
+          .status(500)
+          .json({ message: "Lỗi kết nối đến cổng thanh toán MoMo." });
+      }
+    }
+
+    res.status(201).json(responseData);
   } catch (error) {
     console.error("Lỗi tạo đơn hàng:", error);
     res.status(500).json({ message: "Lỗi server khi tạo đơn hàng." });
