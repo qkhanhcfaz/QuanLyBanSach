@@ -1,7 +1,7 @@
 // File: /src/controllers/adminViewController.js
 // GIAI ĐOẠN 1: Code cơ bản - Hiển thị được dữ liệu là thành công
 const db = require('../models');
-const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, sequelize } = db;
+const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, sequelize } = db;
 
 /**
  * Render Dashboard
@@ -255,7 +255,71 @@ const renderPromotionFormPage = async (req, res) => {
             path: '/promotions'
         });
     } catch (error) {
+
         res.redirect('/admin/promotions');
+    }
+};
+
+/**
+ * Render Cấu hình Website
+ */
+const renderSiteSettings = async (req, res) => {
+    try {
+        let site = await SiteSetting.findOne();
+        if (!site) {
+            site = await SiteSetting.create({
+                ten_website: 'BookZone',
+                dia_chi: 'Quận 7, TP. Hồ Chí Minh',
+                email: 'bookzonestore07@gmail.com',
+                so_dien_thoai: '0969 671 344',
+                nam_ban_quyen: 2026
+            });
+        }
+
+        res.render('admin/pages/site-settings', {
+            title: 'Cấu hình Website',
+            user: req.user,
+            site,
+            path: '/settings'
+        });
+    } catch (error) {
+        console.error("Render Settings Error:", error);
+        res.status(500).send('Lỗi tải cấu hình');
+    }
+};
+
+/**
+ * Update Cấu hình Website
+ */
+const updateSiteSettings = async (req, res) => {
+    try {
+        const {
+            ten_website, dia_chi, email, so_dien_thoai, nam_ban_quyen,
+            facebook, instagram, twitter, linkedin
+        } = req.body;
+
+        let site = await SiteSetting.findOne();
+        if (!site) {
+            site = new SiteSetting();
+        }
+
+        site.ten_website = ten_website;
+        site.dia_chi = dia_chi;
+        site.email = email;
+        site.so_dien_thoai = so_dien_thoai;
+        site.nam_ban_quyen = nam_ban_quyen || 2026;
+
+        site.facebook = facebook;
+        site.instagram = instagram;
+        site.twitter = twitter;
+        site.linkedin = linkedin;
+
+        await site.save();
+
+        res.redirect('/admin/settings?status=success');
+    } catch (error) {
+        console.error("Update Settings Error:", error);
+        res.status(500).send('Lỗi cập nhật cấu hình');
     }
 };
 
@@ -270,5 +334,7 @@ module.exports = {
     renderReceiptsListPage,
     renderReceiptDetailPage,
     renderAdminPromotionsPage,
-    renderPromotionFormPage
+    renderPromotionFormPage,
+    renderSiteSettings,
+    updateSiteSettings
 };
