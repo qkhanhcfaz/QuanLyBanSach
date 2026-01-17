@@ -16,7 +16,10 @@ const {
     renderAdminPromotionsPage,
     renderPromotionFormPage,
     renderSiteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    renderRevenueStatisticsPage,
+    renderOrderStatisticsPage,
+    renderBestSellingStatisticsPage
 } = require('../controllers/adminViewController');
 
 // TẤT CẢ CÁC ROUTE TRONG FILE NÀY SẼ TỰ ĐỘNG CÓ TIỀN TỐ /admin
@@ -24,6 +27,11 @@ const {
 
 // Dashboard
 router.get('/', protect, admin, renderAdminDashboard);
+
+// Thống kê
+router.get('/statistics/revenue', protect, admin, renderRevenueStatisticsPage);
+router.get('/statistics/orders', protect, admin, renderOrderStatisticsPage);
+router.get('/statistics/best-selling', protect, admin, renderBestSellingStatisticsPage);
 
 // Quản lý Sản phẩm
 router.get('/products', protect, admin, renderAdminProducts);
