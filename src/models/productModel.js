@@ -60,6 +60,12 @@ const Product = sequelize.define('Product', {
         defaultValue: 0
     },
 
+    views: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+
     // Trường để phân biệt sách in và ebook
     product_type: {
         type: DataTypes.STRING,
@@ -96,6 +102,11 @@ Product.associate = (models) => {
     Product.hasMany(models.OrderItem, {
         foreignKey: 'product_id',
         as: 'orderItems'
+    });
+
+    Product.hasMany(models.Review, {
+        foreignKey: 'product_id',
+        as: 'reviews'
     });
 
 

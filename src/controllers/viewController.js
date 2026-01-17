@@ -189,7 +189,19 @@ const renderProductDetailPage = async (req, res) => {
       console.warn("Lỗi lấy review hoặc bảng Review chưa sẵn sàng", err.message);
     }
 
-    // 3) sản phẩm liên quan
+    // 3) INCREMENT VIEW COUNT
+    await product.increment('views');
+
+    // 4) STATS: Favorite Count & Avg Rating
+    const favoriteCount = await Favorite.count({ where: { product_id: id } });
+
+    let avgRating = 0;
+    if (reviews.length > 0) {
+      const totalStars = reviews.reduce((sum, r) => sum + r.rating, 0);
+      avgRating = (totalStars / reviews.length).toFixed(1);
+    }
+
+    // 5) sản phẩm liên quan
     const relatedProducts = await Product.findAll({
       where: {
         danh_muc_id: product.danh_muc_id,
@@ -205,6 +217,8 @@ const renderProductDetailPage = async (req, res) => {
       product,
       reviews,
       relatedProducts,
+      favoriteCount,
+      avgRating,
       favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
       user: req.user
     });

@@ -32,6 +32,7 @@ db.CartItem = require('./cartItemModel');
 db.Favorite = require('./favoriteModel');
 db.Order = Order;
 db.OrderItem = OrderItem;
+db.Review = require('./reviewModel');
 
 // Call associate if it exists
 Object.keys(db).forEach(modelName => {
