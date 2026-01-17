@@ -13,7 +13,7 @@ const Role = sequelize.define('Role', {
     }
 }, {
     tableName: 'roles',
-    timestamps: true
+    timestamps: false
 });
 
 Role.associate = (models) => {
