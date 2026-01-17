@@ -4,8 +4,12 @@ const {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  createOrder,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
+
+// POST /api/orders - Tạo đơn hàng (User đã đăng nhập)
+router.post("/", protect, createOrder);
 
 // GET /api/orders - Lấy danh sách đơn hàng (Chỉ Admin)
 router.get("/", protect, admin, getAllOrders);

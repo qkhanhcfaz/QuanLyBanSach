@@ -28,7 +28,7 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "order_items", // Lưu ý tên bảng là order_items (số nhiều, có s)
-      timestamps: false, // Bảng này không có createdAt, updatedAt trong schema SQL cũ
+      timestamps: true, // Bảng này CÓ createdAt, updatedAt trong schema PostgreSQL
     },
   );
 

@@ -1,5 +1,118 @@
-const { Order, User, OrderItem, Product } = require("../models");
+// [CODE MỚI] Import Cart, CartItem để xử lý đặt hàng
+const {
+  Order,
+  User,
+  OrderItem,
+  Product,
+  Cart,
+  CartItem,
+} = require("../models");
 const { Op } = require("sequelize");
+
+/**
+ * @description     Tạo đơn hàng mới (Checkout)
+ * @route           POST /api/orders
+ * @access          Private
+ */
+const createOrder = async (req, res) => {
+  try {
+    const {
+      ten_nguoi_nhan,
+      sdt_nguoi_nhan,
+      email_nguoi_nhan,
+      dia_chi_giao_hang,
+      ghi_chu_khach_hang,
+      phuong_thuc_thanh_toan,
+    } = req.body;
+
+    // 1. Lấy giỏ hàng của user
+    const userId = req.user.id;
+    const cart = await Cart.findOne({
+      where: { user_id: userId },
+      include: [
+        {
+          model: CartItem,
+          as: "items",
+          include: [{ model: Product, as: "product" }],
+        },
+      ],
+    });
+
+    if (!cart || !cart.items || cart.items.length === 0) {
+      return res.status(400).json({ message: "Giỏ hàng trống!" });
+    }
+
+    // 2. Tính toán tổng tiền
+    let tong_tien_hang = 0;
+    const phi_van_chuyen = 30000;
+    const orderItemsData = [];
+
+    for (const item of cart.items) {
+      // Kiểm tra tồn kho (nếu cần chặt chẽ hơn)
+      if (item.product.so_luong_ton_kho < item.so_luong) {
+        return res.status(400).json({
+          message: `Sản phẩm ${item.product.ten_sach} không đủ hàng.`,
+        });
+      }
+
+      tong_tien_hang += Number(item.product.gia_bia) * item.so_luong;
+
+      orderItemsData.push({
+        product_id: item.product_id,
+        so_luong_dat: item.so_luong,
+        don_gia: item.product.gia_bia,
+        thanh_tien: Number(item.product.gia_bia) * item.so_luong,
+      });
+    }
+
+    const tong_thanh_toan = tong_tien_hang + phi_van_chuyen;
+
+    // 3. Tạo đơn hàng (Order)
+    const newOrder = await Order.create({
+      user_id: userId,
+      ten_nguoi_nhan,
+      email_nguoi_nhan,
+      sdt_nguoi_nhan,
+      dia_chi_giao_hang,
+      ghi_chu_khach_hang,
+      tong_tien_hang,
+      phi_van_chuyen,
+      tong_thanh_toan,
+      phuong_thuc_thanh_toan,
+      trang_thai_don_hang: "pending",
+      trang_thai_thanh_toan: false, // Mặc định là chưa thanh toán
+    });
+
+    // 4. Tạo chi tiết đơn hàng (OrderItem)
+    const orderItemsWithId = orderItemsData.map((item) => ({
+      ...item,
+      order_id: newOrder.id,
+    }));
+    await OrderItem.bulkCreate(orderItemsWithId);
+
+    // 5. Trừ tồn kho và Xóa sản phẩm trong giỏ
+    for (const item of cart.items) {
+      // Trừ kho
+      const product = await Product.findByPk(item.product_id);
+      if (product) {
+        product.so_luong_ton_kho -= item.so_luong;
+        product.da_ban += item.so_luong; // Cập nhật số lượng đã bán
+        await product.save();
+      }
+    }
+    // Xóa giỏ hàng
+    await CartItem.destroy({ where: { cart_id: cart.id } });
+
+    res.status(201).json({
+      message: "Đặt hàng thành công",
+      id: newOrder.id,
+      // Nếu có thanh toán online trả về url ở đây
+    });
+  } catch (error) {
+    console.error("Lỗi tạo đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server khi tạo đơn hàng." });
+  }
+};
 
 /**
  * @description     Admin: Lấy danh sách tất cả đơn hàng (có Filter, Search, Pagination)
@@ -141,4 +254,5 @@ module.exports = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  createOrder,
 };
