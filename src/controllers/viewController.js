@@ -189,7 +189,19 @@ const renderProductDetailPage = async (req, res) => {
       console.warn("Lỗi lấy review hoặc bảng Review chưa sẵn sàng", err.message);
     }
 
-    // 3) sản phẩm liên quan
+    // 3) INCREMENT VIEW COUNT
+    await product.increment('views');
+
+    // 4) STATS: Favorite Count & Avg Rating
+    const favoriteCount = await Favorite.count({ where: { product_id: id } });
+
+    let avgRating = 0;
+    if (reviews.length > 0) {
+      const totalStars = reviews.reduce((sum, r) => sum + r.rating, 0);
+      avgRating = (totalStars / reviews.length).toFixed(1);
+    }
+
+    // 5) sản phẩm liên quan
     const relatedProducts = await Product.findAll({
       where: {
         danh_muc_id: product.danh_muc_id,
@@ -205,6 +217,8 @@ const renderProductDetailPage = async (req, res) => {
       product,
       reviews,
       relatedProducts,
+      favoriteCount,
+      avgRating,
       favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
       user: req.user
     });
@@ -256,6 +270,30 @@ const renderForgotPasswordPage = (req, res) => {
 
 const renderResetPasswordPage = (req, res) => {
   res.render('pages/reset-password', { title: 'Đặt Lại Mật Khẩu', user: req.user });
+};
+
+const renderAboutPage = (req, res) => {
+  res.render('pages/about', { title: 'Về Chúng Tôi', user: req.user });
+};
+
+const renderRecruitmentPage = (req, res) => {
+  res.render('pages/careers', { title: 'Tuyển Dụng', user: req.user });
+};
+
+const renderTermsPage = (req, res) => {
+  res.render('pages/terms', { title: 'Điều Khoản', user: req.user });
+};
+
+const renderGuidePage = (req, res) => {
+  res.render('pages/guide', { title: 'Hướng Dẫn Mua Hàng', user: req.user });
+};
+
+const renderReturnPolicyPage = (req, res) => {
+  res.render('pages/return-policy', { title: 'Chính Sách Đổi Trả', user: req.user });
+};
+
+const renderFAQPage = (req, res) => {
+  res.render('pages/faq', { title: 'Câu Hỏi Thường Gặp', user: req.user });
 };
 
 const renderFavoritesPage = async (req, res) => {
@@ -313,3 +351,9 @@ exports.renderProfilePage = renderProfilePage;
 exports.renderForgotPasswordPage = renderForgotPasswordPage;
 exports.renderResetPasswordPage = renderResetPasswordPage;
 exports.renderFavoritesPage = renderFavoritesPage;
+exports.renderAboutPage = renderAboutPage;
+exports.renderRecruitmentPage = renderRecruitmentPage;
+exports.renderTermsPage = renderTermsPage;
+exports.renderGuidePage = renderGuidePage;
+exports.renderReturnPolicyPage = renderReturnPolicyPage;
+exports.renderFAQPage = renderFAQPage;
