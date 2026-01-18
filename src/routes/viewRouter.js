@@ -23,12 +23,17 @@ const {
     renderTermsPage,
     renderGuidePage,
     renderReturnPolicyPage,
-    renderFAQPage
+    renderFAQPage,
+    renderContactPage,
+    renderBlogPage,
+    renderBlogDetailPage
 } = require('../controllers/viewController');
 
 router.get('/', renderHomePage);
 router.get('/products', renderProductListPage);
 router.get('/products/:id', renderProductDetailPage);
+router.get('/blog', renderBlogPage);       // <--- Blog List
+router.get('/blog/:id', renderBlogDetailPage); // <--- Blog Detail
 router.get('/login', renderLoginPage);
 router.get('/register', renderRegisterPage);
 router.get('/cart', renderCartPage);
@@ -43,6 +48,7 @@ router.get('/terms', renderTermsPage);
 router.get('/guide', renderGuidePage);
 router.get('/return-policy', renderReturnPolicyPage);
 router.get('/faq', renderFAQPage);
+router.get('/contact', renderContactPage); // <--- Add Route
 
 router.get('/forgot-password', renderForgotPasswordPage);
 router.get('/reset-password/:token', renderResetPasswordPage);

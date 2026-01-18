@@ -45,10 +45,19 @@ try { db.Promotion = require('./promotionModel'); } catch (e) { console.warn('Pr
 const Message = require('./messageModel');
 db.Message = Message;
 
+const Contact = require('./contactModel');
+db.Contact = Contact;
+
+
+
 // Define Associations
 // User <-> Message
 db.User.hasMany(db.Message, { foreignKey: 'user_id', as: 'messages' });
 db.Message.belongsTo(db.User, { foreignKey: 'user_id', as: 'user' });
+
+// User <-> Post (Author)
+db.User.hasMany(db.Post, { foreignKey: 'user_id', as: 'posts' });
+db.Post.belongsTo(db.User, { foreignKey: 'user_id', as: 'author' });
 
 // Call associate if it exists
 Object.keys(db).forEach(modelName => {
