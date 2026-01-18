@@ -32,9 +32,9 @@ db.SiteSetting = SiteSetting;
 db.Role = Role;
 db.User = User;
 // Safe require for Cart/Favorite which might be new
-try { db.Cart = require('./cartModel'); } catch (e) { console.warn('Cart model not available:', e.message); }
-try { db.CartItem = require('./cartItemModel'); } catch (e) { console.warn('CartItem model not available:', e.message); }
-try { db.Favorite = require('./favoriteModel'); } catch (e) { console.warn('Favorite model not available:', e.message); }
+try { db.Cart = require('./cartModel'); } catch(e) {}
+try { db.CartItem = require('./cartItemModel'); } catch(e) {}
+try { db.Favorite = require('./favoriteModel'); } catch(e) {}
 db.Order = Order;
 db.OrderItem = OrderItem;
 try { db.Review = require('./reviewModel'); } catch (e) { console.warn('Review model not available:', e.message); }
@@ -50,7 +50,5 @@ Object.keys(db).forEach(modelName => {
 });
 
 db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
 module.exports = db;
 
