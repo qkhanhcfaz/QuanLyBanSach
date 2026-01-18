@@ -11,6 +11,11 @@ const SiteSetting = sequelize.define(
     dia_chi: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Quận 5, TP. Hồ Chí Minh' },
     email: { type: DataTypes.STRING, allowNull: false, defaultValue: 'bookzone@gmail.com' },
     so_dien_thoai: { type: DataTypes.STRING, allowNull: false, defaultValue: '0339 945 345' },
+    mo_ta: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: 'Nơi tri thức bắt đầu. Khám phá hàng ngàn đầu sách hấp dẫn, ebook, truyện tranh và các combo ưu đãi đặc biệt.'
+    },
 
     facebook: { type: DataTypes.STRING, allowNull: true },
     instagram: { type: DataTypes.STRING, allowNull: true },

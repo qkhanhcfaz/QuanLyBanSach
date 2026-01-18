@@ -140,7 +140,7 @@ const PORT = process.env.PORT || 8080;
 // const seedProducts = require('./src/seeders/seedProducts');
 // const seedOrders = require('./src/seeders/seedOrders');
 
-sequelize.sync()
+sequelize.sync({ alter: true })
   .then(async () => {
     // ⚠️ CHỈ CHẠY SEED 1 LẦN, SAU ĐÓ COMMENT DÒNG NÀY
     // await seedProducts();

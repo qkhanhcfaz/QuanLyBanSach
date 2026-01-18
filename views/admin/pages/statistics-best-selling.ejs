@@ -1,0 +1,70 @@
+<%- include('../partials/header') %>
+
+    <div class="container-fluid">
+
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Thống kê Sản phẩm bán chạy</h1>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- ============== KHU VỰC BỘ LỌC NGÀY THÁNG ================ -->
+        <!-- ========================================================== -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Bộ lọc thống kê</h6>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <div class="form-group mb-md-0">
+                            <label for="start-date">Từ ngày:</label>
+                            <input type="date" id="start-date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-md-0">
+                            <label for="end-date">Đến ngày:</label>
+                            <input type="date" id="end-date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="filter-btn" class="btn btn-primary btn-block">
+                            <i class="fas fa-filter mr-2"></i>Lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- ============== BẢNG DỮ LIỆU SẢN PHẨM ==================== -->
+        <!-- ========================================================== -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Danh sách sản phẩm bán chạy</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Đã bán</th>
+                                <th>Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="best-selling-body">
+                            <!-- Dữ liệu sẽ được render tại đây -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <%- include('../partials/footer') %>
+
+        <!-- Script riêng cho trang này -->
+        <script src="/js/admin-best-selling.js"></script>

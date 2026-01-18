@@ -295,7 +295,8 @@ const updateSiteSettings = async (req, res) => {
     try {
         const {
             ten_website, dia_chi, email, so_dien_thoai, nam_ban_quyen,
-            facebook, instagram, twitter, linkedin
+            facebook, instagram, twitter, linkedin,
+            mo_ta // <--- Thêm nhận mo_ta từ form
         } = req.body;
 
         let site = await SiteSetting.findOne();
@@ -308,6 +309,7 @@ const updateSiteSettings = async (req, res) => {
         site.email = email;
         site.so_dien_thoai = so_dien_thoai;
         site.nam_ban_quyen = nam_ban_quyen || 2026;
+        site.mo_ta = mo_ta; // <--- Lưu vào DB
 
         site.facebook = facebook;
         site.instagram = instagram;
@@ -323,6 +325,39 @@ const updateSiteSettings = async (req, res) => {
     }
 };
 
+/**
+ * Render Thống kê Doanh thu
+ */
+const renderRevenueStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-revenue', {
+        title: 'Thống kê Doanh thu',
+        user: req.user,
+        path: '/statistics/revenue'
+    });
+};
+
+/**
+ * Render Thống kê Đơn hàng
+ */
+const renderOrderStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-orders', {
+        title: 'Thống kê Đơn hàng',
+        user: req.user,
+        path: '/statistics/orders'
+    });
+};
+
+/**
+ * Render Thống kê Sản phẩm bán chạy
+ */
+const renderBestSellingStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-best-selling', {
+        title: 'Sản phẩm bán chạy',
+        user: req.user,
+        path: '/statistics/best-selling'
+    });
+};
+
 module.exports = {
     renderAdminDashboard,
     renderAdminProducts,
@@ -336,5 +371,8 @@ module.exports = {
     renderAdminPromotionsPage,
     renderPromotionFormPage,
     renderSiteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    renderRevenueStatisticsPage,
+    renderOrderStatisticsPage,
+    renderBestSellingStatisticsPage
 };

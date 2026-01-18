@@ -91,7 +91,8 @@
                     </div>
                 </div>
 
-                <% const isFav=(typeof favoriteProductIds !=='undefined' && favoriteProductIds.includes(product.id)); %>
+                <% const isFav=(typeof favoriteProductIds !=='undefined' && favoriteProductIds.some(id=> id ==
+                    product.id)); %>
                     <div class="d-flex gap-2">
                         <button
                             onclick="addToCart('<%= product.id %>', document.getElementById('quantity-input').value)"

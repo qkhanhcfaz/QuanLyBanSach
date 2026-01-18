@@ -36,6 +36,28 @@
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/') ? 'active-admin' : '' %>">
                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                 </a>
+
+                <!-- Thống kê (Dropdown) -->
+                <a href="#statisticsSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+                    class="list-group-item list-group-item-action bg-transparent text-light dropdown-toggle">
+                    <i class="fas fa-chart-bar me-2"></i>Thống kê
+                </a>
+                <div class="collapse <%= (typeof path !== 'undefined' && path.startsWith('/statistics')) ? 'show' : '' %>"
+                    id="statisticsSubmenu">
+                    <a href="/admin/statistics/revenue"
+                        class="list-group-item list-group-item-action bg-transparent text-light ps-5 border-0 small <%= (typeof path !== 'undefined' && path === '/statistics/revenue') ? 'active-admin' : '' %>">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Doanh thu
+                    </a>
+                    <a href="/admin/statistics/orders"
+                        class="list-group-item list-group-item-action bg-transparent text-light ps-5 border-0 small <%= (typeof path !== 'undefined' && path === '/statistics/orders') ? 'active-admin' : '' %>">
+                        <i class="fas fa-shopping-bag me-2"></i>Đơn hàng
+                    </a>
+                    <a href="/admin/statistics/best-selling"
+                        class="list-group-item list-group-item-action bg-transparent text-light ps-5 border-0 small <%= (typeof path !== 'undefined' && path === '/statistics/best-selling') ? 'active-admin' : '' %>">
+                        <i class="fas fa-cart-arrow-down me-2"></i>Sản phẩm bán chạy
+                    </a>
+                </div>
+
                 <!-- Sản phẩm -->
                 <a href="/admin/products"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/products') ? 'active-admin' : '' %>">
@@ -51,11 +73,11 @@
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/orders') ? 'active-admin' : '' %>">
                     <i class="fas fa-shopping-cart me-2"></i>Đơn hàng
                 </a>
-                <!-- Nhập hàng -->
-                <a href="/admin/receipts"
+                <!-- Nhập hàng (Đã ẩn) -->
+                <!-- <a href="/admin/receipts"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/receipts') ? 'active-admin' : '' %>">
                     <i class="fas fa-receipt me-2"></i>Nhập hàng
-                </a>
+                </a> -->
                 <a href="/admin/promotions"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/promotions') ? 'active-admin' : '' %>">
                     <i class="fas fa-tags me-2"></i>Khuyến mãi
