@@ -222,8 +222,9 @@ const renderProductDetailPage = async (req, res) => {
 
     // 6) Check if user can review (Has purchased & Delivered > Reviewed)
     let canReview = false;
+    let deliveredOrderCount = 0;
     if (req.user) {
-      const deliveredOrderCount = await db.Order.count({
+      deliveredOrderCount = await db.Order.count({
         where: {
           user_id: req.user.id,
           trang_thai_don_hang: 'delivered'
@@ -254,7 +255,8 @@ const renderProductDetailPage = async (req, res) => {
       avgRating,
       favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
       user: req.user,
-      canReview
+      canReview,
+      deliveredOrderCount: req.user ? deliveredOrderCount : 0
     });
 
   } catch (error) {

@@ -137,84 +137,113 @@
 
         </div>
 
-        <!-- Tab Mô tả và Đánh giá (Giữ nguyên) -->
-        <div class="product-description-tabs card mt-5">
-            <div class="card mt-5">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs" id="productTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="description-tab" data-bs-toggle="tab"
-                                data-bs-target="#description-pane" type="button" role="tab">Mô Tả Sản Phẩm</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab"
-                                data-bs-target="#reviews-pane" type="button" role="tab">
-                                Đánh giá (<span id="review-count">
-                                    <%= reviews.length %>
-                                </span>)
-                            </button>
-                        </li>
-                    </ul>
+        <!-- MÔ TẢ SẢN PHẨM -->
+        <div class="card my-5 shadow-sm border-0">
+            <div class="card-body p-4">
+                <h4 class="card-title fw-bold mb-4 border-bottom pb-2">Mô Tả Sản Phẩm</h4>
+                <div class="product-description-content">
+                    <%- product.mo_ta_ngan || "Hiện chưa có mô tả chi tiết cho sản phẩm này." %>
                 </div>
-                <div class="card-body">
-                    <div class="tab-content" id="productTabContent">
+            </div>
+        </div>
 
-                        <!-- === Nội dung Tab Mô tả === -->
-                        <div class="tab-pane fade show active" id="description-pane" role="tabpanel">
-                            <!-- Sử dụng EJS unescaped output '<' để render đúng định dạng HTML -->
-                            <%- product.mo_ta_ngan || "Hiện chưa có mô tả chi tiết cho sản phẩm này." %>
+        <!-- ĐÁNH GIÁ SẢN PHẨM -->
+        <div class="card my-5 shadow-sm border-0">
+            <div class="card-body p-4">
+                <h4 class="card-title fw-bold mb-4 border-bottom pb-2">Đánh Giá & Nhận Xét</h4>
+
+                <!-- DASHBOARD ĐÁNH GIÁ -->
+                <div class="row mb-5 border-bottom pb-4">
+                    <div class="col-md-4 text-center border-end">
+                        <h2 class="display-3 fw-bold text-warning">
+                            <%= avgRating %>
+                        </h2>
+                        <div class="text-warning mb-2">
+                            <% const stars=Math.round(Number(avgRating)); %>
+                                <% for(let i=0; i < stars; i++) { %>★<% } %>
+                                        <% for(let i=0; i < 5 - stars; i++) { %>☆<% } %>
                         </div>
-
-                        <!--  Nội dung Tab Đánh giá -->
-                        <div class="tab-pane fade" id="reviews-pane" role="tabpanel">
-
-                            <!-- Danh sách các đánh giá đã có -->
-                            <div id="review-list">
-                                <% if (reviews && reviews.length> 0) { %>
-                                    <% reviews.forEach(review=> { %>
-                                        <div class="d-flex mb-4">
-                                            <div class="flex-shrink-0">
-                                                <img class="rounded-circle"
-                                                    src="https://ui-avatars.com/api/?name=<%= (review.user && review.user.ho_ten) ? review.user.ho_ten.split(' ').join('+') : 'A' %>&background=random"
-                                                    alt="<%= (review.user && review.user.ho_ten) ? review.user.ho_ten : 'Ẩn danh' %>">
-                                            </div>
-                                            <div class="ms-3">
-                                                <div class="fw-bold">
-                                                    <%= (review.user && review.user.ho_ten) ? review.user.ho_ten
-                                                        : 'Người dùng ẩn danh' %>
-                                                </div>
-                                                <!-- Hiển thị đánh giá sao -->
-                                                <% if (review.rating) { %>
-                                                    <div class="text-warning my-1">
-                                                        <% for(let i=0; i < review.rating; i++) { %>★<% } %>
-                                                                <% for(let i=0; i < 5 - review.rating; i++) { %>☆<% } %>
-                                                    </div>
-                                                    <% } %>
-                                                        <!-- Hiển thị nội dung bình luận -->
-                                                        <p class="mb-1">
-                                                            <%= review.comment %>
-                                                        </p>
-                                                        <small class="text-muted">Đăng vào: <%= new
-                                                                Date(review.createdAt).toLocaleDateString('vi-VN') %>
-                                                        </small>
-                                            </div>
+                        <p class="text-muted">
+                            <%= reviews.length %> đánh giá
+                        </p>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex flex-column justify-content-center h-100">
+                            <% const starCounts={1:0, 2:0, 3:0, 4:0, 5:0}; reviews.forEach(r=> { starCounts[r.rating]++
+                                });
+                                const total = reviews.length || 1;
+                                %>
+                                <% for(let s=5; s>=1; s--) { %>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="me-2 text-nowrap">
+                                            <%= s %> sao
+                                        </span>
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" role="progressbar"
+                                                style="width: <%= (starCounts[s]/total)*100 %>%;"
+                                                aria-valuenow="<%= starCounts[s] %>" aria-valuemin="0"
+                                                aria-valuemax="<%= total %>"></div>
                                         </div>
-                                        <% }) %>
-                                            <% } else { %>
-                                                <p id="no-reviews-message">Chưa có đánh giá nào cho sản phẩm này. Hãy là
-                                                    người đầu tiên đánh giá!</p>
-                                                <% } %>
+                                        <span class="ms-2 text-muted small">
+                                            <%= starCounts[s] %>
+                                        </span>
+                                    </div>
+                                    <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DANH SÁCH ĐÁNH GIÁ -->
+                <div id="review-list">
+                    <% if (reviews && reviews.length> 0) { %>
+                        <% reviews.forEach(review=> { %>
+                            <div class="d-flex mb-4 border-bottom pb-3">
+                                <div class="flex-shrink-0">
+                                    <img class="rounded-circle shadow-sm"
+                                        src="https://ui-avatars.com/api/?name=<%= (review.user && review.user.ho_ten) ? review.user.ho_ten.split(' ').join('+') : 'A' %>&background=random&size=50"
+                                        alt="<%= (review.user && review.user.ho_ten) ? review.user.ho_ten : 'Ẩn danh' %>"
+                                        width="50" height="50">
+                                </div>
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="fw-bold mb-0">
+                                            <%= (review.user && review.user.ho_ten) ? review.user.ho_ten
+                                                : 'Người dùng ẩn danh' %>
+                                        </h6>
+                                        <small class="text-muted">
+                                            <%= new Date(review.createdAt).toLocaleDateString('vi-VN') %>
+                                        </small>
+                                    </div>
+
+                                    <div class="text-warning my-1 small">
+                                        <% for(let i=0; i < review.rating; i++) { %>★<% } %>
+                                                <% for(let i=0; i < 5 - review.rating; i++) { %>☆<% } %>
+                                    </div>
+
+                                    <p class="mb-0 mt-2 text-dark">
+                                        <%= review.comment %>
+                                    </p>
+                                </div>
                             </div>
+                            <% }) %>
+                                <% } else { %>
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="far fa-comment-dots fa-3x mb-3"></i>
+                                        <p>Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
+                                    </div>
+                                    <% } %>
+                </div>
 
-                            <hr>
-
-                            <!-- Form gửi đánh giá mới -->
-                            <h5 class="mt-4">Viết đánh giá của bạn</h5>
+                <!-- FORM ĐÁNH GIÁ -->
+                <% if (user) { %>
+                    <% if (canReview) { %>
+                        <div class="bg-light p-4 rounded mt-4">
+                            <h5 class="mb-3">Viết đánh giá của bạn</h5>
                             <form id="review-form">
-                                <!-- Đánh giá sao -->
                                 <div class="mb-3">
-                                    <label class="form-label">Đánh giá của bạn:</label>
-                                    <div class="star-rating">
+                                    <label class="form-label fw-bold">Đánh giá của bạn:</label>
+                                    <div class="star-rating big-stars">
+                                        <!-- Cần CSS cho big-stars nếu muốn sao to hơn -->
                                         <input type="radio" id="5-stars" name="rating" value="5" /><label for="5-stars"
                                             class="star">★</label>
                                         <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars"
@@ -227,20 +256,34 @@
                                             class="star">★</label>
                                     </div>
                                 </div>
-                                <!-- Nội dung bình luận -->
                                 <div class="mb-3">
-                                    <label for="review-comment" class="form-label">Nhận xét của bạn</label>
-                                    <textarea class="form-control" id="review-comment" rows="3" required></textarea>
+                                    <label for="review-comment" class="form-label fw-bold">Nhận xét chi tiết</label>
+                                    <textarea class="form-control" id="review-comment" rows="4"
+                                        placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..." required></textarea>
                                 </div>
-                                <!-- Nút gửi -->
-                                <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
-                                <!-- Thông báo -->
+                                <button type="submit" class="btn btn-primary px-4">Gửi Đánh Giá</button>
                                 <div id="review-alert" class="mt-3" style="display: none;"></div>
                             </form>
-
                         </div>
-                    </div>
-                </div>
+                        <% } else { %>
+                            <div class="alert alert-info mt-4 d-flex align-items-center">
+                                <i class="fas fa-info-circle fa-2x me-3"></i>
+                                <div>
+                                    <% if (deliveredOrderCount===0) { %>
+                                        <strong>Thông báo:</strong> Bạn chưa mua sản phẩm này nên chưa thể đánh giá.
+                                        <% } else { %>
+                                            <strong>Thông báo:</strong> Bạn đã đánh giá hết số lượt cho phép (1 lần/1
+                                            đơn hàng). Hãy mua thêm để tiếp tục đánh giá nhé!
+                                            <% } %>
+                                </div>
+                            </div>
+                            <% } %>
+                                <% } else { %>
+                                    <div class="alert alert-warning mt-4 text-center">
+                                        Bạn cần <a href="/login" class="fw-bold alert-link">Đăng nhập</a> để viết đánh
+                                        giá.
+                                    </div>
+                                    <% } %>
             </div>
         </div>
 
