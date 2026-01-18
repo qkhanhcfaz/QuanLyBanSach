@@ -42,6 +42,14 @@ try { db.Receipt = require('./receiptModel'); } catch (e) { console.warn('Receip
 try { db.ReceiptItem = require('./receiptItemModel'); } catch (e) { console.warn('ReceiptItem model not available:', e.message); }
 try { db.Promotion = require('./promotionModel'); } catch (e) { console.warn('Promotion model not available:', e.message); }
 
+const Message = require('./messageModel');
+db.Message = Message;
+
+// Define Associations
+// User <-> Message
+db.User.hasMany(db.Message, { foreignKey: 'user_id', as: 'messages' });
+db.Message.belongsTo(db.User, { foreignKey: 'user_id', as: 'user' });
+
 // Call associate if it exists
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
