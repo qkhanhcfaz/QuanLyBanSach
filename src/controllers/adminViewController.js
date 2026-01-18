@@ -295,7 +295,8 @@ const updateSiteSettings = async (req, res) => {
     try {
         const {
             ten_website, dia_chi, email, so_dien_thoai, nam_ban_quyen,
-            facebook, instagram, twitter, linkedin
+            facebook, instagram, twitter, linkedin,
+            mo_ta // <--- Thêm nhận mo_ta từ form
         } = req.body;
 
         let site = await SiteSetting.findOne();
@@ -308,6 +309,7 @@ const updateSiteSettings = async (req, res) => {
         site.email = email;
         site.so_dien_thoai = so_dien_thoai;
         site.nam_ban_quyen = nam_ban_quyen || 2026;
+        site.mo_ta = mo_ta; // <--- Lưu vào DB
 
         site.facebook = facebook;
         site.instagram = instagram;

@@ -10,8 +10,7 @@ const User = sequelize.define('User', {
     },
     role_id: {
         type: DataTypes.BIGINT,
-        allowNull: false,
-        defaultValue: 2
+        allowNull: false
     },
     email: {
         type: DataTypes.STRING,

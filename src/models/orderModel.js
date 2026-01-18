@@ -34,7 +34,8 @@ const Order = sequelize.define('Order', {
     },
     so_dt_nguoi_nhan: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        defaultValue: ''
     },
     dia_chi_giao_hang: {
         type: DataTypes.STRING,
