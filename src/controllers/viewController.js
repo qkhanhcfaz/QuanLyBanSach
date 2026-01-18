@@ -136,7 +136,11 @@ const renderProductListPage = async (req, res) => {
       products: rows,
       allCategories,
       currentCategory: currentCategoryInfo,
-      favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
+      favoriteProductIds: await (async () => {
+        const ids = req.user ? await getMyFavoriteIds(req.user.id) : [];
+        if (req.user) console.log('DEBUG_FAV: User', req.user.id, 'IDs:', ids, 'Type:', typeof ids[0]);
+        return ids;
+      })(),
       queryParams: req.query,
       pagination: {
         currentPage: page,

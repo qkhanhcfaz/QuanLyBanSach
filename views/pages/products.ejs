@@ -70,12 +70,14 @@
 
                         <select name="sort" class="form-select form-select-sm" onchange="this.form.requestSubmit()"
                             style="width: 200px;">
-                            <option value="createdAt-DESC" <% if (queryParams.sortBy==='createdAt' &&
+                            <option value="createdAt-DESC" <% if (queryParams.sortBy===' createdAt' &&
                                 queryParams.order==='DESC' ) { %>selected<% } %>>Mới nhất</option>
                             <option value="gia_bia-ASC" <% if (queryParams.sortBy==='gia_bia' &&
-                                queryParams.order==='ASC' ) { %>selected<% } %>>Giá: Thấp đến Cao</option>
+                                queryParams.order==='ASC' ) { %>selected<% } %>>Giá: Thấp đến Cao
+                            </option>
                             <option value="gia_bia-DESC" <% if (queryParams.sortBy==='gia_bia' &&
-                                queryParams.order==='DESC' ) { %>selected<% } %>>Giá: Cao đến Thấp</option>
+                                queryParams.order==='DESC' ) { %>selected<% } %>>Giá: Cao đến Thấp
+                            </option>
                             <option value="ten_sach-ASC" <% if (queryParams.sortBy==='ten_sach' &&
                                 queryParams.order==='ASC' ) { %>selected<% } %>>Tên: A-Z</option>
                         </select>
@@ -106,36 +108,34 @@
                                         </h6>
                                         <p class="card-text text-danger fw-bold">
                                             <%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %>đ
-                                        </p>
-                                    </div>
-                                    <div class="card-footer bg-white border-0 py-2 d-flex gap-2">
-                                        <button onclick="addToCart('<%= product.id %>')"
-                                            class="btn btn-sm btn-primary flex-grow-1">Thêm vào giỏ</button>
+                                                <div class="card-footer bg-white border-0 py-2 d-flex gap-2">
+                                                    <button onclick="addToCart('<%= product.id %>')"
+                                                        class="btn btn-sm btn-primary flex-grow-1">Thêm vào giỏ</button>
 
-                                        <% const isFav=(typeof favoriteProductIds !=='undefined' &&
-                                            favoriteProductIds.includes(product.id)); %>
-                                            <button class="btn btn-favorite-card btn-favorite border"
-                                                data-id="<%= product.id %>"
-                                                title="<%= isFav ? 'Bỏ thích' : 'Yêu thích' %>">
-                                                <i
-                                                    class="<%= isFav ? 'fas text-danger' : 'far text-danger' %> fa-heart"></i>
-                                            </button>
+                                                    <% const isFav=(typeof favoriteProductIds !=='undefined' &&
+                                                        favoriteProductIds.some(id=> id == product.id)); %>
+                                                        <button class="btn btn-favorite-card btn-favorite border"
+                                                            data-id="<%= product.id %>"
+                                                            title="<%= isFav ? 'Bỏ thích' : 'Yêu thích' %>">
+                                                            <i
+                                                                class="<%= isFav ? 'fas text-danger' : 'far text-danger' %> fa-heart"></i>
+                                                        </button>
+                                                </div>
                                     </div>
                                 </div>
+                                <% }) %>
                             </div>
-                            <% }) %>
-                    </div>
-                    <% } else { %>
-                        <!-- Nếu KHÔNG có sản phẩm, hiển thị thông báo một cách an toàn -->
-                        <div class="text-center p-5 border rounded bg-light">
-                            <p class="lead mb-3">Không tìm thấy sản phẩm nào phù hợp.</p>
-                            <a href="/products" class="btn btn-primary">Xem tất cả sản phẩm</a>
-                        </div>
-                        <% } %>
+                            <% } else { %>
+                                <!-- Nếu KHÔNG có sản phẩm, hiển thị thông báo một cách an toàn -->
+                                <div class="text-center p-5 border rounded bg-light">
+                                    <p class="lead mb-3">Không tìm thấy sản phẩm nào phù hợp.</p>
+                                    <a href="/products" class="btn btn-primary">Xem tất cả sản phẩm</a>
+                                </div>
+                                <% } %>
 
-                            <!-- Phân trang -->
-                            <%- include('../partials/pagination', { pagination: pagination, queryParams: queryParams })
-                                %>
+                                    <!-- Phân trang -->
+                                    <%- include('../partials/pagination', { pagination: pagination, queryParams:
+                                        queryParams }) %>
 
             </main>
         </div>
