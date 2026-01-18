@@ -19,7 +19,8 @@ const {
     updateSiteSettings,
     renderRevenueStatisticsPage,
     renderOrderStatisticsPage,
-    renderBestSellingStatisticsPage
+    renderBestSellingStatisticsPage,
+    renderAdminReviewsPage
 } = require('../controllers/adminViewController');
 
 // TẤT CẢ CÁC ROUTE TRONG FILE NÀY SẼ TỰ ĐỘNG CÓ TIỀN TỐ /admin
@@ -60,5 +61,8 @@ router.post('/settings', protect, admin, updateSiteSettings);
 
 // Quản lý Người dùng
 router.get('/users', protect, admin, renderAdminUsersPage);
+
+// Quản lý Đánh giá
+router.get('/reviews', protect, admin, renderAdminReviewsPage);
 
 module.exports = router;
