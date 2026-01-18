@@ -8,6 +8,8 @@ const { Product, Category, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
+const { protect, admin } = require('../middlewares/authMiddleware');
+const { createReview } = require('../controllers/productController');
 
 // Cấu hình Multer để upload ảnh
 const storage = multer.diskStorage({
@@ -499,6 +501,9 @@ router.get('/:id/stock', async (req, res) => {
 // GET /api/products/:id - Lấy chi tiết sản phẩm
 // (Ưu tiên route này nằm SAU route :id/stock để tránh trùng lặp nếu có logic conflict, nhưng stock cụ thể hơn nên để trước là an toàn nhất)
 router.get('/:id', getProductById);
+
+// POST /api/products/:id/reviews - Gửi đánh giá
+router.post('/:id/reviews', protect, createReview);
 
 
 // POST /api/products - Tạo sản phẩm mới (có upload ảnh)
