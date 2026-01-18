@@ -47,13 +47,20 @@ const toggleFavorite = async (req, res) => {
  */
 const getMyFavoriteIds = async (userId) => {
     try {
+        if (!Favorite) {
+            console.error('CRITICAL ERROR: Favorite model is UNDEFINED in favoriteController');
+            return [];
+        }
+        console.log(`DEBUG_CTRL: Fetching favorites for user ${userId} (Type: ${typeof userId})`);
         const favorites = await Favorite.findAll({
             where: { user_id: userId },
             attributes: ['product_id']
         });
-        return favorites.map(f => f.product_id);
+        const result = favorites.map(f => f.product_id);
+        console.log(`DEBUG_CTRL: Found ${result.length} favorites: ${result.join(',')}`);
+        return result;
     } catch (error) {
-        console.error('Lỗi lấy danh sách yêu thích:', error);
+        console.error('Lỗi lấy danh sách yêu thích (DETAIL):', error);
         return [];
     }
 };
