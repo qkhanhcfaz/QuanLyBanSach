@@ -44,6 +44,7 @@ const receiptRouter = require('./src/routes/receiptRouter');
 const postRouter = require('./src/routes/postRouter');
 const provinceRouter = require('./src/routes/provinceRouter');
 const favoriteRouter = require('./src/routes/favoriteRouter');
+const chatRouter = require('./src/routes/chatRouter');
 
 // --- 3. KHỞI TẠO APP ---
 const app = express();
@@ -120,6 +121,7 @@ app.use('/api/receipts', receiptRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/provinces', provinceRouter);
 app.use('/api/favorites', favoriteRouter);
+app.use('/api/chat', chatRouter);
 
 // B. Admin Routes
 app.use('/admin', adminRouter);
