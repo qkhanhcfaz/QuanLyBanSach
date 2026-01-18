@@ -101,40 +101,41 @@ document.addEventListener('DOMContentLoaded', () => {
      * HÀM VALIDATE DỮ LIỆU
      */
     function validateForm(data) {
+        let errors = [];
+
         // 1. Validate Họ tên
         if (!data.ten_nguoi_nhan || data.ten_nguoi_nhan.length > 50) {
-            return "Họ và tên bắt buộc và không quá 50 ký tự.";
+            errors.push("Họ và tên bắt buộc và không quá 50 ký tự.");
         }
 
         // 2. Validate Số điện thoại (10 số, bắt đầu số 0)
         const phoneRegex = /^0\d{9}$/;
         if (!phoneRegex.test(data.sdt_nguoi_nhan)) {
-            return "Số điện thoại phải bao gồm 10 chữ số và bắt đầu bằng số 0.";
+            errors.push("Số điện thoại phải bao gồm 10 chữ số và bắt đầu bằng số 0.");
         }
 
         // 3. Validate Email (Có @ và đuôi .com)
-        // Regex đơn giản kiểm tra .com ở cuối
         const emailRegex = /^[^\s@]+@[^\s@]+\.com$/i;
         if (!emailRegex.test(data.email_nguoi_nhan)) {
-            return "Email không hợp lệ. Vui lòng sử dụng email có đuôi .com";
+            errors.push("Email không hợp lệ. Vui lòng sử dụng email có đuôi .com");
         }
 
         // 4. Validate Địa chỉ chi tiết
         if (!data.addressDetailValue || data.addressDetailValue.length > 255) {
-            return "Địa chỉ chi tiết bắt buộc và không quá 255 ký tự.";
+            errors.push("Địa chỉ chi tiết bắt buộc và không quá 255 ký tự.");
         }
 
         // 5. Validate Địa chỉ hành chính
         if (data.provinceText === "Chọn..." || data.districtText === "Chọn..." || data.wardText === "Chọn...") {
-            return "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.";
+            errors.push("Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.");
         }
 
         // 6. Validate Ghi chú
         if (data.ghi_chu_khach_hang && data.ghi_chu_khach_hang.length > 500) {
-            return "Ghi chú không được vượt quá 500 ký tự.";
+            errors.push("Ghi chú không được vượt quá 500 ký tự.");
         }
 
-        return null; // Không có lỗi
+        return errors.length > 0 ? errors : null;
     }
 
 
@@ -157,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const addressDetailValue = addressDetailInput.value.trim();
 
         // --- VALIDATION DỮ LIỆU ---
-        const validationError = validateForm({
+        const validationErrors = validateForm({
             ten_nguoi_nhan,
             sdt_nguoi_nhan,
             email_nguoi_nhan,
@@ -168,9 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
             addressDetailValue
         });
 
-        if (validationError) {
+        if (validationErrors) {
             alertBox.className = 'alert alert-danger';
-            alertBox.textContent = validationError;
+            // Hiển thị danh sách lỗi gạch đầu dòng
+            alertBox.innerHTML = validationErrors.map(err => `• ${err}`).join('<br>');
             alertBox.style.display = 'block';
             window.scrollTo(0, 0); // Cuộn lên để xem lỗi
             return;
