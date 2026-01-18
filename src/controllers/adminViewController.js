@@ -1,7 +1,7 @@
 // File: /src/controllers/adminViewController.js
 // GIAI ĐOẠN 1: Code cơ bản - Hiển thị được dữ liệu là thành công
 const db = require('../models');
-const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, sequelize } = db;
+const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, Role, sequelize } = db;
 
 /**
  * Render Dashboard
@@ -156,12 +156,23 @@ const renderAdminOrderDetailPage = async (req, res) => {
 /**
  * Render User
  */
-const renderAdminUsersPage = (req, res) => {
-    res.render('admin/pages/users', {
-        title: 'Quản lý Người dùng',
-        user: req.user,
-        path: '/users'
-    });
+const renderAdminUsersPage = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            include: [{ model: Role, as: 'role' }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.render('admin/pages/users', {
+            title: 'Quản lý Người dùng',
+            user: req.user,
+            path: '/users',
+            users: users
+        });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).send("Lỗi server");
+    }
 };
 
 /**
