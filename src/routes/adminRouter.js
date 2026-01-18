@@ -61,4 +61,8 @@ router.post('/settings', protect, admin, updateSiteSettings);
 // Quản lý Người dùng
 router.get('/users', protect, admin, renderAdminUsersPage);
 
+// Quản lý Chat Support
+const { renderAdminChatPage } = require('../controllers/chatController');
+router.get('/chat', protect, admin, renderAdminChatPage);
+
 module.exports = router;
