@@ -63,37 +63,37 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-         const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
 
-    const labels = [];
-    const data = [];
-    const monthlyDataMap = new Map(); // Dùng Map để truy cập nhanh
+        const labels = [];
+        const data = [];
+        const monthlyDataMap = new Map(); // Dùng Map để truy cập nhanh
 
-    // Đưa dữ liệu từ API vào Map với key là "năm-tháng"
-    revenueData.forEach(item => {
-        const key = `${item.year}-${item.month}`;
-        monthlyDataMap.set(key, parseFloat(item.total));
-    });
+        // Đưa dữ liệu từ API vào Map với key là "năm-tháng"
+        revenueData.forEach(item => {
+            const key = `${item.year}-${item.month}`;
+            monthlyDataMap.set(key, parseFloat(item.total));
+        });
 
-    // Lặp qua từng tháng trong khoảng thời gian đã chọn
-    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        // Lặp qua từng tháng trong khoảng thời gian đã chọn
+        let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 
-    while (currentDate <= endDate) {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1; // getMonth() trả về 0-11
-        const key = `${year}-${month}`;
+        while (currentDate <= endDate) {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1; // getMonth() trả về 0-11
+            const key = `${year}-${month}`;
 
-        // Thêm nhãn "Tháng X/YYYY" vào mảng labels
-        labels.push(`Tháng ${month}/${year}`);
+            // Thêm nhãn "Tháng X/YYYY" vào mảng labels
+            labels.push(`Tháng ${month}/${year}`);
 
-        // Lấy dữ liệu từ Map, nếu không có thì mặc định là 0
-        data.push(monthlyDataMap.get(key) || 0);
-        
-        // Chuyển sang tháng tiếp theo
-        currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-        
+            // Lấy dữ liệu từ Map, nếu không có thì mặc định là 0
+            data.push(monthlyDataMap.get(key) || 0);
+
+            // Chuyển sang tháng tiếp theo
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+
         revenueChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -126,7 +126,87 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     };
-    
+
+    const renderOrdersChart = (ordersData, startDateStr, endDateStr) => {
+        const canvas = document.getElementById('orders-chart');
+        const ctx = canvas?.getContext('2d');
+        if (!ctx) return;
+
+        if (chartTitleEl) chartTitleEl.textContent = "Biểu đồ số lượng đơn hàng";
+
+        if (!ordersData || ordersData.length === 0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#858796";
+            ctx.textAlign = "center";
+            ctx.fillText("Không có dữ liệu đơn hàng trong khoảng thời gian này.", canvas.width / 2, canvas.height / 2);
+            return;
+        }
+
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+
+        const labels = [];
+        const data = [];
+        const monthlyDataMap = new Map();
+
+        ordersData.forEach(item => {
+            const key = `${item.year}-${item.month}`;
+            monthlyDataMap.set(key, parseInt(item.count));
+        });
+
+        let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+        while (currentDate <= endDate) {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+            const key = `${year}-${month}`;
+
+            labels.push(`Tháng ${month}/${year}`);
+            data.push(monthlyDataMap.get(key) || 0);
+
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+
+        if (revenueChartInstance) {
+            revenueChartInstance.destroy();
+        }
+
+        revenueChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Số đơn hàng",
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (tooltipItems) => `Tháng ${tooltipItems[0].label}`,
+                            label: (context) => `${context.parsed.y} đơn hàng`
+                        }
+                    }
+                }
+            }
+        });
+    };
+
     const renderTopProducts = (products) => {
         if (!topProductsBody) return;
         topProductsBody.innerHTML = '';
@@ -168,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // === HÀM CHÍNH ===
     const fetchAndRenderDashboard = async (startDate, endDate) => {
         showLoadingState();
-        
+
         const params = new URLSearchParams({ startDate, endDate });
         const apiUrl = `/api/dashboard/stats?${params.toString()}`;
 
@@ -180,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(data.message || 'Lỗi không xác định.');
 
             renderRevenueChart(data.revenueByMonth, startDate, endDate);
+            renderOrdersChart(data.ordersByMonth, startDate, endDate);
             renderTopProducts(data.topSellingProducts);
             renderTopCustomers(data.topCustomers);
 
@@ -217,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (startDateInput) {
         startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
     }
-    
+
     // Tải dữ liệu lần đầu khi trang được mở
     fetchAndRenderDashboard(startDateInput.value, endDateInput.value);
 });

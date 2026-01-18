@@ -15,6 +15,11 @@ const Role = require('./roleModel');
 const User = require('./userModel');
 const Order = require('./orderModel');
 const OrderItem = require('./orderItemModel');
+// const Comment = require('./commentModel'); 
+const Review = require('./reviewModel');
+// const Receipt = require('./receiptModel');
+// const ReceiptItem = require('./receiptItemModel');
+// const Promotion = require('./promotionModel');
 
 const db = {};
 
@@ -32,6 +37,10 @@ try { db.CartItem = require('./cartItemModel'); } catch(e) {}
 try { db.Favorite = require('./favoriteModel'); } catch(e) {}
 db.Order = Order;
 db.OrderItem = OrderItem;
+try { db.Review = require('./reviewModel'); } catch (e) { console.warn('Review model not available:', e.message); }
+try { db.Receipt = require('./receiptModel'); } catch (e) { console.warn('Receipt model not available:', e.message); }
+try { db.ReceiptItem = require('./receiptItemModel'); } catch (e) { console.warn('ReceiptItem model not available:', e.message); }
+try { db.Promotion = require('./promotionModel'); } catch (e) { console.warn('Promotion model not available:', e.message); }
 
 // Call associate if it exists
 Object.keys(db).forEach(modelName => {
@@ -42,3 +51,4 @@ Object.keys(db).forEach(modelName => {
 
 db.sequelize = sequelize;
 module.exports = db;
+
