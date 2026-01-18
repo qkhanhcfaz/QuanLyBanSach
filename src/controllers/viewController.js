@@ -212,6 +212,31 @@ const renderProductDetailPage = async (req, res) => {
       include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }]
     });
 
+    // 6) Check if user can review (Has purchased & Delivered > Reviewed)
+    let canReview = false;
+    if (req.user) {
+      const deliveredOrderCount = await db.Order.count({
+        where: {
+          user_id: req.user.id,
+          trang_thai_don_hang: 'delivered'
+        },
+        include: [{
+          model: db.OrderItem,
+          as: 'orderItems',
+          where: { product_id: id }
+        }]
+      });
+
+      const existingReviewCount = await db.Review.count({
+        where: {
+          user_id: req.user.id,
+          product_id: id
+        }
+      });
+
+      canReview = deliveredOrderCount > existingReviewCount;
+    }
+
     res.render('pages/product-detail', {
       title: product.ten_sach,
       product,
@@ -220,7 +245,8 @@ const renderProductDetailPage = async (req, res) => {
       favoriteCount,
       avgRating,
       favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
-      user: req.user
+      user: req.user,
+      canReview
     });
 
   } catch (error) {

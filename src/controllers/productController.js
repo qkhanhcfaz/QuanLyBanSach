@@ -400,6 +400,63 @@ const getProductStock = async (req, res) => {
     }
 };
 
+const createReview = async (req, res) => {
+    try {
+        const { rating, comment } = req.body;
+        const productId = req.params.id;
+        const userId = req.user.id;
+
+        // 1. Kiểm tra validation
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Vui lòng chọn số sao từ 1 đến 5.' });
+        }
+
+        // 2. Tính số lượng đơn hàng đã giao thành công chứa sản phẩm này
+        const deliveredOrderCount = await db.Order.count({
+            where: {
+                user_id: userId,
+                trang_thai_don_hang: 'delivered'
+            },
+            include: [{
+                model: db.OrderItem,
+                as: 'orderItems',
+                where: { product_id: productId }
+            }]
+        });
+
+        if (deliveredOrderCount === 0) {
+            return res.status(400).json({ message: 'Bạn chưa mua sản phẩm này hoặc đơn hàng chưa được giao.' });
+        }
+
+        // 3. Tính số lượng đánh giá hiện tại của user cho sản phẩm này
+        const existingReviewCount = await db.Review.count({
+            where: {
+                user_id: userId,
+                product_id: productId
+            }
+        });
+
+        // 4. Kiểm tra quyền đánh giá (Mỗi đơn hàng được 1 đánh giá)
+        if (existingReviewCount >= deliveredOrderCount) {
+            return res.status(400).json({ message: 'Bạn đã đánh giá hết số lần cho phép tương ứng với số đơn hàng đã mua.' });
+        }
+
+        // 5. Tạo đánh giá mới
+        const review = await db.Review.create({
+            user_id: userId,
+            product_id: productId,
+            rating: parseInt(rating),
+            comment: comment
+        });
+
+        res.status(201).json({ message: 'Đánh giá đã được gửi thành công!', review });
+
+    } catch (error) {
+        console.error("Lỗi khi tạo đánh giá:", error);
+        res.status(500).json({ message: "Lỗi server khi tạo đánh giá.", error: error.message });
+    }
+};
+
 module.exports = {
     createProduct,
     getAllProducts,
@@ -408,5 +465,5 @@ module.exports = {
     deleteProduct,
     exportProductsToExcel,
     getBestsellerProducts,
-
+    createReview,
 };
