@@ -32,14 +32,14 @@
                     <h2 class="text-danger fw-bold mb-2">
                         <%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %> đ
                     </h2>
-                    
+
                     <!-- Stock Status Badge -->
                     <div class="mb-3">
-                        <% if(product.so_luong_ton_kho > 0) { %>
+                        <% if(product.so_luong_ton_kho> 0) { %>
                             <span class="badge bg-success"><i class="fas fa-check me-1"></i>Còn hàng</span>
-                        <% } else { %>
-                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Hết hàng</span>
-                        <% } %>
+                            <% } else { %>
+                                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Hết hàng</span>
+                                <% } %>
                     </div>
 
                     <!-- Realtime Stats -->
@@ -64,9 +64,9 @@
                         </div>
                     </div>
 
-                    <p class="text-muted">
-                        <%= product.mo_ta_ngan ? product.mo_ta_ngan : 'Đang cập nhật mô tả...' %>
-                    </p>
+                    <div class="text-muted">
+                        <%- product.mo_ta_ngan ? product.mo_ta_ngan : 'Đang cập nhật mô tả...' %>
+                    </div>
                 </div>
 
                 <!-- Thông tin chi tiết khác -->
