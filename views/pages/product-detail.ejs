@@ -29,9 +29,18 @@
 
                 <!-- Giá sản phẩm -->
                 <div class="product-price-wrapper mb-3">
-                    <h2 class="text-danger fw-bold mb-3">
+                    <h2 class="text-danger fw-bold mb-2">
                         <%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %> đ
                     </h2>
+                    
+                    <!-- Stock Status Badge -->
+                    <div class="mb-3">
+                        <% if(product.so_luong_ton_kho > 0) { %>
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Còn hàng</span>
+                        <% } else { %>
+                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Hết hàng</span>
+                        <% } %>
+                    </div>
 
                     <!-- Realtime Stats -->
                     <div class="d-flex align-items-center mb-3">
@@ -58,25 +67,11 @@
                     <p class="text-muted">
                         <%= product.mo_ta_ngan ? product.mo_ta_ngan : 'Đang cập nhật mô tả...' %>
                     </p>
-                    <!-- Trong tương lai, nếu có giá gốc, bạn có thể bỏ comment dòng này -->
-                    <!-- <span class="product-price-old text-muted text-decoration-line-through">86.000đ</span> -->
                 </div>
 
                 <!-- Thông tin chi tiết khác -->
-                <ul class="product-specs list-unstyled text-muted">
-                    <li>Năm xuất bản: <%= product.nam_xuat_ban || 'N/A' %>
-                    </li>
-                    <li>Số trang: <%= product.so_trang || 'N/A' %>
-                    </li>
-                    <li>Sẵn có: <span id="current-stock" class="fw-bold text-success">
-                            <%= product.so_luong_ton_kho %>
-                        </span> sản phẩm</li>
-                    <% if(product.category) { %>
-                        <li>Danh mục: <a href="/products?category=<%= product.category.id %>">
-                                <%= product.category.ten_danh_muc %>
-                            </a></li>
-                        <% } %>
-                </ul>
+                <!-- Thông tin chi tiết đã chuyển xuống Tab bên dưới -->
+                <div class="mb-4"></div>
 
                 <hr>
 
@@ -147,6 +142,10 @@
                                 data-bs-target="#description-pane" type="button" role="tab">Mô Tả Sản Phẩm</button>
                         </li>
                         <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="specs-tab" data-bs-toggle="tab"
+                                data-bs-target="#specs-pane" type="button" role="tab">Thông Số Kỹ Thuật</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
                             <button class="nav-link" id="reviews-tab" data-bs-toggle="tab"
                                 data-bs-target="#reviews-pane" type="button" role="tab">
                                 Đánh giá (<span id="review-count">
@@ -163,6 +162,40 @@
                         <div class="tab-pane fade show active" id="description-pane" role="tabpanel">
                             <!-- Sử dụng EJS unescaped output '<' để render đúng định dạng HTML -->
                             <%- product.mo_ta_ngan || "Hiện chưa có mô tả chi tiết cho sản phẩm này." %>
+                        </div>
+
+                        <!-- === Nội dung Tab Thông Số Kỹ Thuật === -->
+                        <div class="tab-pane fade" id="specs-pane" role="tabpanel">
+                            <table class="table table-striped table-hover">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" style="width: 30%;">Tác giả</th>
+                                        <td><%= product.tac_gia || 'Đang cập nhật' %></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Nhà xuất bản</th>
+                                        <td><%= product.nha_xuat_ban || 'Đang cập nhật' %></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Năm xuất bản</th>
+                                        <td><%= product.nam_xuat_ban || 'N/A' %></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Số trang</th>
+                                        <td><%= product.so_trang || 'N/A' %></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Loại bìa</th>
+                                        <td><%= product.product_type === 'ebook' ? 'Sách điện tử (Ebook)' : 'Bìa mềm' %></td>
+                                    </tr>
+                                    <% if(product.category) { %>
+                                    <tr>
+                                        <th scope="row">Danh mục</th>
+                                        <td><a href="/products?category=<%= product.category.id %>" class="text-decoration-none"><%= product.category.ten_danh_muc %></a></td>
+                                    </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
                         </div>
 
                         <!--  Nội dung Tab Đánh giá -->
