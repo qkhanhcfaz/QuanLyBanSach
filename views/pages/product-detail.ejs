@@ -29,9 +29,18 @@
 
                 <!-- Giá sản phẩm -->
                 <div class="product-price-wrapper mb-3">
-                    <h2 class="text-danger fw-bold mb-3">
+                    <h2 class="text-danger fw-bold mb-2">
                         <%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %> đ
                     </h2>
+                    
+                    <!-- Stock Status Badge -->
+                    <div class="mb-3">
+                        <% if(product.so_luong_ton_kho > 0) { %>
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Còn hàng</span>
+                        <% } else { %>
+                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Hết hàng</span>
+                        <% } %>
+                    </div>
 
                     <!-- Realtime Stats -->
                     <div class="d-flex align-items-center mb-3">
@@ -58,25 +67,11 @@
                     <p class="text-muted">
                         <%= product.mo_ta_ngan ? product.mo_ta_ngan : 'Đang cập nhật mô tả...' %>
                     </p>
-                    <!-- Trong tương lai, nếu có giá gốc, bạn có thể bỏ comment dòng này -->
-                    <!-- <span class="product-price-old text-muted text-decoration-line-through">86.000đ</span> -->
                 </div>
 
                 <!-- Thông tin chi tiết khác -->
-                <ul class="product-specs list-unstyled text-muted">
-                    <li>Năm xuất bản: <%= product.nam_xuat_ban || 'N/A' %>
-                    </li>
-                    <li>Số trang: <%= product.so_trang || 'N/A' %>
-                    </li>
-                    <li>Sẵn có: <span id="current-stock" class="fw-bold text-success">
-                            <%= product.so_luong_ton_kho %>
-                        </span> sản phẩm</li>
-                    <% if(product.category) { %>
-                        <li>Danh mục: <a href="/products?category=<%= product.category.id %>">
-                                <%= product.category.ten_danh_muc %>
-                            </a></li>
-                        <% } %>
-                </ul>
+                <!-- Thông tin chi tiết đã chuyển xuống Tab bên dưới -->
+                <div class="mb-4"></div>
 
                 <hr>
 
@@ -137,12 +132,14 @@
 
         </div>
 
+
         <!-- MÔ TẢ SẢN PHẨM -->
         <div class="card my-5 shadow-sm border-0">
             <div class="card-body p-4">
                 <h4 class="card-title fw-bold mb-4 border-bottom pb-2">Mô Tả Sản Phẩm</h4>
                 <div class="product-description-content">
                     <%- product.mo_ta_ngan || "Hiện chưa có mô tả chi tiết cho sản phẩm này." %>
+
                 </div>
             </div>
         </div>
@@ -151,7 +148,6 @@
         <div class="card my-5 shadow-sm border-0">
             <div class="card-body p-4">
                 <h4 class="card-title fw-bold mb-4 border-bottom pb-2">Đánh Giá & Nhận Xét</h4>
-
                 <!-- DASHBOARD ĐÁNH GIÁ -->
                 <div class="row mb-5 border-bottom pb-4">
                     <div class="col-md-4 text-center border-end">
