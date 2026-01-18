@@ -57,7 +57,7 @@ const admin = (req, res, next) => {
         console.log('[AUTH DEBUG] No user found in request');
     }
 
-    if (req.user && req.user.role_id == 1) {
+    if (req.user && (req.user.role_id == 1 || (req.user.role && req.user.role.ten_quyen === 'admin'))) {
         return next();
     }
 
