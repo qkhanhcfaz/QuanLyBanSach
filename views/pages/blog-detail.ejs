@@ -1,0 +1,37 @@
+<%- include('../partials/header') %>
+
+<div class="container py-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="/blog">Tin tức</a></li>
+            <li class="breadcrumb-item active" aria-current="page"><%= post.tieu_de %></li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <article class="blog-post">
+                <h1 class="blog-post-title mb-3"><%= post.tieu_de %></h1>
+                <p class="blog-post-meta text-muted mb-4">
+                    <i class="far fa-calendar-alt"></i> <%= new Date(post.createdAt).toLocaleDateString('vi-VN') %> 
+                    by <strong><%= post.author ? post.author.ho_ten : 'Admin' %></strong>
+                </p>
+
+                <% if (post.hinh_anh) { %>
+                    <img src="<%= post.hinh_anh %>" class="img-fluid rounded mb-4 w-100" alt="<%= post.tieu_de %>" style="max-height: 500px; object-fit: cover;">
+                <% } %>
+
+                <div class="blog-content fs-5" style="line-height: 1.8;">
+                    <%- post.noi_dung %>
+                </div>
+            </article>
+
+            <div class="mt-5 text-center">
+                <a href="/blog" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

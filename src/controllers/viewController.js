@@ -3,7 +3,7 @@
 const { Op } = require('sequelize');
 const db = require('../models');
 
-const { Product, Category, Slideshow, Review, User, Favorite } = db;
+const { Product, Category, Slideshow, Review, User, Favorite, Post } = db;
 const { getMyFavoriteIds } = require('./favoriteController');
 
 // Configuration for model relationships
@@ -141,11 +141,7 @@ const renderProductListPage = async (req, res) => {
       products: rows,
       allCategories,
       currentCategory: currentCategoryInfo,
-      favoriteProductIds: await (async () => {
-        const ids = req.user ? await getMyFavoriteIds(req.user.id) : [];
-        if (req.user) console.log('DEBUG_FAV: User', req.user.id, 'IDs:', ids, 'Type:', typeof ids[0]);
-        return ids;
-      })(),
+      favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
       queryParams: req.query,
       pagination: {
         currentPage: page,
@@ -220,32 +216,6 @@ const renderProductDetailPage = async (req, res) => {
       include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }]
     });
 
-    // 6) Check if user can review (Has purchased & Delivered > Reviewed)
-    let canReview = false;
-    let deliveredOrderCount = 0;
-    if (req.user) {
-      deliveredOrderCount = await db.Order.count({
-        where: {
-          user_id: req.user.id,
-          trang_thai_don_hang: 'delivered'
-        },
-        include: [{
-          model: db.OrderItem,
-          as: 'orderItems',
-          where: { product_id: id }
-        }]
-      });
-
-      const existingReviewCount = await db.Review.count({
-        where: {
-          user_id: req.user.id,
-          product_id: id
-        }
-      });
-
-      canReview = deliveredOrderCount > existingReviewCount;
-    }
-
     return res.render('pages/product-detail', {
       title: product.ten_sach || 'Product Detail',
       product,
@@ -254,9 +224,7 @@ const renderProductDetailPage = async (req, res) => {
       favoriteCount,
       avgRating,
       favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
-      user: req.user,
-      canReview,
-      deliveredOrderCount: req.user ? deliveredOrderCount : 0
+      user: req.user
     });
 
   } catch (error) {
@@ -390,4 +358,73 @@ exports.renderRecruitmentPage = renderRecruitmentPage;
 exports.renderTermsPage = renderTermsPage;
 exports.renderGuidePage = renderGuidePage;
 exports.renderReturnPolicyPage = renderReturnPolicyPage;
+exports.renderContactPage = async (req, res) => {
+    res.render('pages/contact', {
+        title: 'Liên hệ',
+        user: req.user,
+        path: '/contact'
+    });
+};
+
+/**
+ * Render Trang Blog (Danh sách bài viết)
+ */
+exports.renderBlogPage = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 6;
+        const offset = (page - 1) * limit;
+        const keyword = req.query.keyword || '';
+
+        const whereClause = { trang_thai: true };
+        if (keyword) {
+            whereClause.tieu_de = { [Op.like]: `%${keyword}%` };
+        }
+
+        const { count, rows } = await Post.findAndCountAll({
+            where: whereClause,
+            limit: limit,
+            offset: offset,
+            order: [['createdAt', 'DESC']],
+            include: [{ model: User, as: 'author', attributes: ['ho_ten'] }]
+        });
+
+        res.render('pages/blog', {
+            title: 'Tin tức',
+            user: req.user,
+            path: '/blog',
+            posts: rows,
+            currentPage: page,
+            totalPages: Math.ceil(count / limit),
+            keyword
+        });
+    } catch (error) {
+        console.error('Render Blog Error:', error);
+        res.status(500).render('pages/error', { message: 'Lỗi tải bài viết' });
+    }
+};
+
+/**
+ * Render Chi tiết bài viết
+ */
+exports.renderBlogDetailPage = async (req, res) => {
+    try {
+        const post = await Post.findOne({
+            where: { id: req.params.id, trang_thai: true },
+            include: [{ model: User, as: 'author', attributes: ['ho_ten'] }]
+        });
+
+        if (!post) return res.status(404).render('pages/error', { message: 'Bài viết không tồn tại' });
+
+        res.render('pages/blog-detail', {
+            title: post.tieu_de,
+            user: req.user,
+            path: '/blog',
+            post
+        });
+    } catch (error) {
+        res.status(500).render('pages/error', { message: 'Lỗi tải bài viết' });
+    }
+};
+
 exports.renderFAQPage = renderFAQPage;
