@@ -14,8 +14,8 @@
 
         <div class="col-6 col-md-3 mb-3">
           <i class="fa-solid fa-headset fs-2 mb-2 text-primary"></i>
-          <p class="mb-0">HỖ TRỢ 24/7</p>
-          <small class="text-white-50">Hotline: <%= s.so_dien_thoai || '0339.952.573' %></small>
+          <p class="mb-0"><a href="/contact" class="text-white text-decoration-none">HỖ TRỢ 24/7</a></p>
+          <small class="text-white-50"><a href="tel:<%= s.so_dien_thoai || '0339.952.573' %>" class="text-white-50 text-decoration-none">Hotline: <%= s.so_dien_thoai || '0339.952.573' %></a></small>
         </div>
 
         <div class="col-6 col-md-3 mb-3">
@@ -68,7 +68,7 @@
 
         <!-- Cột 4: Liên hệ (dữ liệu từ SiteSetting) -->
         <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mb-md-0 mb-4">
-          <h6 class="text-uppercase fw-bold">Liên hệ</h6>
+          <h6 class="text-uppercase fw-bold"><a href="/contact" class="text-white text-decoration-none">Liên hệ</a></h6>
           <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #0d6efd; height: 2px" />
 
           <p><i class="fas fa-home me-3"></i>
