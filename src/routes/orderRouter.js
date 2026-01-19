@@ -5,6 +5,7 @@ const {
   getAllOrders,
   createOrder,
   getOrderById,
+  getMyOrders,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
 
@@ -14,8 +15,11 @@ router.post("/", protect, createOrder);
 // GET /api/orders - Lấy danh sách đơn hàng (Chỉ Admin)
 router.get("/", protect, admin, getAllOrders);
 
-// GET /api/orders/:id - Lấy chi tiết đơn hàng (Chỉ Admin)
-router.get("/:id", protect, admin, getOrderById);
+// GET /api/orders/myorders - Lấy danh sách đơn hàng của tôi
+router.get("/myorders", protect, getMyOrders);
+
+// GET /api/orders/:id - Lấy chi tiết đơn hàng (Admin hoặc Owner)
+router.get("/:id", protect, getOrderById);
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Chỉ Admin)
 router.put("/:id/status", protect, admin, updateOrderStatus);
