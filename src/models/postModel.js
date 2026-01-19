@@ -14,7 +14,7 @@ const Post = sequelize.define('Post', {
     },
     slug: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true, // Tạm thời cho phép null để tránh lỗi với dữ liệu cũ
         unique: true,
     },
     tom_tat: {
