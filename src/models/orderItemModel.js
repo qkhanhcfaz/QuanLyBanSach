@@ -29,10 +29,11 @@ module.exports = (sequelize) => {
     {
       tableName: "order_items", // Lưu ý tên bảng là order_items (số nhiều, có s)
       timestamps: true, // Bảng này CÓ createdAt, updatedAt trong schema PostgreSQL
-    },
+    }
   );
 
   OrderItem.associate = (models) => {
+    // HEAD Association
     if (models.Order) {
       OrderItem.belongsTo(models.Order, {
         foreignKey: "order_id",
@@ -40,6 +41,7 @@ module.exports = (sequelize) => {
       });
     }
 
+    // Remote Association
     if (models.Product) {
       OrderItem.belongsTo(models.Product, {
         foreignKey: "product_id",

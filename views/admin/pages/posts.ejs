@@ -1,0 +1,129 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý Bài viết</h1>
+        <a href="/admin/posts/add" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Thêm bài viết mới
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách bài viết</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="postsTable" width="100%" cellspacing="0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Tiêu đề</th>
+                            <th>Tác giả</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày đăng</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postsTableBody">
+                        <!-- JS renders here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const tableBody = document.getElementById('postsTableBody');
+    const token = localStorage.getItem('token');
+
+    async function loadPosts() {
+        try {
+            const res = await fetch('/api/posts/admin/all', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const posts = await res.json();
+            
+            tableBody.innerHTML = '';
+            if (!posts || posts.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có bài viết nào.</td></tr>';
+                return;
+            }
+
+            posts.forEach(post => {
+                const date = new Date(post.createdAt).toLocaleDateString('vi-VN');
+                const status = post.trang_thai ? 
+                    '<span class="badge bg-success">Đã đăng</span>' : 
+                    '<span class="badge bg-secondary">Bản nháp</span>';
+                const author = post.author ? post.author.ho_ten : 'Admin';
+
+                const row = `
+                    <tr>
+                        <td>${post.id}</td>
+                        <td>${post.tieu_de}</td>
+                        <td>${author}</td>
+                        <td>${status}</td>
+                        <td>${date}</td>
+                        <td>
+                            <a href="/admin/posts/edit/${post.id}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-danger btn-sm btn-delete" data-id="${post.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Add delete event listeners
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', handleDelete);
+            });
+
+        } catch (error) {
+            console.error(error);
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu.</td></tr>';
+        }
+    }
+
+    async function handleDelete(e) {
+        const id = e.target.closest('.btn-delete').dataset.id;
+        
+        const result = await Swal.fire({
+            title: 'Chắc chắn xóa?',
+            text: "Bài viết này sẽ bị xóa vĩnh viễn!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch(`/api/posts/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    Swal.fire('Đã xóa!', 'Bài viết đã được xóa.', 'success');
+                    loadPosts();
+                } else {
+                    Swal.fire('Lỗi!', 'Không thể xóa bài viết.', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Lỗi network!', error.message, 'error');
+            }
+        }
+    }
+
+    loadPosts();
+});
+</script>

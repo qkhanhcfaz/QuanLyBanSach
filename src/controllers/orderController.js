@@ -1,296 +1,252 @@
-// [CODE MỚI] Import Cart, CartItem để xử lý đặt hàng
 const {
-  Order,
-  User,
-  OrderItem,
-  Product,
-  Cart,
-  CartItem,
-} = require("../models");
-const { Op } = require("sequelize");
-const { createPaymentUrl } = require("../services/momoService");
+    Order,
+    User,
+    OrderItem,
+    Cart,
+    CartItem,
+    Product // <--- Thêm Product
+} = require('../models');
+const { Op } = require('sequelize');
+const { sequelize } = require('../config/connectDB'); // <--- Thêm sequelize để dùng transaction
 
 /**
- * @description     Tạo đơn hàng mới (Checkout)
- * @route           POST /api/orders
- * @access          Private
+ * Tạo đơn hàng mới (User)
+ * POST /api/orders
  */
 const createOrder = async (req, res) => {
-  try {
-    const {
-      ten_nguoi_nhan,
-      sdt_nguoi_nhan,
-      email_nguoi_nhan,
-      dia_chi_giao_hang,
-      ghi_chu_khach_hang,
-      phuong_thuc_thanh_toan,
-    } = req.body;
+    const t = await sequelize.transaction(); // Bắt đầu transaction
+    try {
+        const {
+            ten_nguoi_nhan,
+            sdt_nguoi_nhan,
+            dia_chi_giao_hang,
+            email_nguoi_nhan,
+            ghi_chu_khach_hang,
+            phuong_thuc_thanh_toan,
+            ma_khuyen_mai,
+            selectedCartItemIds // <--- Nhận danh sách ID từ client
+        } = req.body;
+        const userId = req.user.id;
 
-    // 1. Lấy giỏ hàng của user
-    const userId = req.user.id;
-    const cart = await Cart.findOne({
-      where: { user_id: userId },
-      include: [
-        {
-          model: CartItem,
-          as: "items",
-          include: [{ model: Product, as: "product" }],
-        },
-      ],
-    });
-
-    if (!cart || !cart.items || cart.items.length === 0) {
-      return res.status(400).json({ message: "Giỏ hàng trống!" });
-    }
-
-    // 2. Tính toán tổng tiền
-    let tong_tien_hang = 0;
-    const phi_van_chuyen = 30000;
-    const orderItemsData = [];
-
-    for (const item of cart.items) {
-      // Kiểm tra tồn kho (nếu cần chặt chẽ hơn)
-      if (item.product.so_luong_ton_kho < item.so_luong) {
-        return res.status(400).json({
-          message: `Sản phẩm ${item.product.ten_sach} không đủ hàng.`,
-        });
-      }
-
-      tong_tien_hang += Number(item.product.gia_bia) * item.so_luong;
-
-      orderItemsData.push({
-        product_id: item.product_id,
-        so_luong_dat: item.so_luong,
-        don_gia: item.product.gia_bia,
-        thanh_tien: Number(item.product.gia_bia) * item.so_luong,
-      });
-    }
-
-    const tong_thanh_toan = tong_tien_hang + phi_van_chuyen;
-
-    // 3. Tạo đơn hàng (Order)
-    const newOrder = await Order.create({
-      user_id: userId,
-      ten_nguoi_nhan,
-      email_nguoi_nhan,
-      sdt_nguoi_nhan,
-      dia_chi_giao_hang,
-      ghi_chu_khach_hang,
-      tong_tien_hang,
-      phi_van_chuyen,
-      tong_thanh_toan,
-      phuong_thuc_thanh_toan,
-      trang_thai_don_hang: "pending",
-      trang_thai_thanh_toan: false, // Mặc định là chưa thanh toán
-    });
-
-    // 4. Tạo chi tiết đơn hàng (OrderItem)
-    const orderItemsWithId = orderItemsData.map((item) => ({
-      ...item,
-      order_id: newOrder.id,
-    }));
-    await OrderItem.bulkCreate(orderItemsWithId);
-
-    // 5. Trừ tồn kho và Xóa sản phẩm trong giỏ
-    for (const item of cart.items) {
-      // Trừ kho
-      const product = await Product.findByPk(item.product_id);
-      if (product) {
-        product.so_luong_ton_kho -= item.so_luong;
-        product.da_ban += item.so_luong; // Cập nhật số lượng đã bán
-        await product.save();
-      }
-    }
-    // Xóa giỏ hàng
-    await CartItem.destroy({ where: { cart_id: cart.id } });
-
-    // === XỬ LÝ THANH TOÁN (COD hoặc ONLINE) ===
-    let responseData = {
-      message: "Đặt hàng thành công",
-      id: newOrder.id,
-    };
-
-    // Nếu chọn thanh toán qua MoMo
-    if (phuong_thuc_thanh_toan === "momo") {
-      try {
-        // Thêm timestamp vào orderId để tránh trùng lặp trên môi trường Test của MoMo
-        // Ví dụ: 55_1705501234567
-        const momoOrderId = `${newOrder.id}_${new Date().getTime()}`;
-
-        const momoResult = await createPaymentUrl({
-          orderId: momoOrderId,
-          amount: tong_thanh_toan,
-          orderInfo: `Thanh toan don hang #${newOrder.id} tai BookStore`,
-        });
-
-        console.log("Momo Result:", momoResult); // Log để debug
-
-        if (momoResult && momoResult.payUrl) {
-          responseData.payUrl = momoResult.payUrl;
-          // Có thể cập nhật lại trạng thái đơn hàng là 'pending_payment' nếu muốn
-        } else {
-          // Nếu lỗi MoMo thì báo lỗi về client
-          console.error("MoMo Create Error:", momoResult);
-          return res.status(500).json({
-            message:
-              "Lỗi tạo link thanh toán MoMo. Vui lòng thử lại hoặc chọn 'Thanh toán khi nhận hàng'.",
-            detail: momoResult,
-          });
+        // 1. Lấy giỏ hàng của user
+        const cart = await Cart.findOne({ where: { user_id: userId } });
+        if (!cart) {
+            await t.rollback();
+            return res.status(400).json({ message: 'Giỏ hàng trống.' });
         }
-      } catch (err) {
-        console.error("MoMo Service Error:", err);
-        return res
-          .status(500)
-          .json({ message: "Lỗi kết nối đến cổng thanh toán MoMo." });
-      }
-    }
 
-    res.status(201).json(responseData);
-  } catch (error) {
-    console.error("Lỗi tạo đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server khi tạo đơn hàng." });
-  }
+        // Tạo điều kiện query
+        const queryOptions = {
+            where: { cart_id: cart.id },
+            include: [{ model: Product, as: 'product' }]
+        };
+
+        // Nếu client gửi lên danh sách ID được chọn, thì lọc theo đó
+        if (selectedCartItemIds && Array.isArray(selectedCartItemIds) && selectedCartItemIds.length > 0) {
+            queryOptions.where.id = selectedCartItemIds;
+        }
+
+        const cartItems = await CartItem.findAll(queryOptions);
+
+        if (!cartItems || cartItems.length === 0) {
+            await t.rollback();
+            return res.status(400).json({ message: 'Không có sản phẩm nào được chọn để thanh toán.' });
+        }
+
+        let tong_tien = 0;
+        const orderItemsData = [];
+
+        // 2. Duyệt qua từng sản phẩm để check kho và tính tiền
+        for (const item of cartItems) {
+            const product = item.product;
+            if (!product) continue;
+
+            // Check tồn kho lần cuối (quan trọng)
+            if (item.so_luong > product.so_luong_ton_kho) {
+                await t.rollback();
+                return res.status(400).json({
+                    message: `Sản phẩm "${product.ten_sach}" đã hết hàng hoặc không đủ số lượng.`
+                });
+            }
+
+            tong_tien += parseFloat(product.gia_bia) * item.so_luong;
+
+            // Chuẩn bị dữ liệu OrderItem
+            orderItemsData.push({
+                product_id: product.id,
+                so_luong_dat: item.so_luong, // Fix: so_luong -> so_luong_dat
+                don_gia: product.gia_bia      // Fix: gia -> don_gia
+            });
+
+            // TRỪ TỒN KHO
+            await product.decrement('so_luong_ton_kho', { by: item.so_luong, transaction: t });
+
+            // TĂNG SỐ LƯỢNG ĐÃ BÁN (Optional)
+            await product.increment('da_ban', { by: item.so_luong, transaction: t });
+        }
+
+        // 3. Tính phí ship và giảm giá (giả định)
+        const phi_van_chuyen = 30000;
+        let giam_gia = 0;
+        // Logic check ma_khuyen_mai ở đây nếu có...
+
+        const tong_thanh_toan = tong_tien + phi_van_chuyen - giam_gia; // Fix: tong_thu_thuc -> tong_thanh_toan
+
+        // 4. Tạo Order
+        const newOrder = await Order.create({
+            user_id: userId,
+            ten_nguoi_nhan,
+            so_dt_nguoi_nhan: sdt_nguoi_nhan, // Map sdt -> so_dt
+            dia_chi_giao_hang,
+            email_nguoi_nhan,
+            ghi_chu_khach_hang,
+            phuong_thuc_thanh_toan,
+            tong_tien_hang: tong_tien,
+            phi_van_chuyen,
+            giam_gia,
+            tong_thanh_toan, // Fix: tong_thu_thuc -> tong_thanh_toan
+            trang_thai_don_hang: 'pending', // Chờ xác nhận
+            trang_thai_thanh_toan: false
+        }, { transaction: t });
+
+        // 5. Tạo OrderItems
+        for (const itemData of orderItemsData) {
+            await OrderItem.create({
+                ...itemData,
+                order_id: newOrder.id
+            }, { transaction: t });
+        }
+
+        // 6. Xóa giỏ hàng sau khi đặt thành công
+        // 6. Xóa các sản phẩm đã đặt khỏi giỏ hàng
+        // Chỉ xóa những item đã nằm trong cartItems (đã lọc ở trên)
+        const orderedItemIds = cartItems.map(item => item.id);
+        if (orderedItemIds.length > 0) {
+            await CartItem.destroy({
+                where: {
+                    id: orderedItemIds
+                },
+                transaction: t
+            });
+        }
+
+        await t.commit(); // Lưu thay đổi vào DB
+
+        res.status(201).json({
+            message: 'Đặt hàng thành công',
+            id: newOrder.id
+        });
+
+    } catch (error) {
+        // Chỉ rollback nếu transaction chưa commit/rollback
+        if (t && !t.finished) {
+            await t.rollback();
+        }
+        console.error('Lỗi createOrder:', error);
+        res.status(500).json({
+            message: 'Lỗi server khi tạo đơn hàng: ' + error.message,
+            stack: error.stack
+        });
+    }
 };
 
 /**
- * @description     Admin: Lấy danh sách tất cả đơn hàng (có Filter, Search, Pagination)
- * @route           GET /api/orders
- * @access          Private/Admin
+ * Lấy danh sách đơn hàng (Admin)
+ * GET /api/orders
  */
 const getAllOrders = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, keyword, status } = req.query;
+    try {
+        const { page = 1, limit = 10, keyword, status } = req.query;
+        const offset = (page - 1) * limit;
 
-    // 1. Xây dựng điều kiện lọc (Where)
-    let whereCondition = {};
+        const whereCondition = {};
 
-    // Lọc theo từ khóa (ID, Tên người nhận)
-    if (keyword) {
-      whereCondition[Op.or] = [
-        // Tìm theo ID (nếu keyword là số)
-        ...(Number.isInteger(parseInt(keyword)) ? [{ id: keyword }] : []),
-        // Tìm theo tên người nhận
-        { ten_nguoi_nhan: { [Op.iLike]: `%${keyword}%` } },
-      ];
+        // Lọc theo trạng thái
+        if (status) {
+            whereCondition.trang_thai_don_hang = status;
+        }
+
+        // Tìm kiếm (theo ID hoặc tên người nhận)
+        if (keyword) {
+            whereCondition[Op.or] = [
+                // { id: keyword }, // Nếu ID là UUID thì phải chính xác, nhưng search thường là like.
+                // Vì ID là UUID nên tìm like sẽ hơi khó nếu user không gõ đủ.
+                // Tạm thời tìm theo tên người nhận hoặc số điện thoại
+                { ten_nguoi_nhan: { [Op.iLike]: `%${keyword}%` } },
+                { so_dt_nguoi_nhan: { [Op.iLike]: `%${keyword}%` } },
+                { email_nguoi_nhan: { [Op.iLike]: `%${keyword}%` } }
+            ];
+
+            // Nếu keyword là số thì tìm theo ID
+            // (Số nguyên dương)
+            if (!isNaN(keyword) && Number.isInteger(parseFloat(keyword))) {
+                whereCondition[Op.or].push({ id: keyword });
+            }
+        }
+
+        const { count, rows } = await Order.findAndCountAll({
+            where: whereCondition,
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'ho_ten'] }
+            ],
+            order: [['createdAt', 'DESC']], // Mới nhất lên đầu
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        res.json({
+            orders: rows,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(count / limit),
+            totalOrders: count
+        });
+
+    } catch (error) {
+        console.error('Lỗi get all orders:', error);
+        res.status(500).json({ message: 'Lỗi server khi lấy danh sách đơn hàng' });
     }
-
-    // Lọc theo trạng thái
-    if (status) {
-      whereCondition.trang_thai_don_hang = status;
-    }
-
-    // 2. Phân trang
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
-
-    // 3. Truy vấn Database
-    const { count, rows } = await Order.findAndCountAll({
-      where: whereCondition,
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "ho_ten", "email"], // Chỉ lấy thông tin cần thiết
-        },
-      ],
-      order: [["createdAt", "DESC"]], // Mới nhất lên đầu
-      limit: limitNum,
-      offset: offset,
-      distinct: true, // Để count đúng khi có include
-    });
-
-    // 4. Trả về kết quả
-    res.json({
-      orders: rows,
-      currentPage: pageNum,
-      totalPages: Math.ceil(count / limitNum),
-      totalOrders: count,
-    });
-  } catch (error) {
-    console.error("Lỗi lấy danh sách đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server khi lấy danh sách đơn hàng." });
-  }
 };
 
 /**
- * @description     Admin: Lấy chi tiết đơn hàng
- * @route           GET /api/orders/:id
- * @access          Private/Admin
- */
-const getOrderById = async (req, res) => {
-  try {
-    const order = await Order.findByPk(req.params.id, {
-      include: [
-        { model: User, as: "user" },
-        {
-          model: OrderItem,
-          as: "orderItems",
-          include: [{ model: Product, as: "product" }],
-        },
-      ],
-    });
-
-    if (!order) {
-      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
-
-    res.json(order);
-  } catch (error) {
-    console.error("Lỗi lấy chi tiết đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server" });
-  }
-};
-
-/**
- * @description     Admin: Cập nhật trạng thái đơn hàng
- * @route           PUT /api/orders/:id/status
- * @access          Private/Admin
+ * Cập nhật trạng thái đơn hàng (Admin)
+ * PUT /api/orders/:id/status
  */
 const updateOrderStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
 
-    const order = await Order.findByPk(id);
+        const order = await Order.findByPk(id);
 
-    if (!order) {
-      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+        }
 
-    // VALIDATION: Chỉ cho phép hủy khi đang chờ hoặc đã xác nhận
-    if (status === "cancelled") {
-      if (
-        order.trang_thai_don_hang !== "pending" &&
-        order.trang_thai_don_hang !== "confirmed"
-      ) {
-        return res.status(400).json({
-          message:
-            "Không thể hủy đơn hàng đã giao hoặc đang giao. Chỉ hủy được khi chưa xử lý xong.",
+        // Cập nhật trạng thái
+        order.trang_thai_don_hang = status;
+
+        // Nếu trạng thái là 'confirmed' hoặc 'delivered', có thể cần xử lý thêm logic
+        // Ví dụ: cập nhật kho, gửi email... (chưa làm ở bước này)
+
+        if (status === 'delivered') {
+            order.trang_thai_thanh_toan = true; // Giả sử giao hàng thành công là đã thanh toán
+        }
+
+        await order.save();
+
+        res.json({
+            message: 'Cập nhật trạng thái thành công',
+            order
         });
-      }
+
+    } catch (error) {
+        console.error('Lỗi update order status:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật đơn hàng' });
     }
-
-    // Cập nhật trạng thái
-    order.trang_thai_don_hang = status;
-
-    // Nếu là 'delivered', cập nhật luôn trạng thái thanh toán thành true (nếu chưa)
-    if (status === "delivered") {
-      order.trang_thai_thanh_toan = true;
-    }
-
-    await order.save();
-
-    res.json({ message: "Cập nhật trạng thái thành công!", order });
-  } catch (error) {
-    console.error("Lỗi cập nhật đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server" });
-  }
 };
 
 module.exports = {
-  getAllOrders,
-  getOrderById,
-  updateOrderStatus,
-  createOrder,
+    updateOrderStatus,
+    getAllOrders,
+    createOrder // <--- Xuất hàm mới
 };

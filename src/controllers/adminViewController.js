@@ -1,7 +1,7 @@
 // File: /src/controllers/adminViewController.js
 // GIAI ĐOẠN 1: Code cơ bản - Hiển thị được dữ liệu là thành công
 const db = require('../models');
-const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, sequelize } = db;
+const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, Role, Review, sequelize } = db;
 
 /**
  * Render Dashboard
@@ -156,12 +156,23 @@ const renderAdminOrderDetailPage = async (req, res) => {
 /**
  * Render User
  */
-const renderAdminUsersPage = (req, res) => {
-    res.render('admin/pages/users', {
-        title: 'Quản lý Người dùng',
-        user: req.user,
-        path: '/users'
-    });
+const renderAdminUsersPage = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            include: [{ model: Role, as: 'role' }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.render('admin/pages/users', {
+            title: 'Quản lý Người dùng',
+            user: req.user,
+            path: '/users',
+            users: users
+        });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).send("Lỗi server");
+    }
 };
 
 /**
@@ -295,7 +306,8 @@ const updateSiteSettings = async (req, res) => {
     try {
         const {
             ten_website, dia_chi, email, so_dien_thoai, nam_ban_quyen,
-            facebook, instagram, twitter, linkedin
+            facebook, instagram, twitter, linkedin,
+            mo_ta // <--- Thêm nhận mo_ta từ form
         } = req.body;
 
         let site = await SiteSetting.findOne();
@@ -308,6 +320,7 @@ const updateSiteSettings = async (req, res) => {
         site.email = email;
         site.so_dien_thoai = so_dien_thoai;
         site.nam_ban_quyen = nam_ban_quyen || 2026;
+        site.mo_ta = mo_ta; // <--- Lưu vào DB
 
         site.facebook = facebook;
         site.instagram = instagram;
@@ -323,7 +336,127 @@ const updateSiteSettings = async (req, res) => {
     }
 };
 
+/**
+ * Render Thống kê Doanh thu
+ */
+const renderRevenueStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-revenue', {
+        title: 'Thống kê Doanh thu',
+        user: req.user,
+        path: '/statistics/revenue'
+    });
+};
+
+/**
+ * Render Thống kê Đơn hàng
+ */
+const renderOrderStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-orders', {
+        title: 'Thống kê Đơn hàng',
+        user: req.user,
+        path: '/statistics/orders'
+    });
+};
+
+/**
+ * Render Danh sách Đánh giá
+ */
+const renderAdminReviewsPage = async (req, res) => {
+    try {
+        const { page = 1 } = req.query;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await Review.findAndCountAll({
+            include: [
+                { model: User, as: 'user', attributes: ['ho_ten', 'email'] },
+                { model: Product, as: 'product', attributes: ['ten_sach', 'img'] }
+            ],
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset
+        });
+
+        res.render('admin/pages/reviews', {
+            title: 'Quản lý Đánh giá',
+            user: req.user,
+            path: '/reviews',
+            reviews: rows,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(count / limit),
+            totalReviews: count
+        });
+    } catch (error) {
+        console.error("Lỗi tải đánh giá admin:", error);
+        res.status(500).send('Lỗi tải đánh giá');
+    }
+};
+
+/**
+ * Render Thống kê Sản phẩm bán chạy
+ */
+const renderBestSellingStatisticsPage = (req, res) => {
+    res.render('admin/pages/statistics-best-selling', {
+        title: 'Sản phẩm bán chạy',
+        user: req.user,
+        path: '/statistics/best-selling'
+    });
+};
+
+/**
+ * Render Trang Liên hệ
+ */
+const renderAdminContactsPage = (req, res) => {
+    res.render('admin/pages/contacts', {
+        title: 'Quản lý Liên hệ',
+        user: req.user,
+        path: '/contacts'
+    });
+};
+
+/**
+ * Render Trang Quản lý Bài viết
+ */
+const renderAdminPostsPage = (req, res) => {
+    res.render('admin/pages/posts', {
+        title: 'Quản lý Bài viết',
+        user: req.user,
+        path: '/posts'
+    });
+};
+
+/**
+ * Render Form Thêm/Sửa Bài viết
+ */
+const renderPostFormPage = async (req, res) => {
+    try {
+        let post;
+        let title = 'Thêm Bài Viết Mới';
+
+        if (req.params.id) {
+            post = await Post.findByPk(req.params.id);
+            if (!post) {
+                return res.redirect('/admin/posts');
+            }
+            title = 'Chỉnh sửa Bài Viết';
+        }
+
+        res.render('admin/pages/post-form', {
+            title,
+            user: req.user,
+            post,
+            path: '/posts'
+        });
+    } catch (error) {
+        console.error(error);
+        res.redirect('/admin/posts');
+    }
+};
+
 module.exports = {
+    renderAdminPostsPage,
+    renderPostFormPage,
+    renderAdminContactsPage,
     renderAdminDashboard,
     renderAdminProducts,
     renderProductFormPage,
@@ -336,5 +469,9 @@ module.exports = {
     renderAdminPromotionsPage,
     renderPromotionFormPage,
     renderSiteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    renderRevenueStatisticsPage,
+    renderOrderStatisticsPage,
+    renderAdminReviewsPage,
+    renderBestSellingStatisticsPage
 };

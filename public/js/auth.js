@@ -88,7 +88,7 @@ if (loginForm) {
                     showConfirmButton: false
                 }).then(() => {
                     // **Chuyển hướng dựa trên vai trò**
-                    if (data.role_id === 1) {
+                    if (data.isAdmin || data.role_id === 1) {
                         window.location.href = '/admin'; // Admin vào trang quản trị
                     } else {
                         window.location.href = '/'; // User thường về trang chủ

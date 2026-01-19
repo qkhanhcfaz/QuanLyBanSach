@@ -113,6 +113,25 @@ const addToCart = async (request, response) => {
             where: { cart_id: cart.id, product_id: productId }
         });
 
+        // --- BẮT ĐẦU CHECK TỒN KHO ---
+        // Lấy thông tin sản phẩm để check tồn kho
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            return response.status(404).json({ message: "Sản phẩm không tồn tại." });
+        }
+
+        let newQuantity = quantity;
+        if (cartItem) {
+            newQuantity += cartItem.so_luong;
+        }
+
+        if (newQuantity > product.so_luong_ton_kho) {
+            return response.status(400).json({ 
+                message: `Kho chỉ còn ${product.so_luong_ton_kho} sản phẩm. (Giỏ hàng của bạn đang có: ${cartItem ? cartItem.so_luong : 0})`
+            });
+        }
+        // --- KẾT THÚC CHECK TỒN KHO ---
+
         if (cartItem) {
             // Nếu sản phẩm đã có, chỉ cần cập nhật lại số lượng.
             cartItem.so_luong += quantity;
@@ -159,8 +178,19 @@ const updateCartItem = async (request, response) => {
             return response.status(403).json({ message: "Bạn không có quyền thực hiện hành động này." });
         }
 
+        // --- BẮT ĐẦU CHECK TỒN KHO ---
+        const product = await Product.findByPk(cartItem.product_id);
+        const newQuantity = parseInt(soLuong);
+        
+        if (product && newQuantity > product.so_luong_ton_kho) {
+             return response.status(400).json({ 
+                message: `Số lượng yêu cầu vượt quá tồn kho. (Còn lại: ${product.so_luong_ton_kho})`
+            });
+        }
+        // --- KẾT THÚC CHECK TỒN KHO ---
+
         // Cập nhật số lượng và lưu lại
-        cartItem.so_luong = parseInt(soLuong);
+        cartItem.so_luong = newQuantity;
         await cartItem.save();
 
         response.status(200).json(cartItem);

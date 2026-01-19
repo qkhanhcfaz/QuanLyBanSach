@@ -1,12 +1,11 @@
-// File: /src/models/postModel.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 
 const Post = sequelize.define('Post', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         primaryKey: true,
-        autoIncrement: true,
+        autoIncrement: true
     },
     tieu_de: {
         type: DataTypes.STRING,
@@ -14,29 +13,32 @@ const Post = sequelize.define('Post', {
     },
     slug: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true, // Tạm thời cho phép null để tránh lỗi với dữ liệu cũ
         unique: true,
     },
     tom_tat: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+        type: DataTypes.STRING(500), // Short description
+        allowNull: true
     },
     noi_dung: {
-        type: DataTypes.TEXT,
-        allowNull: false,
+        type: DataTypes.TEXT, // Full HTML content
+        allowNull: false
     },
-    anh_dai_dien: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'URL ảnh đại diện cho bài viết'
+    hinh_anh: {
+        type: DataTypes.STRING, // URL image
+        allowNull: true
     },
     trang_thai: {
         type: DataTypes.BOOLEAN,
-        defaultValue: true, // true: published, false: draft
+        defaultValue: true // true = Published, false = Draft
+    },
+    user_id: { // Author
+        type: DataTypes.INTEGER,
+        allowNull: true
     }
 }, {
     tableName: 'posts',
-    timestamps: true,
+    timestamps: true
 });
 
 module.exports = Post;

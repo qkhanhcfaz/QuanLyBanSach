@@ -16,7 +16,14 @@ const {
     renderAdminPromotionsPage,
     renderPromotionFormPage,
     renderSiteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    renderRevenueStatisticsPage,
+    renderOrderStatisticsPage,
+    renderBestSellingStatisticsPage,
+    renderAdminContactsPage,
+    renderAdminPostsPage,
+    renderPostFormPage,
+    renderAdminReviewsPage
 } = require('../controllers/adminViewController');
 
 // TẤT CẢ CÁC ROUTE TRONG FILE NÀY SẼ TỰ ĐỘNG CÓ TIỀN TỐ /admin
@@ -24,6 +31,11 @@ const {
 
 // Dashboard
 router.get('/', protect, admin, renderAdminDashboard);
+
+// Thống kê
+router.get('/statistics/revenue', protect, admin, renderRevenueStatisticsPage);
+router.get('/statistics/orders', protect, admin, renderOrderStatisticsPage);
+router.get('/statistics/best-selling', protect, admin, renderBestSellingStatisticsPage);
 
 // Quản lý Sản phẩm
 router.get('/products', protect, admin, renderAdminProducts);
@@ -52,5 +64,20 @@ router.post('/settings', protect, admin, updateSiteSettings);
 
 // Quản lý Người dùng
 router.get('/users', protect, admin, renderAdminUsersPage);
+
+// Quản lý Chat Support
+const { renderAdminChatPage } = require('../controllers/chatController');
+router.get('/chat', protect, admin, renderAdminChatPage);
+
+// Quản lý Liên hệ
+router.get('/contacts', protect, admin, renderAdminContactsPage);
+
+// Quản lý Bài viết
+router.get('/posts', protect, admin, renderAdminPostsPage);
+router.get('/posts/add', protect, admin, renderPostFormPage);
+router.get('/posts/edit/:id', protect, admin, renderPostFormPage);
+
+// Quản lý Đánh giá
+router.get('/reviews', protect, admin, renderAdminReviewsPage);
 
 module.exports = router;

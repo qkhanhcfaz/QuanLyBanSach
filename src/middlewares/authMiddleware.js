@@ -45,14 +45,58 @@ const protect = async (req, res, next) => {
     // Giải mã token để lấy ID người dùng.
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Dùng ID đã giải mã để tìm người dùng trong CSDL.
-    // Luôn `include` thông tin Role để phục vụ cho việc phân quyền.
-    req.user = await db.User.findByPk(decoded.id, {
-      attributes: { exclude: ["mat_khau"] }, // Không bao giờ lấy mật khẩu
-      include: {
-        model: db.Role,
-        as: "role", // Đảm bảo bí danh này khớp với model User
-      },
+<<<<<<< HEAD
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      req.user = await db.User.findByPk(decoded.id, {
+        attributes: { exclude: ['mat_khau'] },
+        include: {
+          model: db.Role,
+          as: 'role'
+        }
+      });
+
+      if (!req.user) {
+        return res.redirect('/login');
+      }
+
+      next();
+    } catch (err) {
+      console.error('Lỗi xác thực token:', err.message);
+      return res.redirect('/login');
+    }
+  };
+
+  const admin = (req, res, next) => {
+    /**
+     * CHỐT LOGIC:
+     * - user phải tồn tại
+     * - role phải được include
+     * - role_id === 1 (ADMIN)
+     * => CÁCH NÀY KHÔNG PHỤ THUỘC TÊN CỘT roles
+     */
+    // DEBUG LOG
+    if (req.user) {
+      console.log(`[AUTH DEBUG] User: ${req.user.email}, Role ID: ${req.user.role_id}`);
+    } else {
+      console.log('[AUTH DEBUG] No user found in request');
+    }
+
+    if (req.user && (req.user.role_id == 1 || (req.user.role && req.user.role.ten_quyen === 'admin'))) {
+      return next();
+    }
+
+    // Không phải admin
+    if (req.originalUrl.startsWith('/admin')) {
+      return res.status(403).render('pages/error', {
+        title: '403 - Không có quyền',
+        message: 'Bạn không có quyền Admin để truy cập trang này'
+      });
+    }
+
+    return res.status(403).json({
+      message: 'Không có quyền Admin'
     });
 
     // Nếu không tìm thấy người dùng (ví dụ: token hợp lệ nhưng user đã bị xóa).

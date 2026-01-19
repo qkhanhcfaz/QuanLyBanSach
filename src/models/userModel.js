@@ -53,6 +53,7 @@ const User = sequelize.define(
     },
     img: {
       type: DataTypes.STRING,
+      defaultValue: 'default_avatar.png'
     },
     dia_chi: {
       type: DataTypes.STRING,
@@ -79,79 +80,67 @@ const User = sequelize.define(
     tableName: "users",
     timestamps: true,
     hooks: {
+      // Hook 'beforeCreate': Chạy trước khi tạo mới user vào database.
       beforeCreate: async (user) => {
+        // Nếu user này có mật khẩu (tức là không phải login bằng Google/Facebook mà không có pass)
+        // thì thực hiện mã hóa mật khẩu.
         if (user.mat_khau) {
-          const salt = await bcrypt.genSalt(10);
-          user.mat_khau = await bcrypt.hash(user.mat_khau, salt);
+          const salt = await bcrypt.genSalt(10); // Tạo chuỗi ngẫu nhiên (salt)
+          user.mat_khau = await bcrypt.hash(user.mat_khau, salt); // Mã hóa mật khẩu
         }
       },
+      // Hook 'beforeUpdate': Chạy trước khi cập nhật thông tin user.
       beforeUpdate: async (user) => {
+        // Chỉ mã hóa lại mật khẩu nếu trường 'mat_khau' có thay đổi.
         if (user.changed("mat_khau")) {
           const salt = await bcrypt.genSalt(10);
           user.mat_khau = await bcrypt.hash(user.mat_khau, salt);
         }
       },
     },
-  },
+  }
 );
 
-// Định nghĩa các mối quan hệ (associations)
-User.associate = (models) => {
-  // Mối quan hệ User "thuộc về một" Role
-  User.belongsTo(models.Role, {
-    foreignKey: "role_id",
-    as: "role",
-    constraints: false, // Tắt ràng buộc khóa ngoại trong DB để tránh lỗi syntax khi sync
-    onDelete: "RESTRICT", // Nếu Role bị xóa, role_id trong User sẽ thành NULL
-    onUpdate: "CASCADE", // Nếu id trong Role thay đổi, role_id trong User cũng thay đổi theo
-  });
+// --- CÁC PHƯƠNG THỨC MỞ RỘNG (INSTANCE METHODS) ---
 
-  // Mối quan hệ User "có nhiều" Receipt
-  if (models.Receipt) {
-    User.hasMany(models.Receipt, {
-      foreignKey: "user_id",
-      as: "receipts",
-    });
-  }
-
-  // Thêm các mối quan hệ khác ở đây nếu cần, ví dụ: User có nhiều Order
-  if (models.Order) {
-    User.hasMany(models.Order, {
-      foreignKey: "user_id",
-      as: "orders",
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-    });
-  }
-  // Quan hệ: User có nhiều Review
-  if (models.Review) {
-    User.hasMany(models.Review, {
-      foreignKey: "user_id",
-      as: "reviews",
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
-    });
-  }
+// 1. Phương thức kiểm tra mật khẩu:
+//    So sánh mật khẩu người dùng nhập vào (candidatePassword) với mật khẩu đã mã hóa trong database.
+User.prototype.comparePassword = async function (candidatePassword) {
+  // this.mat_khau: mật khẩu đã hash trong DB
+  return await bcrypt.compare(candidatePassword, this.mat_khau);
 };
 
-// Phương thức so sánh mật khẩu
-User.prototype.comparePassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.mat_khau);
-};
+// 2. Phương thức tạo token reset mật khẩu:
 User.prototype.getResetPasswordToken = function () {
-  // 1. Tạo một token ngẫu nhiên
+  // Tạo một chuỗi ngẫu nhiên 20 byte, chuyển sang dạng hex string.
   const resetToken = crypto.randomBytes(20).toString("hex");
 
-  // 2. Hash token đó và lưu vào cột resetPasswordToken trong DB
+  // Hash chuỗi resetToken này và lưu vào database (để bảo mật, không lưu plain text).
   this.resetPasswordToken = crypto
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
 
-  // 3. Đặt thời gian hết hạn (ví dụ: 10 phút)
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+  // Đặt thời hạn hết hạn cho token là 15 phút (15 * 60 * 1000 ms).
+  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
-  // 4. Trả về token gốc (chưa hash) để gửi qua email
+  // Trả về resetToken ban đầu (chưa hash) để gửi qua email cho người dùng.
   return resetToken;
 };
+
+// Định nghĩa mối quan hệ (Associations)
+User.associate = (models) => {
+  // User thuộc về một Role (User.role_id liên kết với Role.id)
+  User.belongsTo(models.Role, {
+    foreignKey: "role_id",
+    as: "role",
+  });
+
+  // User có thể có nhiều đơn hàng (One-to-Many)
+  User.hasMany(models.Order, {
+    foreignKey: "user_id",
+    as: "orders",
+  });
+};
+
 module.exports = User;

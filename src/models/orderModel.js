@@ -12,22 +12,37 @@ module.exports = (sequelize) => {
       user_id: {
         type: DataTypes.BIGINT,
         allowNull: true,
+<<<<<<< HEAD
       },
+      trang_thai_don_hang: {
+        type: DataTypes.ENUM('pending', 'confirmed', 'shipping', 'delivered', 'cancelled'),
+        defaultValue: 'pending'
+      },
+      phuong_thuc_thanh_toan: {
+        type: DataTypes.STRING,
+        defaultValue: 'COD'
+      },
+      trang_thai_thanh_toan: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      // Thông tin người nhận hàng
       ten_nguoi_nhan: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
+        type: DataTypes.STRING,
+        allowNull: false
       },
       email_nguoi_nhan: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
+        type: DataTypes.STRING,
+        allowNull: false
       },
-      sdt_nguoi_nhan: {
-        type: DataTypes.STRING(20),
+      so_dt_nguoi_nhan: {
+        type: DataTypes.STRING,
         allowNull: false,
+        defaultValue: ''
       },
       dia_chi_giao_hang: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
+        type: DataTypes.STRING,
+        allowNull: false
       },
       ghi_chu_khach_hang: {
         type: DataTypes.TEXT,

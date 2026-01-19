@@ -48,12 +48,6 @@ document.addEventListener('DOMContentLoaded', function () {
         reviewForm.addEventListener('submit', async function (event) {
             event.preventDefault();
 
-            const token = localStorage.getItem('token');
-            if (!token) {
-                Swal.fire('Vui lòng đăng nhập', 'Bạn cần đăng nhập để gửi đánh giá.', 'warning');
-                return;
-            }
-
             // Lấy dữ liệu từ form
             const rating = document.querySelector('input[name="rating"]:checked')?.value;
             const comment = document.getElementById('review-comment').value.trim();
@@ -69,12 +63,18 @@ document.addEventListener('DOMContentLoaded', function () {
             submitButton.textContent = 'Đang gửi...';
 
             try {
+                // Chuẩn bị headers (hỗ trợ cả Cookie và Token nếu có)
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                const token = localStorage.getItem('token');
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const response = await fetch(`/api/products/${productId}/reviews`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: headers,
                     body: JSON.stringify({ rating, comment })
                 });
 
@@ -85,10 +85,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     reviewAlert.className = 'alert alert-success';
                     reviewAlert.textContent = 'Cảm ơn bạn đã gửi đánh giá!';
                     reviewForm.reset();
-                    // Có thể thêm logic để hiển thị review mới ngay lập tức mà không cần tải lại trang
+                    // Reload sau 1s để hiển thị đánh giá mới
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 } else {
                     reviewAlert.className = 'alert alert-danger';
                     reviewAlert.textContent = result.message || 'Gửi đánh giá thất bại.';
+
+                    // Nếu lỗi 401, nhắc đăng nhập
+                    if (response.status === 401) {
+                        Swal.fire('Vui lòng đăng nhập', 'Phiên đăng nhập đã hết hạn.', 'warning');
+                    }
                 }
                 reviewAlert.style.display = 'block';
 
@@ -111,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (response.ok) {
                     const data = await response.json();
 
-                    // Cập nhật giao diện số lượng
+                    // Cập nhật giao diện số lượng tồn kho 
                     stockDisplay.textContent = data.stock;
 
                     // Cập nhật max cho input số lượng
