@@ -15,7 +15,7 @@ const sequelize = new Sequelize(
         host: process.env.DB_HOST, // Host của CSDL (thường là 'localhost' khi chạy ở máy)
         port: process.env.DB_PORT, // Cổng của CSDL (mặc định của PostgreSQL là 5432)
         dialect: 'postgres',       // Chỉ định loại CSDL chúng ta đang sử dụng
-        
+
         // Tắt logging các câu lệnh SQL ra console để đỡ rối,
         // bạn có thể bật lại bằng cách đổi `false` thành `console.log` khi cần gỡ lỗi.
         logging: false,

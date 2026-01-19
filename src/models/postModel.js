@@ -9,7 +9,12 @@ const Post = sequelize.define('Post', {
     },
     tieu_de: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+    },
+    slug: {
+        type: DataTypes.STRING,
+        allowNull: true, // Tạm thời cho phép null để tránh lỗi với dữ liệu cũ
+        unique: true,
     },
     tom_tat: {
         type: DataTypes.STRING(500), // Short description

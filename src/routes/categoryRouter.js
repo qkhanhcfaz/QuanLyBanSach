@@ -1,32 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect, admin } = require('../middlewares/authMiddleware');
-const { createCategory, updateCategory, deleteCategory } = require('../controllers/categoryController');
+const {
+  getAllCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} = require("../controllers/categoryController");
+const { protect, admin } = require("../middlewares/authMiddleware");
 
-// Import models
-const { Category } = require('../models');
+// GET /api/categories - Lấy tất cả danh mục
+router.get("/", getAllCategories);
 
-// GET /api/categories - Lấy tất cả danh mục từ database
-router.get('/', async (req, res) => {
-    try {
-        const categories = await Category.findAll({
-            attributes: ['id', 'ten_danh_muc', 'mo_ta', 'danh_muc_cha_id']
-        });
+// POST /api/categories - Tạo danh mục mới (chỉ admin)
+router.post("/", protect, admin, createCategory);
 
-        res.json(categories);
-    } catch (error) {
-        console.error('Lỗi danh mục:', error);
-        res.status(500).json({ error: 'Lỗi khi lấy danh mục', chi_tiet: error.message });
-    }
-});
+// PUT /api/categories/:id - Cập nhật danh mục (chỉ admin)
+router.put("/:id", protect, admin, updateCategory);
 
-// POST /api/categories - Thêm danh mục mới (Admin only)
-router.post('/', protect, admin, createCategory);
-
-// PUT /api/categories/:id - Cập nhật danh mục (Admin only)
-router.put('/:id', protect, admin, updateCategory);
-
-// DELETE /api/categories/:id - Xóa danh mục (Admin only)
-router.delete('/:id', protect, admin, deleteCategory);
+// DELETE /api/categories/:id - Xóa danh mục (chỉ admin)
+router.delete("/:id", protect, admin, deleteCategory);
 
 module.exports = router;
