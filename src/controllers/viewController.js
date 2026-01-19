@@ -115,10 +115,27 @@ const renderProductDetailPage = async (req, res) => {
     });
 
     if (!product) {
-      return res
-        .status(404)
-        .render("pages/error", { message: "Sản phẩm không tồn tại" });
+      // Redirect to product list if specific product is missing (e.g., ID 1 error)
+      return res.redirect('/products?error=product_not_found');
     }
+
+    // [LOGIC MỚI - FINAL]
+    // Sử dụng Middleware trong server.js để tracking previousPath.
+
+    const currentUrl = req.originalUrl;
+    const previousUrl = req.session.previousPath; // Được set bởi middleware toàn cục
+
+    console.log("------- CHECK VIEW SESSION (FINAL) -------");
+    console.log("Previous URL:", previousUrl);
+    console.log("Current URL:", currentUrl);
+
+    if (previousUrl === currentUrl) {
+      console.log(">> RELOAD DETECTED (PREV == CURR) -> SKIP");
+    } else {
+      console.log(">> NAVIGATION DETECTED -> INCREMENT");
+      await product.increment("views");
+    }
+    console.log("------------------------------------------");
 
     // 2. [CODE MỚI] Lấy danh sách đánh giá của sản phẩm này
     // Nếu chưa có bảng reviews thì nó sẽ trả về mảng rỗng [] -> Không bị lỗi nữa

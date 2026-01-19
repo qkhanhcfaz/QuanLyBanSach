@@ -32,6 +32,9 @@ const {
 router.get('/', renderHomePage);
 router.get('/products', renderProductListPage);
 router.get('/products/:id', renderProductDetailPage);
+router.get('/categories/:id', (req, res) => {
+    res.redirect(`/products?category=${req.params.id}`);
+});
 router.get('/blog', renderBlogPage);       // <--- Blog List
 router.get('/blog/:id', renderBlogDetailPage); // <--- Blog Detail
 router.get('/login', renderLoginPage);
