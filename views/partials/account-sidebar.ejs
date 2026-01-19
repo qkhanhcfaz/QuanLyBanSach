@@ -1,0 +1,17 @@
+<div class="list-group">
+    <a href="/profile"
+        class="list-group-item list-group-item-action <%= (typeof activePage !== 'undefined' && activePage === 'profile') ? 'active' : '' %>">
+        <i class="fa-solid fa-user me-2"></i> Thông tin tài khoản
+    </a>
+    <a href="/my-orders"
+        class="list-group-item list-group-item-action <%= (typeof activePage !== 'undefined' && activePage === 'orders') ? 'active' : '' %>">
+        <i class="fa-solid fa-box-open me-2"></i> Đơn hàng
+    </a>
+    <a href="/favorites"
+        class="list-group-item list-group-item-action <%= (typeof activePage !== 'undefined' && activePage === 'favorites') ? 'active' : '' %>">
+        <i class="fa-solid fa-heart me-2"></i> Danh sách yêu thích
+    </a>
+    <a href="/" class="list-group-item list-group-item-action text-danger">
+        <i class="fa-solid fa-house me-2"></i> Quay về trang chủ
+    </a>
+</div>

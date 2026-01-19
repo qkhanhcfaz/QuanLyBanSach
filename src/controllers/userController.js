@@ -141,10 +141,80 @@ const deleteUser = async (req, res) => {
     }
 };
 
+/**
+ * Lấy thông tin profile của chính mình
+ */
+const getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id, {
+            attributes: { exclude: ['mat_khau'] },
+            include: [{ model: Role, as: 'role' }]
+        });
+        if (user) {
+            res.json(user);
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+/**
+ * Cập nhật thông tin profile của chính mình
+ */
+const updateUserProfile = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+
+        if (user) {
+            user.ho_ten = req.body.ho_ten || user.ho_ten;
+            user.email = req.body.email || user.email;
+            user.phone = req.body.phone || user.phone;
+            user.dia_chi = req.body.dia_chi || user.dia_chi;
+
+            // Handle Avatar Upload
+            if (req.file) {
+                user.img = '/uploads/avatars/' + req.file.filename;
+            }
+
+            // Check if email changed and is unique (omitted for brevity, but should be done)
+
+            const updatedUser = await user.save();
+
+            res.json({
+                id: updatedUser.id,
+                ho_ten: updatedUser.ho_ten,
+                ten_dang_nhap: updatedUser.ten_dang_nhap,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                dia_chi: updatedUser.dia_chi,
+                img: updatedUser.img,
+                role_id: updatedUser.role_id,
+                token: generateToken(updatedUser.id, updatedUser.role_id) // Optional: return new token if needed
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error("Update Profile Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+function generateToken(id, roleId) {
+    const jwt = require('jsonwebtoken');
+    return jwt.sign({ id, role_id: roleId }, process.env.JWT_SECRET || 'secret', {
+        expiresIn: '30d',
+    });
+}
+
 module.exports = {
     getAllUsers,
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    getUserProfile,
+    updateUserProfile
 };

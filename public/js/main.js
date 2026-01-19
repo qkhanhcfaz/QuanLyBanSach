@@ -47,9 +47,7 @@ function handleAuthLinks() {
                     Xin chào, ${user.ho_ten}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/profile">Thông tin tài khoản</a></li>
-                    <li><a class="dropdown-item" href="/favorites">Sách yêu thích</a></li>
-                    <li><a class="dropdown-item" href="/my-orders">Lịch sử đơn hàng</a></li>
+                    <li><a class="dropdown-item" href="/profile">Tài khoản</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" id="logout-btn">Đăng xuất</a></li>
                 </ul>
@@ -83,7 +81,7 @@ function handlePopupLogin() {
 
     popupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const email = popupForm.email.value;
         const mat_khau = popupForm.mat_khau.value;
         const alertBox = document.getElementById('popup-alert');

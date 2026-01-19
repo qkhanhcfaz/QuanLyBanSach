@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Lấy token từ localStorage để xác thực
     const token = localStorage.getItem('token');
-    
+
     // Nếu không có token, chuyển hướng ngay về trang đăng nhập
     if (!token) {
         window.location.href = '/login';
@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const diaChiInput = document.getElementById('dia_chi');
     const tenDangNhapInput = document.getElementById('ten_dang_nhap');
 
+    // Avatar elements
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+
     // Các ô input trong form đổi mật khẩu
     const currentPasswordInput = document.getElementById('currentPassword');
     const newPasswordInput = document.getElementById('newPassword');
@@ -33,6 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // === CÁC HÀM XỬ LÝ LOGIC ===
+
+    // Xem trước ảnh khi chọn
+    avatarInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                avatarPreview.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
 
     /**
      * Hàm lấy thông tin profile của người dùng từ server và điền vào form.
@@ -52,15 +68,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 throw new Error('Không thể tải thông tin tài khoản.');
             }
-            
+
             const user = await response.json();
-            
+
             // Điền thông tin vào các ô input
             hoTenInput.value = user.ho_ten || '';
             emailInput.value = user.email || '';
             phoneInput.value = user.phone || '';
             diaChiInput.value = user.dia_chi || '';
             tenDangNhapInput.value = user.ten_dang_nhap || '';
+
+            // Hiển thị avatar
+            if (user.img) {
+                avatarPreview.src = user.img;
+            }
 
         } catch (error) {
             // Hiển thị lỗi nếu không tải được thông tin
@@ -69,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             profileAlert.style.display = 'block';
         }
     }
-    
+
     /**
      * Lắng nghe sự kiện submit của form "Thông tin cá nhân"
      */
@@ -81,22 +102,26 @@ document.addEventListener('DOMContentLoaded', () => {
         profileSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang lưu...';
         profileAlert.style.display = 'none'; // Ẩn thông báo cũ
 
-        // Lấy dữ liệu đã được người dùng cập nhật từ form
-        const updatedData = {
-            ho_ten: hoTenInput.value.trim(),
-            email: emailInput.value.trim(),
-            phone: phoneInput.value.trim(),
-            dia_chi: diaChiInput.value.trim(),
-        };
+        // Sử dụng FormData để gửi cả text và file
+        const formData = new FormData();
+        formData.append('ho_ten', hoTenInput.value.trim());
+        formData.append('email', emailInput.value.trim());
+        formData.append('phone', phoneInput.value.trim());
+        formData.append('dia_chi', diaChiInput.value.trim());
+
+        if (avatarInput.files[0]) {
+            formData.append('avatar', avatarInput.files[0]);
+        }
 
         try {
             const response = await fetch('/api/users/profile', {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    // KHÔNG set Content-Type: application/json khi dùng FormData
+                    // Browser sẽ tự set Content-Type: multipart/form-data kèm boundary
                 },
-                body: JSON.stringify(updatedData)
+                body: formData
             });
 
             const result = await response.json();
@@ -105,15 +130,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Hiển thị thông báo thành công
                 profileAlert.textContent = 'Cập nhật thông tin thành công!';
                 profileAlert.className = 'alert alert-success';
-                
+
                 // CẬP NHẬT LẠI DỮ LIỆU TRONG LOCALSTORAGE
-                // Điều này rất quan trọng để đảm bảo header hiển thị đúng tên/email mới
                 const userFromStorage = JSON.parse(localStorage.getItem('user'));
                 userFromStorage.ho_ten = result.ho_ten;
                 userFromStorage.email = result.email;
-                
+                if (result.ten_dang_nhap) userFromStorage.ten_dang_nhap = result.ten_dang_nhap;
+                if (result.img) {
+                    userFromStorage.img = result.img;
+                }
+
                 localStorage.setItem('user', JSON.stringify(userFromStorage));
-                // Nếu server trả về token mới (do đổi email), hãy cập nhật lại
                 if (result.token) {
                     localStorage.setItem('token', result.token);
                 }
@@ -154,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPassword = newPasswordInput.value;
 
         try {
-             const response = await fetch('/api/users/change-password', {
+            const response = await fetch('/api/users/change-password', {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -174,8 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 passwordAlert.className = 'alert alert-danger';
             }
         } catch (error) {
-             passwordAlert.textContent = 'Lỗi kết nối đến server.';
-             passwordAlert.className = 'alert alert-danger';
+            passwordAlert.textContent = 'Lỗi kết nối đến server.';
+            passwordAlert.className = 'alert alert-danger';
         } finally {
             passwordSubmitBtn.disabled = false;
             passwordSubmitBtn.textContent = 'Đổi mật khẩu';

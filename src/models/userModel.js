@@ -26,7 +26,13 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: true
     },
-    ten_dang_nhap: DataTypes.STRING
+    ten_dang_nhap: DataTypes.STRING,
+    phone: DataTypes.STRING,
+    dia_chi: DataTypes.STRING,
+    img: {
+        type: DataTypes.STRING,
+        defaultValue: '/images/default-avatar.png'
+    }
 }, {
     tableName: 'users',
     timestamps: true,
