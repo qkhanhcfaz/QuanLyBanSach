@@ -294,9 +294,30 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+/**
+ * @description     Xóa mềm đơn hàng (Admin)
+ * @route           DELETE /api/orders/:id
+ */
+const softDeleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    await order.destroy(); // Soft delete vì đã bật paranoid: true
+    res.json({ message: "Đã xóa đơn hàng thành công" });
+  } catch (error) {
+    console.error("Lỗi xóa đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
 module.exports = {
   updateOrderStatus,
   getAllOrders,
   createOrder,
   getOrderById,
+  softDeleteOrder,
 };

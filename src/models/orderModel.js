@@ -67,6 +67,7 @@ const Order = sequelize.define(
   {
     tableName: "orders",
     timestamps: true,
+    paranoid: true, // Soft delete: thêm cột deletedAt
   },
 );
 

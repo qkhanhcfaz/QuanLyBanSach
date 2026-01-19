@@ -72,7 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <td class="text-end">${formatCurrency(order.tong_thanh_toan)}</td>
                             <td class="text-center">${getStatusBadge(order.trang_thai_don_hang)}</td>
                             <td class="text-center">
-                                <a href="/admin/orders/${order.id}" class="btn btn-info btn-circle btn-sm" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                                <a href="/admin/orders/${order.id}" class="btn btn-info btn-circle btn-sm me-1" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                                <button class="btn btn-danger btn-circle btn-sm btn-delete-order" data-id="${order.id}" title="Xóa đơn hàng"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`;
           ordersTableBody.insertAdjacentHTML("beforeend", row);
@@ -101,6 +102,41 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // === GẮN SỰ KIỆN ===
+  // Sự kiện logic Xóa đơn hàng (Event Delegation)
+  ordersTableBody.addEventListener("click", async (e) => {
+    const deleteBtn = e.target.closest(".btn-delete-order");
+    if (!deleteBtn) return;
+
+    const orderId = deleteBtn.dataset.id;
+    if (confirm("Bạn có chắc chắn muốn xóa đơn hàng này không?")) {
+      try {
+        const response = await fetch(`/api/orders/${orderId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          alert("Xóa đơn hàng thành công!");
+          // Load lại trang hiện tại
+          const activePage =
+            document.querySelector(".page-item.active .page-link").dataset
+              .page || 1;
+          fetchAndRenderOrders(
+            parseInt(activePage),
+            keywordInput.value,
+            statusSelect.value,
+          );
+        } else {
+          const data = await response.json();
+          alert(data.message || "Xóa thất bại!");
+        }
+      } catch (error) {
+        console.error("Lỗi xóa đơn hàng:", error);
+        alert("Lỗi kết nối đến server.");
+      }
+    }
+  });
+
   // Sự kiện submit form tìm kiếm
   filterForm.addEventListener("submit", (e) => {
     e.preventDefault();

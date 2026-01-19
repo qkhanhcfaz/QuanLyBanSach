@@ -5,6 +5,7 @@ const {
   getAllOrders,
   createOrder,
   getOrderById,
+  softDeleteOrder,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
 
@@ -20,5 +21,8 @@ router.get("/:id", protect, admin, getOrderById);
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Chỉ Admin)
 router.put("/:id/status", protect, admin, updateOrderStatus);
+
+// DELETE /api/orders/:id - Xóa mềm đơn hàng (Chỉ Admin)
+router.delete("/:id", protect, admin, softDeleteOrder);
 
 module.exports = router;
