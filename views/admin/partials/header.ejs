@@ -87,6 +87,16 @@
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/users') ? 'active-admin' : '' %>">
                     <i class="fas fa-users me-2"></i>Người dùng
                 </a>
+                <!-- Bài viết (Blog) -->
+                <a href="/admin/posts"
+                    class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/posts') ? 'active-admin' : '' %>">
+                    <i class="fas fa-newspaper me-2"></i>Bài viết
+                </a>
+                <!-- Liên hệ -->
+                <a href="/admin/contacts"
+                    class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/contacts') ? 'active-admin' : '' %>">
+                    <i class="fas fa-envelope me-2"></i>Liên hệ
+                </a>
                 <!-- Cấu hình -->
                 <a href="/admin/settings"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/settings') ? 'active-admin' : '' %>">

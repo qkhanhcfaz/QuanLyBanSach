@@ -51,10 +51,30 @@
 
 <%- include('../partials/footer') %>
 
+
+<script src="https://cdn.tiny.cloud/1/6jxj84yhnkoprhrf3zff9cou3kt0p192bxg8k6xfdq8mlem7/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
 <script>
+// Initialize TinyMCE
+tinymce.init({
+    selector: '#noi_dung',
+    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+    height: 500,
+    menubar: false,
+    setup: function (editor) {
+        editor.on('change', function () {
+            editor.save(); // Sync content to textarea
+        });
+    }
+});
+
 document.getElementById('postForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    // Ensure TinyMCE updates the textarea before we grab the value
+    tinymce.triggerSave();
+
     const id = document.getElementById('postId').value;
     const token = localStorage.getItem('token');
     
@@ -62,7 +82,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         tieu_de: document.getElementById('tieu_de').value,
         hinh_anh: document.getElementById('hinh_anh').value,
         tom_tat: document.getElementById('tom_tat').value,
-        noi_dung: document.getElementById('noi_dung').value,
+        noi_dung: document.getElementById('noi_dung').value, // This now gets value from TinyMCE
         trang_thai: document.getElementById('trang_thai').checked
     };
 
