@@ -1,7 +1,7 @@
 // File: /src/controllers/adminViewController.js
 // GIAI ĐOẠN 1: Code cơ bản - Hiển thị được dữ liệu là thành công
 const db = require('../models');
-const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, sequelize } = db;
+const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, Role, sequelize } = db;
 
 /**
  * Render Dashboard
@@ -156,12 +156,23 @@ const renderAdminOrderDetailPage = async (req, res) => {
 /**
  * Render User
  */
-const renderAdminUsersPage = (req, res) => {
-    res.render('admin/pages/users', {
-        title: 'Quản lý Người dùng',
-        user: req.user,
-        path: '/users'
-    });
+const renderAdminUsersPage = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            include: [{ model: Role, as: 'role' }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.render('admin/pages/users', {
+            title: 'Quản lý Người dùng',
+            user: req.user,
+            path: '/users',
+            users: users
+        });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).send("Lỗi server");
+    }
 };
 
 /**
@@ -358,7 +369,60 @@ const renderBestSellingStatisticsPage = (req, res) => {
     });
 };
 
+/**
+ * Render Trang Liên hệ
+ */
+const renderAdminContactsPage = (req, res) => {
+    res.render('admin/pages/contacts', {
+        title: 'Quản lý Liên hệ',
+        user: req.user,
+        path: '/contacts'
+    });
+};
+
+/**
+ * Render Trang Quản lý Bài viết
+ */
+const renderAdminPostsPage = (req, res) => {
+    res.render('admin/pages/posts', {
+        title: 'Quản lý Bài viết',
+        user: req.user,
+        path: '/posts'
+    });
+};
+
+/**
+ * Render Form Thêm/Sửa Bài viết
+ */
+const renderPostFormPage = async (req, res) => {
+    try {
+        let post;
+        let title = 'Thêm Bài Viết Mới';
+
+        if (req.params.id) {
+            post = await Post.findByPk(req.params.id);
+            if (!post) {
+                return res.redirect('/admin/posts');
+            }
+            title = 'Chỉnh sửa Bài Viết';
+        }
+
+        res.render('admin/pages/post-form', {
+            title,
+            user: req.user,
+            post,
+            path: '/posts'
+        });
+    } catch (error) {
+        console.error(error);
+        res.redirect('/admin/posts');
+    }
+};
+
 module.exports = {
+    renderAdminPostsPage,
+    renderPostFormPage,
+    renderAdminContactsPage,
     renderAdminDashboard,
     renderAdminProducts,
     renderProductFormPage,

@@ -1,0 +1,101 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form id="postForm">
+                <input type="hidden" id="postId" value="<%= typeof post !== 'undefined' ? post.id : '' %>">
+                
+                <div class="mb-3">
+                    <label for="tieu_de" class="form-label">Tiêu đề bài viết (*)</label>
+                    <input type="text" class="form-control" id="tieu_de" required 
+                           value="<%= typeof post !== 'undefined' ? post.tieu_de : '' %>">
+                </div>
+
+                <div class="mb-3">
+                    <label for="hinh_anh" class="form-label">Link Ảnh bìa</label>
+                    <input type="text" class="form-control" id="hinh_anh" 
+                           value="<%= typeof post !== 'undefined' ? post.hinh_anh : '' %>">
+                </div>
+
+                <div class="mb-3">
+                    <label for="tom_tat" class="form-label">Tóm tắt ngắn</label>
+                    <textarea class="form-control" id="tom_tat" rows="3"><%= typeof post !== 'undefined' ? post.tom_tat : '' %></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="noi_dung" class="form-label">Nội dung chi tiết (HTML)</label>
+                    <!-- Simple textarea for now, could interface with CKEditor/TinyMCE if requested -->
+                    <textarea class="form-control" id="noi_dung" rows="10" required><%= typeof post !== 'undefined' ? post.noi_dung : '' %></textarea>
+                    <small class="text-muted">Hỗ trợ mã HTML cơ bản.</small>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="trang_thai" 
+                           <%= (typeof post !== 'undefined' && post.trang_thai) ? 'checked' : '' %>>
+                    <label class="form-check-label" for="trang_thai">Xuất bản ngay (Hiển thị lên trang chủ)</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Lưu bài viết
+                </button>
+                <a href="/admin/posts" class="btn btn-secondary">Hủy</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+document.getElementById('postForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('postId').value;
+    const token = localStorage.getItem('token');
+    
+    const data = {
+        tieu_de: document.getElementById('tieu_de').value,
+        hinh_anh: document.getElementById('hinh_anh').value,
+        tom_tat: document.getElementById('tom_tat').value,
+        noi_dung: document.getElementById('noi_dung').value,
+        trang_thai: document.getElementById('trang_thai').checked
+    };
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/posts/${id}` : '/api/posts';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        
+        if (res.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: result.message,
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.href = '/admin/posts';
+            });
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        Swal.fire('Lỗi!', error.message, 'error');
+    }
+});
+</script>

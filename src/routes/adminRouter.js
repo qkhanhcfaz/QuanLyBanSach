@@ -19,7 +19,10 @@ const {
     updateSiteSettings,
     renderRevenueStatisticsPage,
     renderOrderStatisticsPage,
-    renderBestSellingStatisticsPage
+    renderBestSellingStatisticsPage,
+    renderAdminContactsPage,
+    renderAdminPostsPage,
+    renderPostFormPage
 } = require('../controllers/adminViewController');
 
 // TẤT CẢ CÁC ROUTE TRONG FILE NÀY SẼ TỰ ĐỘNG CÓ TIỀN TỐ /admin
@@ -60,5 +63,17 @@ router.post('/settings', protect, admin, updateSiteSettings);
 
 // Quản lý Người dùng
 router.get('/users', protect, admin, renderAdminUsersPage);
+
+// Quản lý Chat Support
+const { renderAdminChatPage } = require('../controllers/chatController');
+router.get('/chat', protect, admin, renderAdminChatPage);
+
+// Quản lý Liên hệ
+router.get('/contacts', protect, admin, renderAdminContactsPage);
+
+// Quản lý Bài viết
+router.get('/posts', protect, admin, renderAdminPostsPage);
+router.get('/posts/add', protect, admin, renderPostFormPage);
+router.get('/posts/edit/:id', protect, admin, renderPostFormPage);
 
 module.exports = router;

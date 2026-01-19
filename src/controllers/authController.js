@@ -59,7 +59,10 @@ const login = async (req, res) => {
     const { email, mat_khau } = req.body;
 
     try {
-        const user = await User.findOne({ where: { email } });
+        const user = await User.findOne({ 
+            where: { email },
+            include: [{ model: Role, as: 'role' }]
+        });
 
         if (!user) {
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
@@ -87,11 +90,14 @@ const login = async (req, res) => {
                 maxAge: 30 * 24 * 60 * 60 * 1000 // 30 ngày
             });
 
+            const isAdmin = user.role_id === 1 || (user.role && (user.role.ten_quyen === 'admin' || user.role.ten_quyen === 'Admin' || user.role.ten_quyen === 'Quản trị viên'));
+            
             res.json({
                 id: user.id,
                 ho_ten: user.ho_ten,
                 email: user.email,
                 role_id: user.role_id,
+                isAdmin: isAdmin,
                 token: token
             });
         } else {
