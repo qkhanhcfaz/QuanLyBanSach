@@ -26,25 +26,25 @@ const viewRouter = require("./src/routes/viewRouter");
 const adminRouter = require("./src/routes/adminRouter");
 
 // Routers cho API (Backend Logic)
-const authRouter = require('./src/routes/authRouter');
-const userRouter = require('./src/routes/userRouter');
-const categoryRouter = require('./src/routes/categoryRouter');
-const productRouter = require('./src/routes/productRouter');
-const reviewRouter = require('./src/routes/reviewRouter');
-const cartRouter = require('./src/routes/cartRouter');
-const orderRouter = require('./src/routes/orderRouter');
-const slideshowRouter = require('./src/routes/slideshowRouter');
-const promotionRouter = require('./src/routes/promotionRouter');
-const comboRouter = require('./src/routes/comboRouter');
-const dashboardRouter = require('./src/routes/dashboardRouter');
-const ebookRouter = require('./src/routes/ebookRouter');
-const roleRouter = require('./src/routes/roleRouter');
-const receiptRouter = require('./src/routes/receiptRouter');
-const postRouter = require('./src/routes/postRouter');
-const provinceRouter = require('./src/routes/provinceRouter');
-const favoriteRouter = require('./src/routes/favoriteRouter');
-const chatRouter = require('./src/routes/chatRouter');
-const contactRouter = require('./src/routes/contactRouter');
+const authRouter = require("./src/routes/authRouter");
+const userRouter = require("./src/routes/userRouter");
+const categoryRouter = require("./src/routes/categoryRouter");
+const productRouter = require("./src/routes/productRouter");
+const reviewRouter = require("./src/routes/reviewRouter");
+const cartRouter = require("./src/routes/cartRouter");
+const orderRouter = require("./src/routes/orderRouter");
+const slideshowRouter = require("./src/routes/slideshowRouter");
+const promotionRouter = require("./src/routes/promotionRouter");
+const comboRouter = require("./src/routes/comboRouter");
+const dashboardRouter = require("./src/routes/dashboardRouter");
+const ebookRouter = require("./src/routes/ebookRouter");
+const roleRouter = require("./src/routes/roleRouter");
+const receiptRouter = require("./src/routes/receiptRouter");
+const postRouter = require("./src/routes/postRouter");
+const provinceRouter = require("./src/routes/provinceRouter");
+const favoriteRouter = require("./src/routes/favoriteRouter");
+const chatRouter = require("./src/routes/chatRouter");
+const contactRouter = require("./src/routes/contactRouter");
 // const postRouter = require('./src/routes/postRouter'); -> Already declared above
 
 // --- 3. KHỞI TẠO APP ---
@@ -105,7 +105,6 @@ app.use(async (req, res, next) => {
 // --- 5. GẮN (MOUNT) ROUTER ---
 
 // A. API Routes
-<<<<<<< HEAD
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/categories", categoryRouter);
@@ -123,28 +122,8 @@ app.use("/api/receipts", receiptRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/provinces", provinceRouter);
 app.use("/api/favorites", favoriteRouter);
-=======
-app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter);
-app.use('/api/categories', categoryRouter);
-app.use('/api/products', productRouter);
-app.use('/api/reviews', reviewRouter);
-app.use('/api/cart', cartRouter);
-app.use('/api/orders', orderRouter);
-app.use('/api/slideshows', slideshowRouter);
-app.use('/api/promotions', promotionRouter);
-app.use('/api/combos', comboRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api/ebooks', ebookRouter);
-app.use('/api/roles', roleRouter);
-app.use('/api/receipts', receiptRouter);
-app.use('/api/posts', postRouter);
-app.use('/api/provinces', provinceRouter);
-app.use('/api/favorites', favoriteRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/contacts', contactRouter);
-app.use('/api/posts', postRouter);
->>>>>>> 77da11814b85677759fc226a8054ba992b7611f8
+app.use("/api/chat", chatRouter);
+app.use("/api/contacts", contactRouter);
 
 // B. Admin Routes
 app.use("/admin", adminRouter);
@@ -155,24 +134,16 @@ app.use("/", viewRouter);
 // --- 6. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 8080;
 
-<<<<<<< HEAD
-// Tạm thời tắt alter: true để tránh lỗi syntax khi sync với bảng Users (Postgres)
-// Chúng ta sẽ dùng script riêng để update DB nếu cần.
-sequelize
-  .sync()
-  .then(() => {
-=======
 // 👉 IMPORT SEED (chỉ dùng khi cần)
 // const seedProducts = require('./src/seeders/seedProducts');
 // const seedOrders = require('./src/seeders/seedOrders');
 
-sequelize.sync({ alter: true })
+sequelize
+  .sync()
   .then(async () => {
     // ⚠️ CHỈ CHẠY SEED 1 LẦN, SAU ĐÓ COMMENT DÒNG NÀY
     // await seedProducts();
     // await seedOrders();
-
->>>>>>> 77da11814b85677759fc226a8054ba992b7611f8
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
       console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
