@@ -18,7 +18,7 @@
                 <div class="col">
                     <div class="card h-100 shadow-sm border-0 hover-lift">
                         <div class="position-relative overflow-hidden" style="height: 200px;">
-                            <img src="<%= post.anh_dai_dien || '/images/placeholder-blog.jpg' %>" 
+                            <img src="<%= post.hinh_anh || '/images/placeholder-blog.jpg' %>" 
                                  class="card-img-top h-100 w-100 object-fit-cover transition-transform" 
                                  alt="<%= post.tieu_de %>">
                             <div class="position-absolute top-0 start-0 bg-primary text-white px-3 py-1 m-2 rounded-pill small">
@@ -27,12 +27,12 @@
                         </div>
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title fw-bold">
-                                <a href="#" class="text-decoration-none text-dark stretched-link">
+                                <a href="/blog/<%= post.id %>" class="text-decoration-none text-dark stretched-link">
                                     <%= post.tieu_de %>
                                 </a>
                             </h5>
                             <p class="card-text text-muted flex-grow-1 small line-clamp-3">
-                                <%= post.noi_dung_ngan || 'Không có mô tả.' %>
+                                <%= post.tom_tat || 'Không có mô tả.' %>
                             </p>
                             <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
                                 <span class="text-primary fw-bold small">Đọc tiếp <i class="fas fa-arrow-right ms-1"></i></span>
