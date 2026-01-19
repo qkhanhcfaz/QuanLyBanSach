@@ -1,99 +1,95 @@
-const { Category } = require("../models");
+const { Category, Product } = require('../models');
 
-// GET /api/categories
-const getAllCategories = async (req, res) => {
-  try {
-    const categories = await Category.findAll({
-      attributes: ["id", "ten_danh_muc", "mo_ta", "danh_muc_cha_id"], // Removed "img"
-      order: [["id", "ASC"]],
-    });
-
-    res.json(categories);
-  } catch (error) {
-    console.error("Lỗi danh mục:", error);
-    res
-      .status(500)
-      .json({ error: "Lỗi khi lấy danh mục", chi_tiet: error.message });
-  }
-};
-
-// POST /api/categories
+// Tạo danh mục mới
 const createCategory = async (req, res) => {
-  try {
-    const { ten_danh_muc, mo_ta, danh_muc_cha_id } = req.body; // Removed img
+    try {
+        const { ten_danh_muc, danh_muc_cha_id, mo_ta, img } = req.body;
 
-    if (!ten_danh_muc) {
-      return res.status(400).json({ message: "Tên danh mục là bắt buộc" });
+        const newCategory = await Category.create({
+            ten_danh_muc,
+            danh_muc_cha_id: danh_muc_cha_id || null, // Nếu rỗng thì là null (danh mục gốc)
+            mo_ta,
+            img
+        });
+
+        res.status(201).json({
+            message: 'Thêm danh mục thành công!',
+            category: newCategory
+        });
+    } catch (error) {
+        console.error('Lỗi khi thêm danh mục:', error);
+        res.status(500).json({ message: 'Lỗi server khi thêm danh mục', error: error.message });
     }
-
-    const newCategory = await Category.create({
-      ten_danh_muc,
-      mo_ta,
-      danh_muc_cha_id: danh_muc_cha_id || null, // Removed img
-    });
-
-    res
-      .status(201)
-      .json({ message: "Tạo danh mục thành công", category: newCategory });
-  } catch (error) {
-    console.error("Lỗi tạo danh mục:", error);
-    res.status(500).json({ message: "Lỗi server khi tạo danh mục" });
-  }
 };
 
-// PUT /api/categories/:id
+// Cập nhật danh mục
 const updateCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { ten_danh_muc, mo_ta, danh_muc_cha_id } = req.body; // Removed img
+    try {
+        const { id } = req.params;
+        const { ten_danh_muc, danh_muc_cha_id, mo_ta, img } = req.body;
 
-    const category = await Category.findByPk(id);
+        const category = await Category.findByPk(id);
 
-    if (!category) {
-      return res.status(404).json({ message: "Không tìm thấy danh mục" });
+        if (!category) {
+            return res.status(404).json({ message: 'Không tìm thấy danh mục' });
+        }
+
+        // Cập nhật thông tin
+        category.ten_danh_muc = ten_danh_muc;
+        category.danh_muc_cha_id = danh_muc_cha_id || null;
+        category.mo_ta = mo_ta;
+        category.img = img;
+
+        await category.save();
+
+        res.json({
+            message: 'Cập nhật danh mục thành công!',
+            category
+        });
+    } catch (error) {
+        console.error('Lỗi khi cập nhật danh mục:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật danh mục', error: error.message });
     }
-
-    category.ten_danh_muc = ten_danh_muc || category.ten_danh_muc;
-    category.mo_ta = mo_ta !== undefined ? mo_ta : category.mo_ta;
-
-    // Handle logic null for danh_muc_cha_id if sent as null/empty
-    if (danh_muc_cha_id === null || danh_muc_cha_id === "") {
-      category.danh_muc_cha_id = null;
-    } else {
-      category.danh_muc_cha_id = danh_muc_cha_id;
-    }
-    // Removed img update logic
-
-    await category.save();
-
-    res.json({ message: "Cập nhật danh mục thành công", category });
-  } catch (error) {
-    console.error("Lỗi cập nhật danh mục:", error);
-    res.status(500).json({ message: "Lỗi server khi cập nhật danh mục" });
-  }
 };
 
-// DELETE /api/categories/:id
+// Xóa danh mục
 const deleteCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const category = await Category.findByPk(id);
+    try {
+        const { id } = req.params;
 
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+        const category = await Category.findByPk(id);
+
+        if (!category) {
+            return res.status(404).json({ message: 'Không tìm thấy danh mục' });
+        }
+
+        // 1. Kiểm tra xem có danh mục con không?
+        const childCount = await Category.count({ where: { danh_muc_cha_id: id } });
+        if (childCount > 0) {
+            return res.status(400).json({ message: 'Không thể xóa danh mục này vì còn chứa danh mục con.' });
+        }
+
+        // 2. Kiểm tra xem có sản phẩm thuộc danh mục này không?
+        const productCount = await Product.count({ where: { danh_muc_id: id } });
+        if (productCount > 0) {
+            return res.status(400).json({ message: `Không thể xóa danh mục này vì còn chứa ${productCount} sản phẩm.` });
+        }
+
+        await category.destroy();
+
+        res.json({ message: 'Xóa danh mục thành công!' });
+    } catch (error) {
+        console.error('Lỗi khi xóa danh mục:', error);
+        // Kiểm tra lỗi Foreign Key constraint của Database (nếu check ở trên bị sót)
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(400).json({ message: 'Không thể xóa danh mục này vì đang được sử dụng ở bảng khác.' });
+        }
+        res.status(500).json({ message: 'Lỗi server khi xóa danh mục', error: error.message });
     }
-
-    await category.destroy();
-    res.json({ message: "Category deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    res.status(500).json({ message: "Server error" });
-  }
 };
 
 module.exports = {
-  getAllCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
+    createCategory,
+    updateCategory,
+    deleteCategory
 };

@@ -1,67 +1,43 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/connectDB");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/connectDB');
 
-const Review = sequelize.define(
-  "Review",
-  {
-    id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
-    },
+const Review = sequelize.define('Review', {
     user_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
     },
     product_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'products',
+            key: 'id'
+        }
     },
     rating: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      validate: {
-        min: 1,
-        max: 5,
-      },
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            min: 1,
+            max: 5
+        }
     },
     comment: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    parent_id: {
-      type: DataTypes.BIGINT,
-      allowNull: true,
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-  },
-  {
-    tableName: "reviews",
-    timestamps: true,
-  },
-);
+        type: DataTypes.TEXT,
+        allowNull: true
+    }
+}, {
+    tableName: 'reviews',
+    timestamps: true
+});
 
 Review.associate = (models) => {
-  if (models.User) {
-    Review.belongsTo(models.User, {
-      foreignKey: "user_id",
-      as: "user",
-    });
-  }
-
-  if (models.Product) {
-    Review.belongsTo(models.Product, {
-      foreignKey: "product_id",
-      as: "product",
-    });
-  }
+    Review.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+    Review.belongsTo(models.Product, { foreignKey: 'product_id', as: 'product' });
 };
 
 module.exports = Review;

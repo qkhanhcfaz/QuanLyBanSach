@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const { sequelize } = require('../config/connectDB');
 
@@ -67,8 +67,8 @@ if (db.User && db.Message) {
 
 // [NEW/MERGED] User <-> Post (Author) 
 if (db.User && db.Post) {
-  db.User.hasMany(db.Post, { foreignKey: 'user_id', as: 'posts' });
-  db.Post.belongsTo(db.User, { foreignKey: 'user_id', as: 'author' });
+    db.User.hasMany(db.Post, { foreignKey: 'user_id', as: 'posts' });
+    db.Post.belongsTo(db.User, { foreignKey: 'user_id', as: 'author' });
 }
 
 // Call associate if it exists in each model
