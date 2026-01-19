@@ -1,6 +1,8 @@
 <!-- File: /views/pages/my-orders.ejs -->
 <%- include('../partials/header') %>
 
+
+
     <div class="container py-3">
         <div class="row">
             <!-- Sidebar -->
@@ -11,7 +13,36 @@
 
             <!-- Main Content -->
             <div class="col-md-9">
-                <h1 class="h3 mb-4">Lịch sử đơn hàng</h1>
+                <h1 class="h3 mb-4">Đơn hàng của bạn</h1>
+
+                <!-- Status Tabs -->
+                <ul class="nav nav-tabs mb-4" id="orderStatusTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-status="all"
+                            type="button" role="tab">Tất cả</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-status="pending"
+                            type="button" role="tab">Chờ xác nhận</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="confirmed-tab" data-bs-toggle="tab" data-status="confirmed"
+                            type="button" role="tab">Đã xác nhận</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="shipping-tab" data-bs-toggle="tab" data-status="shipping"
+                            type="button" role="tab">Đang giao</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="delivered-tab" data-bs-toggle="tab" data-status="delivered"
+                            type="button" role="tab">Đã giao</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-status="cancelled"
+                            type="button" role="tab">Đã hủy</button>
+                    </li>
+                </ul>
+
                 <div id="orders-container">
                     <div class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">

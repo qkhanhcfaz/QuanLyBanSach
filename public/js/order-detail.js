@@ -57,27 +57,30 @@ async function fetchAndRenderOrderDetail() {
  * @param {object} data - Đối tượng JSON chứa thông tin chi tiết đơn hàng từ API.
  */
 function renderOrderDetail(data) {
+    const detailContent = document.getElementById('order-detail-content');
+    if (detailContent) detailContent.style.display = 'block';
+
     // --- HIỂN THỊ THÔNG TIN CHUNG ---
     setText('order-id-header', `Chi tiết đơn hàng #${data.id}`);
     setText('order-date', new Date(data.createdAt).toLocaleDateString('vi-VN'));
-    
+
     // --- XỬ LÝ VÀ HIỂN THỊ CÁC BADGE TRẠNG THÁI ---
     const orderStatusInfo = getStatusInfo(data.trang_thai_don_hang);
     const paymentStatusInfo = getPaymentStatusInfo(data.trang_thai_thanh_toan);
-    
+
     const orderStatusBadgeEl = document.getElementById('order-status-badge');
     if (orderStatusBadgeEl) {
-        orderStatusBadgeEl.innerHTML = `<span class="badge ${orderStatusInfo.className}">${orderStatusInfo.text}</span>`;
+        orderStatusBadgeEl.innerHTML = `<span class="badge rounded-pill ${orderStatusInfo.className}">${orderStatusInfo.text}</span>`;
     }
 
     const paymentStatusBadgeEl = document.getElementById('payment-status-badge');
     if (paymentStatusBadgeEl) {
-        paymentStatusBadgeEl.innerHTML = `<span class="badge ${paymentStatusInfo.className}">${paymentStatusInfo.text}</span>`;
+        paymentStatusBadgeEl.innerHTML = `<span class="badge rounded-pill ${paymentStatusInfo.className}">${paymentStatusInfo.text}</span>`;
     }
 
     // --- HIỂN THỊ THÔNG TIN NGƯỜI NHẬN ---
     setText('customer-name', data.ten_nguoi_nhan);
-    setText('customer-phone', data.sdt_nguoi_nhan);
+    setText('customer-phone', data.so_dt_nguoi_nhan); // Fix mapping
     setText('customer-address', data.dia_chi_giao_hang);
 
     // --- HIỂN THỊ DANH SÁCH SẢN PHẨM ---
@@ -87,36 +90,48 @@ function renderOrderDetail(data) {
     if (data.orderItems && Array.isArray(data.orderItems) && data.orderItems.length > 0) {
         data.orderItems.forEach(item => {
             const productName = item.product ? item.product.ten_sach : 'Sản phẩm không còn tồn tại';
+            const productImage = item.product && item.product.img ? item.product.img : '/images/default-book.png';
             const productPrice = formatCurrency(parseFloat(item.don_gia));
             const lineTotal = formatCurrency(parseFloat(item.so_luong_dat) * parseFloat(item.don_gia));
 
             const itemRowHtml = `
                 <tr>
-                    <td>${productName}</td>
-                    <td class="text-center">${item.so_luong_dat}</td>
+                    <td>
+                        <img src="${productImage}" alt="${productName}" class="product-img-mini">
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark mb-1">${productName}</div>
+                        <div class="text-muted small">Mã sản phẩm: #${item.product_id}</div>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-light text-dark border px-3 py-2">${item.so_luong_dat}</span>
+                    </td>
                     <td class="text-end">${productPrice}</td>
-                    <td class="text-end">${lineTotal}</td>
+                    <td class="text-end fw-bold text-dark">${lineTotal}</td>
                 </tr>
             `;
             itemsContainer.innerHTML += itemRowHtml;
         });
     } else {
-        itemsContainer.innerHTML = '<tr><td colspan="4" class="text-center">Không có sản phẩm nào trong đơn hàng này.</td></tr>';
+        itemsContainer.innerHTML = '<tr><td colspan="4" class="text-center py-4">Không có sản phẩm nào trong đơn hàng này.</td></tr>';
     }
 
     // --- HIỂN THỊ TỔNG TIỀN (BAO GỒM GIẢM GIÁ) ---
     setText('subtotal', formatCurrency(parseFloat(data.tong_tien_hang)));
     setText('shipping-fee', formatCurrency(parseFloat(data.phi_van_chuyen)));
     setText('total-price', formatCurrency(parseFloat(data.tong_thanh_toan)));
-    
+
     const discountRow = document.getElementById('discount-row');
     const discountAmountEl = document.getElementById('discount-amount');
-    
-    if (data.so_tien_giam_gia && parseFloat(data.so_tien_giam_gia) > 0) {
-        discountAmountEl.textContent = `- ${formatCurrency(parseFloat(data.so_tien_giam_gia))}`;
-        discountRow.style.display = 'flex'; // Sử dụng flex để căn chỉnh
+
+    // Fix mapping from so_tien_giam_gia to giam_gia
+    if (data.giam_gia && parseFloat(data.giam_gia) > 0) {
+        discountAmountEl.textContent = `- ${formatCurrency(parseFloat(data.giam_gia))}`;
+        discountRow.classList.add('d-flex');
+        discountRow.style.display = 'flex';
     } else {
-        discountRow.style.display = 'none'; // Ẩn đi nếu không có giảm giá
+        discountRow.classList.remove('d-flex');
+        discountRow.style.display = 'none';
     }
 
     // Ẩn thông báo lỗi nếu tải thành công

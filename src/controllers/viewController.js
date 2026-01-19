@@ -282,7 +282,7 @@ const renderCheckoutPage = (req, res) => {
 };
 
 const renderMyOrdersPage = (req, res) => {
-  res.render('pages/my-orders', { title: 'Đơn Hàng Của Tôi', user: req.user });
+  res.render('pages/my-orders', { title: 'Đơn hàng của bạn', user: req.user });
 };
 
 const renderOrderDetailPage = (req, res) => {

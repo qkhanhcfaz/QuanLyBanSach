@@ -2,96 +2,199 @@
 
 <%- include('../partials/header') %>
 
-<main class="container my-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            
-            <!-- TIÊU ĐỀ -->
-            <h2 id="order-id-header">Đang tải chi tiết đơn hàng...</h2>
-            <hr>
+    <style>
+        .order-detail-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: all 0.3s ease;
+        }
 
-            <!-- THÔNG BÁO LỖI (quan trọng) -->
-            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+        .info-icon-wrapper {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-right: 15px;
+        }
 
-            <!-- THÔNG TIN CHUNG CỦA ĐƠN HÀNG -->
-            <div class="card mb-4">
-                <div class="card-header">Thông tin đơn hàng</div>
-                <div class="card-body">
-                    <p><strong>Ngày đặt hàng:</strong> <span id="order-date"></span></p>
-                    <p><strong>Trạng thái đơn hàng:</strong> <span id="order-status-badge"></span></p> <!-- Đổi ID -->
-                    <p><strong>Trạng thái thanh toán:</strong> <span id="payment-status-badge"></span></p> <!-- Dòng mới -->
-                </div>
+        .bg-primary-light {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+        .bg-success-light {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+
+        .product-img-mini {
+            width: 40px;
+            height: 55px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #fff;
+            padding: 2px;
+            border: 1px solid #eee;
+        }
+
+        .summary-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #edf2f7;
+        }
+
+        .table thead th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            color: #718096;
+            padding: 1rem;
+        }
+    </style>
+
+    <main class="container py-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 mb-4">
+                <% const activePage='orders' ; %>
+                    <%- include('../partials/account-sidebar', { activePage: activePage }) %>
             </div>
 
-            <!-- THÔNG TIN NGƯỜI NHẬN -->
-            <div class="card mb-4">
-                <div class="card-header">Địa chỉ giao hàng</div>
-                <div class="card-body">
-                    <p><strong>Người nhận:</strong> <span id="customer-name"></span></p>
-                    <p><strong>Số điện thoại:</strong> <span id="customer-phone"></span></p>
-                    <p><strong>Địa chỉ:</strong> <span id="customer-address"></span></p>
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 id="order-id-header" class="h3 mb-1 fw-bold">Chi tiết đơn hàng</h2>
+                        <p class="text-muted mb-0">Theo dõi thông tin và trạng thái đơn hàng của bạn</p>
+                    </div>
+                    <a href="/my-orders" class="btn btn-outline-secondary btn-sm px-3 rounded-pill">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại
+                    </a>
                 </div>
-            </div>
 
-            <!-- DANH SÁCH SẢN PHẨM TRONG ĐƠN HÀNG -->
-            <div class="card mb-4">
-                <div class="card-header">Các sản phẩm đã đặt</div>
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Sản phẩm</th>
-                                <th class="text-center">Số lượng</th>
-                                <th class="text-right">Đơn giá</th>
-                                <th class="text-right">Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <!-- JavaScript sẽ điền dữ liệu vào đây -->
-                        <tbody id="order-items-tbody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                <!-- THÔNG BÁO LỖI -->
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
 
-            <!-- TỔNG KẾT ĐƠN HÀNG -->
-            <div class="row justify-content-end">
-                <div class="col-md-5">
-                    <div class="card">
-                        <div class="card-body">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span>Tạm tính:</span>
-                                    <strong id="subtotal"></strong>
-                                </li>
-                                <!-- Dòng mới hiển thị giảm giá (nếu có) -->
-                                <li id="discount-row" class="list-group-item d-flex justify-content-between text-success" style="display: none;">
+                <div id="order-detail-content" style="display: none;">
+                    <div class="row">
+                        <!-- THÔNG TIN CHUNG CỦA ĐƠN HÀNG -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 order-detail-card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="info-icon-wrapper bg-primary-light">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </div>
+                                        <h5 class="mb-0 fw-bold">Thông tin đơn hàng</h5>
+                                    </div>
+                                    <div class="ps-1">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Ngày đặt hàng:</span>
+                                            <span id="order-date" class="fw-medium"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">Trạng thái:</span>
+                                            <span id="order-status-badge"></span>
+                                        </p>
+                                        <p class="mb-0 d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">Thanh toán:</span>
+                                            <span id="payment-status-badge"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- THÔNG TIN NGƯỜI NHẬN -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 order-detail-card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="info-icon-wrapper bg-success-light">
+                                            <i class="fas fa-shipping-fast"></i>
+                                        </div>
+                                        <h5 class="mb-0 fw-bold">Địa chỉ giao hàng</h5>
+                                    </div>
+                                    <div class="ps-1">
+                                        <p class="mb-2"><strong>Người nhận:</strong> <span id="customer-name"></span>
+                                        </p>
+                                        <p class="mb-2"><strong>Điện thoại:</strong> <span id="customer-phone"></span>
+                                        </p>
+                                        <p class="mb-0"><strong>Địa chỉ:</strong> <span id="customer-address"
+                                                class="text-muted small"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DANH SÁCH SẢN PHẨM TRONG ĐƠN HÀNG -->
+                    <div class="card mb-4 order-detail-card overflow-hidden">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-box-open me-2 text-primary"></i>Sản phẩm đã đặt
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 70px;" class="text-center">Ảnh</th>
+                                            <th>Thông tin sản phẩm</th>
+                                            <th class="text-center">Số lượng</th>
+                                            <th class="text-end">Đơn giá</th>
+                                            <th class="text-end">Thành tiền</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-items-tbody">
+                                        <!-- JS content here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TỔNG KẾT ĐƠN HÀNG -->
+                    <div class="row justify-content-end">
+                        <div class="col-md-5">
+                            <div class="summary-card p-4 shadow-sm">
+                                <h5 class="fw-bold mb-3">Tổng cộng</h5>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Tạm tính:</span>
+                                    <span id="subtotal" class="fw-bold text-dark"></span>
+                                </div>
+                                <div id="discount-row" class="justify-content-between mb-2 text-success"
+                                    style="display: none;">
                                     <span>Giảm giá:</span>
-                                    <strong id="discount-amount"></strong>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span>Phí vận chuyển:</span>
-                                    <strong id="shipping-fee"></strong>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between bg-light">
-                                    <span class="h5">Tổng cộng:</span>
-                                    <span class="h5" id="total-price"></span>
-                                </li>
-                            </ul>
+                                    <span id="discount-amount" class="fw-bold"></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="text-muted">Phí vận chuyển:</span>
+                                    <span id="shipping-fee" class="fw-bold text-dark"></span>
+                                </div>
+                                <div class="border-top pt-3 mt-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="h5 mb-0 fw-bold">Tổng thanh toán:</span>
+                                        <span class="h4 mb-0 text-danger fw-bold" id="total-price"></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- NÚT QUAY LẠI -->
-            <div class="text-center mt-4">
-               <a href="/my-orders" class="btn btn-secondary">Quay lại lịch sử đơn hàng</a>
             </div>
-
         </div>
+    </main>
     </div>
-</main>
+    </main>
 
-<!-- Đảm bảo bạn đã nhúng file script ở cuối trang -->
-<script src="/js/order-detail.js"></script>
+    <!-- Đảm bảo bạn đã nhúng file script ở cuối trang -->
+    <script src="/js/order-detail.js"></script>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>

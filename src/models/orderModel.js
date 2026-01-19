@@ -54,6 +54,10 @@ const Order = sequelize.define('Order', {
         type: DataTypes.DECIMAL(10, 2),
         defaultValue: 0
     },
+    giam_gia: {
+        type: DataTypes.DECIMAL(10, 2),
+        defaultValue: 0
+    },
     tong_thanh_toan: {
         type: DataTypes.DECIMAL(10, 2),
         defaultValue: 0

@@ -15,4 +15,15 @@ router.get('/', protect, admin, getAllOrders);
 // POST /api/orders
 router.post('/', protect, createOrder);
 
+// Hủy đơn hàng (User)
+// PUT /api/orders/:id/cancel
+const { getMyOrders, cancelOrder, reorderOrder, getOrderDetails } = require('../controllers/orderController');
+router.get('/myorders', protect, getMyOrders);
+router.get('/:id', protect, getOrderDetails); // Thêm route này
+router.put('/:id/cancel', protect, cancelOrder);
+
+// Mua lại đơn hàng (User)
+// PUT /api/orders/:id/reorder
+router.put('/:id/reorder', protect, reorderOrder);
+
 module.exports = router;

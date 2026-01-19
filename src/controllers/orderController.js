@@ -245,8 +245,135 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
+/**
+ * Lấy lịch sử đơn hàng của chính mình (User)
+ * GET /api/orders/myorders
+ */
+const getMyOrders = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orders = await Order.findAll({
+            where: { user_id: userId },
+            include: [
+                {
+                    model: OrderItem,
+                    as: 'orderItems',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json(orders);
+    } catch (error) {
+        console.error('Lỗi get my orders:', error);
+        res.status(500).json({ message: 'Lỗi server khi lấy lịch sử đơn hàng' });
+    }
+};
+
+/**
+ * Hủy đơn hàng (User)
+ * PUT /api/orders/:id/cancel
+ */
+const cancelOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const order = await Order.findOne({
+            where: { id, user_id: userId }
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
+        }
+
+        if (order.trang_thai_don_hang !== 'pending') {
+            return res.status(400).json({ message: 'Chỉ có thể hủy đơn hàng ở trạng thái chờ xác nhận.' });
+        }
+
+        order.trang_thai_don_hang = 'cancelled';
+        await order.save();
+
+        res.json({ message: 'Đã hủy đơn hàng thành công.', order });
+    } catch (error) {
+        console.error('Lỗi cancel order:', error);
+        res.status(500).json({ message: 'Lỗi server khi hủy đơn hàng.' });
+    }
+};
+
+/**
+ * Đặt lại đơn hàng đã hủy (User)
+ * PUT /api/orders/:id/reorder
+ */
+const reorderOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const order = await Order.findOne({
+            where: { id, user_id: userId }
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
+        }
+
+        if (order.trang_thai_don_hang !== 'cancelled') {
+            return res.status(400).json({ message: 'Chỉ có thể mua lại đơn hàng đã hủy.' });
+        }
+
+        // Chuyển lại về trạng thái chờ xác nhận
+        order.trang_thai_don_hang = 'pending';
+        // Có thể cần reset lại trạng thái thanh toán nếu cần
+        order.trang_thai_thanh_toan = false;
+
+        await order.save();
+
+        res.json({ message: 'Đã đặt lại đơn hàng thành công.', order });
+    } catch (error) {
+        console.error('Lỗi reorder:', error);
+        res.status(500).json({ message: 'Lỗi server khi đặt lại đơn hàng.' });
+    }
+};
+
+/**
+ * Lấy chi tiết một đơn hàng cụ thể (User)
+ * GET /api/orders/:id
+ */
+const getOrderDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const order = await Order.findOne({
+            where: { id, user_id: userId },
+            include: [
+                {
+                    model: OrderItem,
+                    as: 'orderItems',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng của bạn.' });
+        }
+
+        res.json(order);
+    } catch (error) {
+        console.error('Lỗi get order details:', error);
+        res.status(500).json({ message: 'Lỗi server khi lấy chi tiết đơn hàng.' });
+    }
+};
+
 module.exports = {
     updateOrderStatus,
     getAllOrders,
-    createOrder // <--- Xuất hàm mới
+    createOrder,
+    getMyOrders,
+    cancelOrder,
+    reorderOrder,
+    getOrderDetails
 };
