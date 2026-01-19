@@ -21,7 +21,12 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    ho_ten: DataTypes.STRING
+    ho_ten: DataTypes.STRING,
+    trang_thai: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    ten_dang_nhap: DataTypes.STRING
 }, {
     tableName: 'users',
     timestamps: true,
