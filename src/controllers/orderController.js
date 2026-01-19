@@ -23,7 +23,8 @@ const createOrder = async (req, res) => {
             email_nguoi_nhan,
             ghi_chu_khach_hang,
             phuong_thuc_thanh_toan,
-            ma_khuyen_mai
+            ma_khuyen_mai,
+            selectedCartItemIds // <--- Nhận danh sách ID từ client
         } = req.body;
         const userId = req.user.id;
 
@@ -34,14 +35,22 @@ const createOrder = async (req, res) => {
             return res.status(400).json({ message: 'Giỏ hàng trống.' });
         }
 
-        const cartItems = await CartItem.findAll({
+        // Tạo điều kiện query
+        const queryOptions = {
             where: { cart_id: cart.id },
             include: [{ model: Product, as: 'product' }]
-        });
+        };
+
+        // Nếu client gửi lên danh sách ID được chọn, thì lọc theo đó
+        if (selectedCartItemIds && Array.isArray(selectedCartItemIds) && selectedCartItemIds.length > 0) {
+            queryOptions.where.id = selectedCartItemIds;
+        }
+
+        const cartItems = await CartItem.findAll(queryOptions);
 
         if (!cartItems || cartItems.length === 0) {
             await t.rollback();
-            return res.status(400).json({ message: 'Giỏ hàng trống.' });
+            return res.status(400).json({ message: 'Không có sản phẩm nào được chọn để thanh toán.' });
         }
 
         let tong_tien = 0;
@@ -55,8 +64,8 @@ const createOrder = async (req, res) => {
             // Check tồn kho lần cuối (quan trọng)
             if (item.so_luong > product.so_luong_ton_kho) {
                 await t.rollback();
-                return res.status(400).json({ 
-                    message: `Sản phẩm "${product.ten_sach}" đã hết hàng hoặc không đủ số lượng.` 
+                return res.status(400).json({
+                    message: `Sản phẩm "${product.ten_sach}" đã hết hàng hoặc không đủ số lượng.`
                 });
             }
 
@@ -71,7 +80,7 @@ const createOrder = async (req, res) => {
 
             // TRỪ TỒN KHO
             await product.decrement('so_luong_ton_kho', { by: item.so_luong, transaction: t });
-            
+
             // TĂNG SỐ LƯỢNG ĐÃ BÁN (Optional)
             await product.increment('da_ban', { by: item.so_luong, transaction: t });
         }
@@ -87,7 +96,7 @@ const createOrder = async (req, res) => {
         const newOrder = await Order.create({
             user_id: userId,
             ten_nguoi_nhan,
-            so_dt_nguoi_nhan,
+            so_dt_nguoi_nhan: sdt_nguoi_nhan, // Map sdt -> so_dt
             dia_chi_giao_hang,
             email_nguoi_nhan,
             ghi_chu_khach_hang,
@@ -109,7 +118,17 @@ const createOrder = async (req, res) => {
         }
 
         // 6. Xóa giỏ hàng sau khi đặt thành công
-        await CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
+        // 6. Xóa các sản phẩm đã đặt khỏi giỏ hàng
+        // Chỉ xóa những item đã nằm trong cartItems (đã lọc ở trên)
+        const orderedItemIds = cartItems.map(item => item.id);
+        if (orderedItemIds.length > 0) {
+            await CartItem.destroy({
+                where: {
+                    id: orderedItemIds
+                },
+                transaction: t
+            });
+        }
 
         await t.commit(); // Lưu thay đổi vào DB
 
@@ -119,9 +138,15 @@ const createOrder = async (req, res) => {
         });
 
     } catch (error) {
-        await t.rollback();
+        // Chỉ rollback nếu transaction chưa commit/rollback
+        if (t && !t.finished) {
+            await t.rollback();
+        }
         console.error('Lỗi createOrder:', error);
-        res.status(500).json({ message: 'Lỗi server khi tạo đơn hàng.' });
+        res.status(500).json({
+            message: 'Lỗi server khi tạo đơn hàng: ' + error.message,
+            stack: error.stack
+        });
     }
 };
 

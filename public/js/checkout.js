@@ -125,6 +125,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 return;
             }
+            // Lọc danh sách items dựa trên selection từ trang giỏ hàng
+            const selectedIdsJSON = sessionStorage.getItem('selectedCartItemIds');
+            let selectedIds = null;
+            if (selectedIdsJSON) {
+                try {
+                    selectedIds = JSON.parse(selectedIdsJSON);
+                    // Convert to string set for easier lookup
+                    const selectedSet = new Set(selectedIds.map(String));
+
+                    // Lọc cart items
+                    cart.items = cart.items.filter(item => selectedSet.has(String(item.id)));
+                } catch (e) {
+                    console.error("Lỗi parsing selectedCartItemIds", e);
+                }
+            }
+
+            if (!cart.items || cart.items.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Chưa chọn sản phẩm',
+                    text: 'Bạn chưa chọn sản phẩm nào để thanh toán. Quay lại giỏ hàng?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Quay lại giỏ hàng',
+                    cancelButtonText: 'Ở lại'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/cart';
+                    }
+                });
+                // Vẫn render (trống) hoặc return tùy ý
+                // return; 
+            }
+
             const discountAmount = parseFloat(sessionStorage.getItem('discountAmountApplied')) || 0;
             renderSummary(cart, discountAmount);
 
@@ -197,6 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const phuong_thuc_thanh_toan = document.querySelector('input[name="paymentMethod"]:checked').value;
         const ma_khuyen_mai = sessionStorage.getItem('promoCodeToCheckout') || null;
 
+        // Lấy lại selected IDs để gửi lên server
+        const selectedIdsJSON = sessionStorage.getItem('selectedCartItemIds');
+        const selectedCartItemIds = selectedIdsJSON ? JSON.parse(selectedIdsJSON) : [];
 
         // Vô hiệu hóa nút để tránh double-click
         const submitButton = checkoutForm.querySelector('button[type="submit"]');
@@ -218,11 +254,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     email_nguoi_nhan,
                     ghi_chu_khach_hang,
                     phuong_thuc_thanh_toan,
-                    ma_khuyen_mai
+                    ma_khuyen_mai,
+                    selectedCartItemIds // Gửi kèm danh sách ID
                 })
             });
 
-            const data = await response.json();
+            // Đọc response dưới dạng text trước để check lỗi HTML
+            const textData = await response.text();
+            let data;
+            try {
+                data = JSON.parse(textData);
+            } catch (e) {
+                console.error("Server returned non-JSON:", textData);
+                throw new Error(`Server returned non-JSON response: ${textData.substring(0, 100)}...`);
+            }
 
             if (response.ok) {
                 sessionStorage.removeItem('promoCodeToCheckout');
@@ -253,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Lỗi khi đặt hàng:', error);
             alertBox.className = 'alert alert-danger';
-            alertBox.textContent = 'Không thể kết nối đến server. Vui lòng thử lại sau.';
+            alertBox.innerHTML = `Lỗi kết nối: ${error.message} <br> <small>${error.stack || ''}</small>`;
             alertBox.style.display = 'block';
             // Kích hoạt lại nút submit
             submitButton.disabled = false;
