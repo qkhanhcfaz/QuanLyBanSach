@@ -43,6 +43,9 @@ const receiptRouter = require("./src/routes/receiptRouter");
 const postRouter = require("./src/routes/postRouter");
 const provinceRouter = require("./src/routes/provinceRouter");
 const favoriteRouter = require("./src/routes/favoriteRouter");
+const chatRouter = require("./src/routes/chatRouter");
+const contactRouter = require("./src/routes/contactRouter");
+// const postRouter = require('./src/routes/postRouter'); -> Already declared above
 
 // --- 3. KHỞI TẠO APP ---
 const app = express();
@@ -119,6 +122,9 @@ app.use("/api/receipts", receiptRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/provinces", provinceRouter);
 app.use("/api/favorites", favoriteRouter);
+app.use("/api/chat", chatRouter);
+app.use("/api/contacts", contactRouter);
+app.use("/api/posts", postRouter);
 
 // B. Admin Routes
 app.use("/admin", adminRouter);
@@ -129,11 +135,17 @@ app.use("/", viewRouter);
 // --- 6. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 8080;
 
-// Tạm thời tắt alter: true để tránh lỗi syntax khi sync với bảng Users (Postgres)
-// Chúng ta sẽ dùng script riêng để update DB nếu cần.
+// 👉 IMPORT SEED (chỉ dùng khi cần)
+// const seedProducts = require('./src/seeders/seedProducts');
+// const seedOrders = require('./src/seeders/seedOrders');
+
 sequelize
-  .sync()
-  .then(() => {
+  .sync({ alter: true })
+  .then(async () => {
+    // ⚠️ CHỈ CHẠY SEED 1 LẦN, SAU ĐÓ COMMENT DÒNG NÀY
+    // await seedProducts();
+    // await seedOrders();
+
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
       console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);

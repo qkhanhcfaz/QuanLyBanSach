@@ -1,12 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const {
-  getAllOrders,
-  getOrderById,
   updateOrderStatus,
+  getAllOrders,
   createOrder,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
+
+// Tạo đơn hàng mới (User)
+// POST /api/orders
+router.post("/", protect, createOrder);
 
 // POST /api/orders - Tạo đơn hàng (User đã đăng nhập)
 router.post("/", protect, createOrder);

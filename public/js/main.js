@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // PHẦN 1: CÁC HÀM LUÔN CHẠY TRÊN MỌI TRANG
     // ====================================================================
     handleAuthLinks();
+    handlePopupLogin(); // <--- Kích hoạt logic popup login
     loadCategoriesForMenu();
 
     // ====================================================================
@@ -65,10 +66,84 @@ function handleAuthLinks() {
         }
     } else {
         authLinksContainer.innerHTML = `
-            <a class="btn btn-outline-primary me-2" href="/login">Đăng nhập</a>
+            <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
+                Đăng nhập
+            </button>
             <a class="btn btn-primary" href="/register">Đăng ký</a>
         `;
     }
+}
+
+/**
+ * Xử lý logic đăng nhập trên Popup Modal
+ */
+function handlePopupLogin() {
+    const popupForm = document.getElementById('popupLoginForm');
+    if (!popupForm) return;
+
+    popupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = popupForm.email.value;
+        const mat_khau = popupForm.mat_khau.value;
+        const alertBox = document.getElementById('popup-alert');
+        const submitBtn = popupForm.querySelector('button[type="submit"]');
+
+        // Reset trạng thái
+        alertBox.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xử lý...';
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, mat_khau }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Lưu token
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify({
+                    id: data.id,
+                    ho_ten: data.ho_ten,
+                    email: data.email,
+                    role_id: data.role_id
+                }));
+
+                // Ẩn modal
+                const modalEl = document.getElementById('loginModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                // SweetAlert báo thành công
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập thành công!',
+                    text: `Chào mừng ${data.ho_ten} quay trở lại!`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                // Reload trang để cập nhật Header
+                window.location.reload();
+            } else {
+                alertBox.className = 'alert alert-danger';
+                alertBox.textContent = data.message || 'Đăng nhập thất bại';
+                alertBox.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Login Error:', error);
+            alertBox.className = 'alert alert-danger';
+            alertBox.textContent = 'Mất kết nối server. Vui lòng thử lại sau.';
+            alertBox.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Đăng Nhập';
+        }
+    });
 }
 
 /**

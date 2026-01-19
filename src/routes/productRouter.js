@@ -9,6 +9,10 @@ const { protect, admin } = require("../middlewares/authMiddleware");
 // Import models
 const { Product, Category, sequelize } = require("../models");
 const { Op } = require("sequelize");
+const multer = require("multer");
+const path = require("path");
+const { protect, admin } = require("../middlewares/authMiddleware");
+const { createReview } = require("../controllers/productController");
 
 // --- CẤU HÌNH MULTER UPLOAD ẢNH ---
 const storage = multer.diskStorage({
@@ -554,11 +558,15 @@ router.post("/", protect, admin, upload.single("img"), createProduct);
 // PUT /api/products/:id - Cập nhật sản phẩm (Có upload ảnh, chỉ Admin)
 router.put("/:id", protect, admin, upload.single("img"), updateProduct);
 
-// DELETE /api/products/:id - Xóa sản phẩm (Chỉ Admin)
-router.delete("/:id", protect, admin, deleteProduct);
+// GET /api/products/:id - Lấy chi tiết sản phẩm
+// (Ưu tiên route này nằm SAU route :id/stock để tránh trùng lặp nếu có logic conflict, nhưng stock cụ thể hơn nên để trước là an toàn nhất)
+router.get("/:id", getProductById);
 
-// GET /api/products/export/excel - Export Excel (Chỉ Admin)
-router.get("/export/excel", protect, admin, exportProductsToExcel);
+// POST /api/products/:id/reviews - Gửi đánh giá
+router.post("/:id/reviews", protect, createReview);
+
+// POST /api/products - Tạo sản phẩm mới (có upload ảnh)
+router.post("/", upload.single("img"), createProduct);
 
 // GET /api/products/publishers - Lấy danh sách NXB
 router.get("/publishers", getAllPublishers);
