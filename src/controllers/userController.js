@@ -206,6 +206,7 @@ const updateUserProfile = async (req, res) => {
     user.phone = req.body.phone || user.phone;
     user.dia_chi = req.body.dia_chi || user.dia_chi;
     user.ngay_sinh = req.body.ngay_sinh || user.ngay_sinh;
+    user.gioi_tinh = req.body.gioi_tinh || user.gioi_tinh;
 
     // Xử lý khi người dùng thay đổi email
     if (req.body.email && req.body.email !== user.email) {

@@ -61,6 +61,11 @@ const User = sequelize.define(
       type: DataTypes.DATEONLY,
       allowNull: true,
     },
+    gioi_tinh: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      // "Nam", "Nữ", "Khác"
+    },
     trang_thai: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
