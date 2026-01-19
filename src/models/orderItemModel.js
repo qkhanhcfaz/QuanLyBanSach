@@ -1,47 +1,54 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/connectDB');
+const { DataTypes } = require("sequelize");
 
-const OrderItem = sequelize.define('OrderItem', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
-    order_id: {
-        type: DataTypes.INTEGER, // Changed from UUID to INTEGER to match Order model
-        allowNull: false
-    },
-    product_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    so_luong_dat: {
+module.exports = (sequelize) => {
+  const OrderItem = sequelize.define(
+    "OrderItem",
+    {
+      id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      order_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+      },
+      product_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      so_luong_dat: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 1
+      },
+      don_gia: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
+      },
     },
-    don_gia: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
-        allowNull: false
-    },
-    updatedAt: {
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
-        allowNull: false
+    {
+      tableName: "order_items", // Lưu ý tên bảng là order_items (số nhiều, có s)
+      timestamps: true, // Bảng này CÓ createdAt, updatedAt trong schema PostgreSQL
     }
-}, {
-    tableName: 'order_items',
-    timestamps: true
-});
+  );
 
-OrderItem.associate = (models) => {
-    OrderItem.belongsTo(models.Order, { foreignKey: 'order_id', as: 'order' });
-    OrderItem.belongsTo(models.Product, { foreignKey: 'product_id', as: 'product' });
+  OrderItem.associate = (models) => {
+    // HEAD Association
+    if (models.Order) {
+      OrderItem.belongsTo(models.Order, {
+        foreignKey: "order_id",
+        as: "order",
+      });
+    }
+
+    // Remote Association
+    if (models.Product) {
+      OrderItem.belongsTo(models.Product, {
+        foreignKey: "product_id",
+        as: "product",
+      });
+    }
+  };
+
+  return OrderItem;
 };
-
-module.exports = OrderItem;
