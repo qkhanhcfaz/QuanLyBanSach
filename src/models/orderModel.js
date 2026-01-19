@@ -23,7 +23,7 @@ const Order = sequelize.define(
     },
     sdt_nguoi_nhan: {
       type: DataTypes.STRING(20),
-      allowNull: false,
+      allowNull: true,
     },
     dia_chi_giao_hang: {
       type: DataTypes.STRING(255),
