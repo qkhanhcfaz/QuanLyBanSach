@@ -1,5 +1,5 @@
 const db = require('../models');
-const { User, Role } = db;
+const { User, Role, Cart, CartItem } = db;
 const bcrypt = require('bcryptjs');
 
 /**
@@ -117,13 +117,20 @@ const deleteUser = async (req, res) => {
         if (req.user.id === user.id) {
             return res.status(400).json({ message: 'Không thể xóa chính mình!' });
         }
-        
+
         if (user.role && (user.role.ten_quyen.toLowerCase() === 'admin' || user.role.ten_quyen.toLowerCase() === 'quản trị viên')) {
-             return res.status(400).json({ message: 'Không thể xóa tài khoản Quản trị viên! (Role: ' + user.role.ten_quyen + ')' });
+            return res.status(400).json({ message: 'Không thể xóa tài khoản Quản trị viên! (Role: ' + user.role.ten_quyen + ')' });
         }
-        
+
         if (user.role_id === 1 || user.role_id === '1') {
-             return res.status(400).json({ message: 'Không thể xóa tài khoản có ID Vai trò là 1 (Admin)!' });
+            return res.status(400).json({ message: 'Không thể xóa tài khoản có ID Vai trò là 1 (Admin)!' });
+        }
+
+        // Xóa giỏ hàng liên quan trước
+        const cart = await Cart.findOne({ where: { user_id: user.id } });
+        if (cart) {
+            await CartItem.destroy({ where: { cart_id: cart.id } });
+            await cart.destroy();
         }
 
         await user.destroy();
