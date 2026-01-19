@@ -111,30 +111,29 @@ Product.associate = (models) => {
     onDelete: "CASCADE",
     hooks: true,
   });
+  if (models.CartItem) {
+    Product.hasMany(models.CartItem, {
+      foreignKey: "product_id",
+      onDelete: "CASCADE",
+      hooks: true,
+    });
+  }
+
+  if (models.Review) {
+    Product.hasMany(models.Review, {
+      foreignKey: "product_id",
+      as: "reviews",
+      onDelete: "CASCADE",
+      hooks: true,
+    });
+  }
+
+  if (models.ReceiptItem) {
+    Product.hasMany(models.ReceiptItem, {
+      foreignKey: "product_id",
+      as: "receiptHistory",
+    });
+  }
 };
-
-if (models.CartItem) {
-  Product.hasMany(models.CartItem, {
-    foreignKey: "product_id",
-    onDelete: "CASCADE",
-    hooks: true,
-  });
-}
-
-if (models.Review) {
-  Product.hasMany(models.Review, {
-    foreignKey: "product_id",
-    as: "reviews",
-    onDelete: "CASCADE",
-    hooks: true,
-  });
-}
-
-if (models.ReceiptItem) {
-  Product.hasMany(models.ReceiptItem, {
-    foreignKey: "product_id",
-    as: "receiptHistory",
-  });
-}
 
 module.exports = Product;

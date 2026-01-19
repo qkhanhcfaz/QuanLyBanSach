@@ -23,8 +23,7 @@ const User = sequelize.define(
     role_id: {
       type: DataTypes.BIGINT,
       allowNull: false,
-      defaultValue: 2, // Mặc định là 'User'
-      // references đã được định nghĩa trong associate, bỏ tại đây để tránh lỗi syntax khi sync alter table
+      // defaultValue: 2, // Đã chuyển vào hook beforeCreate để tránh lỗi syntax SQL
     },
     // ==========================================================
 
@@ -80,6 +79,10 @@ const User = sequelize.define(
     timestamps: true,
     hooks: {
       beforeCreate: async (user) => {
+        // Gán role mặc định nếu chưa có
+        if (!user.role_id) {
+          user.role_id = 2;
+        }
         if (user.mat_khau) {
           const salt = await bcrypt.genSalt(10);
           user.mat_khau = await bcrypt.hash(user.mat_khau, salt);

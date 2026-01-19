@@ -9,9 +9,7 @@ const { protect, admin } = require("../middlewares/authMiddleware");
 // Import models
 const { Product, Category, sequelize } = require("../models");
 const { Op } = require("sequelize");
-const multer = require("multer");
-const path = require("path");
-const { protect, admin } = require("../middlewares/authMiddleware");
+
 const { createReview } = require("../controllers/productController");
 
 // --- CẤU HÌNH MULTER UPLOAD ẢNH ---
@@ -565,13 +563,7 @@ router.get("/:id", getProductById);
 // POST /api/products/:id/reviews - Gửi đánh giá
 router.post("/:id/reviews", protect, createReview);
 
-// POST /api/products - Tạo sản phẩm mới (có upload ảnh)
-router.post("/", upload.single("img"), createProduct);
-
 // GET /api/products/publishers - Lấy danh sách NXB
 router.get("/publishers", getAllPublishers);
-
-// GET /api/products/:id - Lấy chi tiết sản phẩm (Đặt cuối cùng để tránh trùng route)
-router.get("/:id", getProductById);
 
 module.exports = router;

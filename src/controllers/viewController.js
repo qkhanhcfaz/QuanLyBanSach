@@ -150,6 +150,16 @@ const renderProductDetailPage = async (req, res) => {
       ],
     });
 
+    // 4. Đếm số lượt yêu thích
+    const favoriteCount = await Favorite.count({ where: { product_id: id } });
+
+    // 5. Tính điểm trung bình
+    let avgRating = 0;
+    if (reviews && reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+      avgRating = (totalRating / reviews.length).toFixed(1);
+    }
+
     // 6) Check if user can review (Has purchased & Delivered > Reviewed)
     let canReview = false;
     let deliveredOrderCount = 0;
@@ -181,7 +191,7 @@ const renderProductDetailPage = async (req, res) => {
     }
 
     return res.render("pages/product-detail", {
-      title: product.ten_sach || "Product Detail",
+      title: product.ten_sach || "Chi tiết sản phẩm",
       product,
       reviews,
       relatedProducts,
@@ -193,8 +203,8 @@ const renderProductDetailPage = async (req, res) => {
       deliveredOrderCount: req.user ? deliveredOrderCount : 0,
     });
   } catch (error) {
-    console.error("Lỗi trang tin tức:", error);
-    res.render("pages/error", { message: "Lỗi tải danh sách bài viết" });
+    console.error("Lỗi trang chi tiết sản phẩm:", error);
+    res.render("pages/error", { message: "Lỗi tải thông tin sản phẩm" });
   }
 };
 
@@ -317,11 +327,41 @@ exports.renderProfilePage = renderProfilePage;
 exports.renderForgotPasswordPage = renderForgotPasswordPage;
 exports.renderResetPasswordPage = renderResetPasswordPage;
 exports.renderFavoritesPage = renderFavoritesPage;
-exports.renderAboutPage = renderAboutPage;
-exports.renderRecruitmentPage = renderRecruitmentPage;
-exports.renderTermsPage = renderTermsPage;
-exports.renderGuidePage = renderGuidePage;
-exports.renderReturnPolicyPage = renderReturnPolicyPage;
+exports.renderAboutPage = (req, res) => {
+  res.render("pages/about", {
+    title: "Giới thiệu",
+    user: req.user,
+    path: "/about",
+  });
+};
+exports.renderRecruitmentPage = (req, res) => {
+  res.render("pages/recruitment", {
+    title: "Tuyển dụng",
+    user: req.user,
+    path: "/recruitment",
+  });
+};
+exports.renderTermsPage = (req, res) => {
+  res.render("pages/terms", {
+    title: "Điều khoản",
+    user: req.user,
+    path: "/terms",
+  });
+};
+exports.renderGuidePage = (req, res) => {
+  res.render("pages/guide", {
+    title: "Hướng dẫn mua hàng",
+    user: req.user,
+    path: "/guide",
+  });
+};
+exports.renderReturnPolicyPage = (req, res) => {
+  res.render("pages/return-policy", {
+    title: "Chính sách đổi trả",
+    user: req.user,
+    path: "/return-policy",
+  });
+};
 exports.renderContactPage = async (req, res) => {
   res.render("pages/contact", {
     title: "Liên hệ",
@@ -394,4 +434,10 @@ exports.renderBlogDetailPage = async (req, res) => {
   }
 };
 
-exports.renderFAQPage = renderFAQPage;
+exports.renderFAQPage = (req, res) => {
+  res.render("pages/faq", {
+    title: "Câu hỏi thường gặp",
+    user: req.user,
+    path: "/faq",
+  });
+};
