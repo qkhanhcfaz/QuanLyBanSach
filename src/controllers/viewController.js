@@ -1,11 +1,11 @@
-const { Op } = require('sequelize');
-const db = require('../models');
+const { Op } = require("sequelize");
+const db = require("../models");
 
 const { Product, Category, Slideshow, Review, User, Favorite, Post } = db;
-const { getMyFavoriteIds } = require('./favoriteController');
+const { getMyFavoriteIds } = require("./favoriteController");
 
 // Configuration for model relationships
-const REVIEW_FOREIGN_KEY = 'product_id'; // Standard foreign key for Review model
+const REVIEW_FOREIGN_KEY = "product_id"; // Standard foreign key for Review model
 
 /** Helpers */
 const toInt = (v, def = 0) => {
@@ -116,14 +116,14 @@ const renderProductDetailPage = async (req, res) => {
 
     if (!product) {
       // Redirect to product list if specific product is missing (e.g., ID 1 error)
-      return res.redirect('/products?error=product_not_found');
+      return res.redirect("/products?error=product_not_found");
     }
 
     // [LOGIC MỚI - FINAL]
     // Sử dụng Middleware trong server.js để tracking previousPath.
 
     const currentUrl = req.originalUrl;
-    const previousUrl = req.session.previousPath; // Được set bởi middleware toàn cục
+    const previousUrl = req.session?.previousPath; // Được set bởi middleware toàn cục
 
     console.log("------- CHECK VIEW SESSION (FINAL) -------");
     console.log("Previous URL:", previousUrl);
@@ -169,21 +169,23 @@ const renderProductDetailPage = async (req, res) => {
       deliveredOrderCount = await db.Order.count({
         where: {
           user_id: req.user.id,
-          trang_thai_don_hang: 'delivered'
+          trang_thai_don_hang: "delivered",
         },
-        include: [{
-          model: db.OrderItem,
-          as: 'orderItems',
-          where: { product_id: id }
-        }]
+        include: [
+          {
+            model: db.OrderItem,
+            as: "orderItems",
+            where: { product_id: id },
+          },
+        ],
       });
 
       // Count existing reviews by this user for this product
       const existingReviewCount = await db.Review.count({
         where: {
           user_id: req.user.id,
-          product_id: id
-        }
+          product_id: id,
+        },
       });
 
       canReview = deliveredOrderCount > existingReviewCount;
@@ -199,8 +201,8 @@ const renderProductDetailPage = async (req, res) => {
       avgRating = (totalRating / reviews.length).toFixed(1);
     }
 
-    return res.render('pages/product-detail', {
-      title: product.ten_sach || 'Product Detail',
+    return res.render("pages/product-detail", {
+      title: product.ten_sach || "Product Detail",
       product,
       reviews,
       relatedProducts,
@@ -209,9 +211,8 @@ const renderProductDetailPage = async (req, res) => {
       user: req.user,
       canReview,
       avgRating,
-      deliveredOrderCount: req.user ? deliveredOrderCount : 0
+      deliveredOrderCount: req.user ? deliveredOrderCount : 0,
     });
-
   } catch (error) {
     console.error("Lỗi chi tiết sản phẩm:", error);
     res
@@ -266,23 +267,26 @@ const renderResetPasswordPage = (req, res) => {
 };
 
 const renderRecruitmentPage = (req, res) => {
-  res.render('pages/careers', { title: 'Tuyển Dụng', user: req.user });
+  res.render("pages/careers", { title: "Tuyển Dụng", user: req.user });
 };
 
 const renderTermsPage = (req, res) => {
-  res.render('pages/terms', { title: 'Điều Khoản', user: req.user });
+  res.render("pages/terms", { title: "Điều Khoản", user: req.user });
 };
 
 const renderGuidePage = (req, res) => {
-  res.render('pages/guide', { title: 'Hướng Dẫn Mua Hàng', user: req.user });
+  res.render("pages/guide", { title: "Hướng Dẫn Mua Hàng", user: req.user });
 };
 
 const renderReturnPolicyPage = (req, res) => {
-  res.render('pages/return-policy', { title: 'Chính Sách Đổi Trả', user: req.user });
+  res.render("pages/return-policy", {
+    title: "Chính Sách Đổi Trả",
+    user: req.user,
+  });
 };
 
 const renderFAQPage = (req, res) => {
-  res.render('pages/faq', { title: 'Câu Hỏi Thường Gặp', user: req.user });
+  res.render("pages/faq", { title: "Câu Hỏi Thường Gặp", user: req.user });
 };
 
 /**
@@ -293,7 +297,7 @@ const renderBlogPage = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 6;
     const offset = (page - 1) * limit;
-    const keyword = req.query.keyword || '';
+    const keyword = req.query.keyword || "";
 
     const whereClause = { trang_thai: true };
     if (keyword) {
@@ -304,22 +308,22 @@ const renderBlogPage = async (req, res) => {
       where: whereClause,
       limit: limit,
       offset: offset,
-      order: [['createdAt', 'DESC']],
-      include: [{ model: User, as: 'author', attributes: ['ho_ten'] }]
+      order: [["createdAt", "DESC"]],
+      include: [{ model: User, as: "author", attributes: ["ho_ten"] }],
     });
 
-    res.render('pages/blog', {
-      title: 'Tin tức',
+    res.render("pages/blog", {
+      title: "Tin tức",
       user: req.user,
-      path: '/blog',
+      path: "/blog",
       posts: rows,
       currentPage: page,
       totalPages: Math.ceil(count / limit),
-      keyword
+      keyword,
     });
   } catch (error) {
-    console.error('Render Blog Error:', error);
-    res.status(500).render('pages/error', { message: 'Lỗi tải bài viết' });
+    console.error("Render Blog Error:", error);
+    res.status(500).render("pages/error", { message: "Lỗi tải bài viết" });
   }
 };
 
@@ -330,26 +334,29 @@ const renderBlogDetailPage = async (req, res) => {
   try {
     const post = await Post.findOne({
       where: { id: req.params.id, trang_thai: true },
-      include: [{ model: User, as: 'author', attributes: ['ho_ten'] }]
+      include: [{ model: User, as: "author", attributes: ["ho_ten"] }],
     });
 
-    if (!post) return res.status(404).render('pages/error', { message: 'Bài viết không tồn tại' });
+    if (!post)
+      return res
+        .status(404)
+        .render("pages/error", { message: "Bài viết không tồn tại" });
 
-    res.render('pages/blog-detail', {
+    res.render("pages/blog-detail", {
       title: post.tieu_de,
       user: req.user,
-      path: '/blog',
-      post
+      path: "/blog",
+      post,
     });
   } catch (error) {
-    res.status(500).render('pages/error', { message: 'Lỗi tải bài viết' });
+    res.status(500).render("pages/error", { message: "Lỗi tải bài viết" });
   }
 };
 
 const renderFavoritesPage = async (req, res) => {
   try {
     if (!req.user) {
-      return res.redirect('/login');
+      return res.redirect("/login");
     }
 
     const userId = req.user.id;
@@ -359,39 +366,40 @@ const renderFavoritesPage = async (req, res) => {
       include: [
         {
           model: Product,
-          attributes: ['id', 'ten_sach', 'gia_bia', 'img']
-        }
+          attributes: ["id", "ten_sach", "gia_bia", "img"],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
-    const products = favorites.map(fav => fav.Product);
-    const favoriteProductIds = products.map(p => p.id);
+    const products = favorites.map((fav) => fav.Product);
+    const favoriteProductIds = products.map((p) => p.id);
 
-    res.render('pages/favorites', {
-      title: 'Sách Yêu Thích',
+    res.render("pages/favorites", {
+      title: "Sách Yêu Thích",
       products,
-      favoriteProductIds
+      favoriteProductIds,
     });
-
   } catch (error) {
-    console.error('Render Favorites Page Error:', error);
-    res.status(500).render('pages/error', {
-      title: 'Lỗi Server',
-      message: 'Đã có lỗi xảy ra khi tải danh sách yêu thích. Vui lòng thử lại sau.'
+    console.error("Render Favorites Page Error:", error);
+    res.status(500).render("pages/error", {
+      title: "Lỗi Server",
+      message:
+        "Đã có lỗi xảy ra khi tải danh sách yêu thích. Vui lòng thử lại sau.",
     });
   }
 };
 
-const renderAboutPage = (req, res) => { // Dummy function as it was missing from original snippet but exported
-  res.render('pages/about', { title: 'Giới Thiệu', user: req.user });
+const renderAboutPage = (req, res) => {
+  // Dummy function as it was missing from original snippet but exported
+  res.render("pages/about", { title: "Giới Thiệu", user: req.user });
 };
 
 const renderContactPage = async (req, res) => {
-  res.render('pages/contact', {
-    title: 'Liên hệ',
+  res.render("pages/contact", {
+    title: "Liên hệ",
     user: req.user,
-    path: '/contact'
+    path: "/contact",
   });
 };
 
@@ -418,5 +426,5 @@ module.exports = {
   renderFAQPage,
   renderContactPage,
   renderBlogPage,
-  renderBlogDetailPage
+  renderBlogDetailPage,
 };
