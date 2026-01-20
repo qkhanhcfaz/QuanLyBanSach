@@ -164,13 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
         shippingFeeEl.textContent = formatCurrency(shippingFee);
 
         // Xử lý hiển thị dòng giảm giá
-        if (currentDiscountAmount > 0 && subtotal > 0) {
-            // Nếu subtotal < discount thì sao? Thường discount ko được quá subtotal
-            // Ở đây cứ hiển thị, việc tính toán fix âm ở dưới
-            discountAmountEl.textContent = `- ${formatCurrency(currentDiscountAmount)}`;
-            discountRow.style.display = 'flex';
-        } else {
-            discountRow.style.display = 'none';
+        if (discountRow && discountAmountEl) {
+            if (currentDiscountAmount > 0 && subtotal > 0) {
+                // Nếu subtotal < discount thì sao? Thường discount ko được quá subtotal
+                // Ở đây cứ hiển thị, việc tính toán fix âm ở dưới
+                discountAmountEl.textContent = `- ${formatCurrency(currentDiscountAmount)}`;
+                discountRow.style.display = 'flex';
+            } else {
+                discountRow.style.display = 'none';
+            }
         }
 
         // Tính tổng tiền cuối cùng và đảm bảo không bị âm

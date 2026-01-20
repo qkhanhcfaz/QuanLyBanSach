@@ -6,7 +6,7 @@ const MOMO_CONFIG = {
   accessKey: process.env.MOMO_ACCESS_KEY,
   secretKey: process.env.MOMO_SECRET_KEY,
   partnerCode: process.env.MOMO_PARTNER_CODE,
-  redirectUrl: process.env.SERVER_URL + "/checkout/result", // Chuyển hướng sau khi thanh toán
+  redirectUrl: process.env.SERVER_URL + "/my-orders", // Chuyển hướng sau khi thanh toán
   ipnUrl: process.env.SERVER_URL + "/api/payment/momo-ipn", // Server MoMo gọi vào
   requestType: "payWithATM",
   extraData: "",

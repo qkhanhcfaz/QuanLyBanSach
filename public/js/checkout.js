@@ -197,11 +197,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hiển thị dòng giảm giá nếu có
     const discountRowCheckout = document.getElementById('discount-row-checkout');
     const discountAmountCheckout = document.getElementById('discount-amount-checkout');
-    if (discountAmount > 0) {
-      discountAmountCheckout.textContent = `- ${discountAmount.toLocaleString('vi-VN')}đ`;
-      discountRowCheckout.style.display = 'flex';
-    } else {
-      discountRowCheckout.style.display = 'none';
+    if (discountRowCheckout && discountAmountCheckout) {
+      if (discountAmount > 0) {
+        discountAmountCheckout.textContent = `- ${discountAmount.toLocaleString('vi-VN')}đ`;
+        discountRowCheckout.style.display = 'flex';
+      } else {
+        discountRowCheckout.style.display = 'none';
+      }
     }
 
     // <<< TÍNH LẠI TỔNG CỘNG CUỐI CÙNG >>>

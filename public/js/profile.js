@@ -12,9 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Form và các nút submit
   const profileForm = document.getElementById("profileForm");
-  const passwordForm = document.getElementById("passwordForm");
   const profileSubmitBtn = profileForm.querySelector('button[type="submit"]');
-  const passwordSubmitBtn = passwordForm.querySelector('button[type="submit"]');
 
   // Các ô input trong form thông tin cá nhân
   const hoTenInput = document.getElementById("ho_ten");
@@ -22,15 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const phoneInput = document.getElementById("phone");
   const diaChiInput = document.getElementById("dia_chi");
   const ngaySinhInput = document.getElementById("ngay_sinh");
+  const gioiTinhInput = document.getElementById("gioi_tinh"); // Thêm input giới tính
   const tenDangNhapInput = document.getElementById("ten_dang_nhap");
-
-  // Các ô input trong form đổi mật khẩu
-  const currentPasswordInput = document.getElementById("currentPassword");
-  const newPasswordInput = document.getElementById("newPassword");
 
   // Các hộp thoại thông báo
   const profileAlert = document.getElementById("profileAlert");
-  const passwordAlert = document.getElementById("passwordAlert");
 
   // === CÁC HÀM XỬ LÝ LOGIC ===
 
@@ -61,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
       phoneInput.value = user.phone || "";
       diaChiInput.value = user.dia_chi || "";
       ngaySinhInput.value = user.ngay_sinh || "";
+      gioiTinhInput.value = user.gioi_tinh || ""; // Điền giới tính
       tenDangNhapInput.value = user.ten_dang_nhap || "";
     } catch (error) {
       // Hiển thị lỗi nếu không tải được thông tin
@@ -89,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
       phone: phoneInput.value.trim(),
       dia_chi: diaChiInput.value.trim(),
       ngay_sinh: ngaySinhInput.value,
+      gioi_tinh: gioiTinhInput.value, // Lấy giá trị giới tính
     };
 
     try {
@@ -138,51 +134,6 @@ document.addEventListener("DOMContentLoaded", () => {
       profileSubmitBtn.textContent = "Lưu thay đổi";
       // Hiển thị hộp thoại thông báo
       profileAlert.style.display = "block";
-    }
-  });
-
-  /**
-   * Lắng nghe sự kiện submit của form "Đổi mật khẩu"
-   */
-  passwordForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    // Vô hiệu hóa nút và hiển thị trạng thái đang xử lý
-    passwordSubmitBtn.disabled = true;
-    passwordSubmitBtn.innerHTML =
-      '<span class="spinner-border spinner-border-sm"></span> Đang đổi...';
-    passwordAlert.style.display = "none";
-
-    const currentPassword = currentPasswordInput.value;
-    const newPassword = newPasswordInput.value;
-
-    try {
-      const response = await fetch("/api/users/change-password", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        passwordAlert.textContent = result.message;
-        passwordAlert.className = "alert alert-success";
-        passwordForm.reset(); // Xóa các trường trong form sau khi đổi thành công
-      } else {
-        passwordAlert.textContent = result.message || "Đổi mật khẩu thất bại.";
-        passwordAlert.className = "alert alert-danger";
-      }
-    } catch (error) {
-      passwordAlert.textContent = "Lỗi kết nối đến server.";
-      passwordAlert.className = "alert alert-danger";
-    } finally {
-      passwordSubmitBtn.disabled = false;
-      passwordSubmitBtn.textContent = "Đổi mật khẩu";
-      passwordAlert.style.display = "block";
     }
   });
 

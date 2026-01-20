@@ -16,6 +16,8 @@ const { sequelize } = require("../config/connectDB"); // <--- Thêm sequelize đ
 const createOrder = async (req, res) => {
   const t = await sequelize.transaction(); // Bắt đầu transaction
   try {
+    console.log("👉 createOrder Request Body:", JSON.stringify(req.body, null, 2));
+
     const {
       ten_nguoi_nhan,
       sdt_nguoi_nhan,
@@ -106,14 +108,14 @@ const createOrder = async (req, res) => {
       {
         user_id: userId,
         ten_nguoi_nhan,
-        so_dt_nguoi_nhan: sdt_nguoi_nhan, // Map sdt -> so_dt
+        sdt_nguoi_nhan, // Correct key matches model
         dia_chi_giao_hang,
         email_nguoi_nhan,
         ghi_chu_khach_hang,
         phuong_thuc_thanh_toan,
         tong_tien_hang: tong_tien,
         phi_van_chuyen,
-        giam_gia,
+        // giam_gia, // Removed as column does not exist in model
         tong_thanh_toan, // Fix: tong_thu_thuc -> tong_thanh_toan
         trang_thai_don_hang: "pending", // Chờ xác nhận
         trang_thai_thanh_toan: false,
@@ -156,7 +158,10 @@ const createOrder = async (req, res) => {
     if (t && !t.finished) {
       await t.rollback();
     }
-    console.error("Lỗi createOrder:", error);
+    console.error("❌ Lỗi createOrder:", error);
+    if (error.original) {
+      console.error("❌ Sequelize Error Detail:", error.original);
+    }
     res.status(500).json({
       message: "Lỗi server khi tạo đơn hàng: " + error.message,
       stack: error.stack,
@@ -267,7 +272,7 @@ const getOrderById = async (req, res) => {
         {
           model: User,
           as: "user",
-          attributes: ["id", "ho_ten", "email", "so_dien_thoai"],
+          attributes: ["id", "ho_ten", "email"],
         },
         {
           model: OrderItem,
@@ -281,10 +286,45 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
 
+    // [DEBUG] Log để kiểm tra type
+    console.log(`[AUTH CHECK] OrderUser: ${order.user_id} (${typeof order.user_id}) | RequestUser: ${req.user.id} (${typeof req.user.id}) | Role: ${req.user.role_id}`);
+
+    // [MỚI] Check quyền xem
+    // Fix lỗi so sánh type (String vs Number)
+    // Nếu không phải Admin (role_id = 1) VÀ không phải chủ đơn hàng -> Chặn
+    if (String(req.user.role_id) !== '1' && String(order.user_id) !== String(req.user.id)) {
+      console.log('⛔ Truy cập bị từ chối.');
+      return res.status(403).json({ message: "Bạn không có quyền xem đơn hàng này." });
+    }
+
     res.json(order);
   } catch (error) {
     console.error("Lỗi get order by id:", error);
     res.status(500).json({ message: "Lỗi server khi lấy chi tiết đơn hàng" });
+  }
+};
+
+/**
+ * Lấy danh sách đơn hàng của tôi (User)
+ * GET /api/orders/myorders
+ */
+const getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      where: { user_id: req.user.id },
+      order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: OrderItem,
+          as: "orderItems",
+          include: [{ model: Product, as: "product" }],
+        },
+      ],
+    });
+    res.json(orders);
+  } catch (error) {
+    console.error("Lỗi get my orders:", error);
+    res.status(500).json({ message: "Lỗi server khi lấy lịch sử đơn hàng" });
   }
 };
 
@@ -293,4 +333,5 @@ module.exports = {
   getAllOrders,
   createOrder,
   getOrderById,
+  getMyOrders,
 };

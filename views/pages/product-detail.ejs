@@ -1,4 +1,4 @@
-<!-- File: /views/pages/product-detail.ejs (Phiên bản đã fix - không bị lặp) -->
+<!-- File: /views/pages/product-detail.ejs (Fixed) -->
 <%- include('../partials/header') %>
 
 <div class="container my-5">
@@ -19,20 +19,17 @@
     <div class="col-lg-5">
       <h1 class="product-title display-6"><%= product.ten_sach %></h1>
 
-      <!-- Thông tin Tác giả và NXB -->
       <div class="product-meta mb-3">
         <span>Tác giả: <%= product.tac_gia || 'Đang cập nhật' %></span>
         <span class="mx-2">|</span>
         <span>NXB: <%= product.nha_xuat_ban || 'Đang cập nhật' %></span>
       </div>
 
-      <!-- Giá sản phẩm -->
       <div class="product-price-wrapper mb-3">
         <h2 class="text-danger fw-bold mb-2">
           <%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %> đ
         </h2>
 
-        <!-- Stock Status Badge -->
         <div class="mb-3">
           <% if (product.so_luong_ton_kho > 0) { %>
             <span class="badge bg-success"><i class="fas fa-check me-1"></i>Còn hàng</span>
@@ -41,7 +38,6 @@
           <% } %>
         </div>
 
-        <!-- Realtime Stats -->
         <div class="d-flex align-items-center mb-3">
           <div class="me-3" title="Lượt xem">
             <i class="fas fa-eye text-muted me-1"></i>
@@ -64,7 +60,6 @@
 
       <hr>
 
-      <!-- Bộ chọn số lượng và nút Thêm vào giỏ -->
       <div class="d-flex align-items-center mb-4">
         <span class="me-3">Số lượng:</span>
         <div class="input-group quantity-selector me-3" style="width: 120px;">
@@ -81,7 +76,7 @@
         </div>
       </div>
 
-      <% 
+      <%
         const isFav =
           (typeof favoriteProductIds !== 'undefined') &&
           favoriteProductIds.some(id => String(id) === String(product.id));
@@ -126,7 +121,7 @@
       </div>
 
       <div class="service-box mt-4">
-        <h5 class="service-box-title">Dịch vụ & Khuyến mãi</h5>
+        <h5 class="service-box-title">Dịch vụ</h5>
         <ul class="list-unstyled">
           <li class="d-flex">
             <i class="fas fa-check-circle text-success me-2 mt-1"></i>
@@ -169,10 +164,10 @@
 
         <div class="col-md-8">
           <div class="d-flex flex-column justify-content-center h-100">
-            <% 
+            <%
               const starCounts = {1:0, 2:0, 3:0, 4:0, 5:0};
-              reviews.forEach(r => { starCounts[r.rating]++; });
-              const total = reviews.length || 1;
+              (reviews || []).forEach(r => { starCounts[r.rating] = (starCounts[r.rating] || 0) + 1; });
+              const total = (reviews && reviews.length) ? reviews.length : 1;
             %>
 
             <% for (let s = 5; s >= 1; s--) { %>
@@ -326,7 +321,7 @@
               <div class="card-body d-flex flex-column p-3">
                 <h6
                   class="card-title flex-grow-1"
-                  style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; height: 3em; line-height: 1.5em;"
+                  style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; height: 3em; line-height: 1.5em;"
                 >
                   <a
                     href="/products/<%= rProd.id %>"
@@ -362,12 +357,14 @@
                   </button>
                 </div>
               </div>
+
             </div>
           </div>
         <% }) %>
       </div>
     </div>
   <% } %>
+
 </div>
 
 <!-- JS -->
