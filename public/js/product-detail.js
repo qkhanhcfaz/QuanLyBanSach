@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (response.ok) {
                     const data = await response.json();
 
-                    // Cập nhật giao diện số lượng
+                    // Cập nhật giao diện số lượng tồn kho 
                     stockDisplay.textContent = data.stock;
 
                     // Cập nhật max cho input số lượng

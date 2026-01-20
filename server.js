@@ -124,7 +124,6 @@ app.use("/api/provinces", provinceRouter);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/contacts", contactRouter);
-app.use("/api/posts", postRouter);
 
 // B. Admin Routes
 app.use("/admin", adminRouter);
@@ -140,12 +139,11 @@ const PORT = process.env.PORT || 8080;
 // const seedOrders = require('./src/seeders/seedOrders');
 
 sequelize
-  .sync({ alter: true })
+  .sync()
   .then(async () => {
     // ⚠️ CHỈ CHẠY SEED 1 LẦN, SAU ĐÓ COMMENT DÒNG NÀY
     // await seedProducts();
     // await seedOrders();
-
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
       console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);

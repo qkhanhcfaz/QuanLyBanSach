@@ -1,155 +1,109 @@
-// File: /src/controllers/userController.js
+const db = require("../models");
+const { User, Role, Cart, CartItem } = db;
+const bcrypt = require("bcryptjs");
 
-// Import các model cần thiết và các toán tử của Sequelize
-const { User, Role } = require("../models");
-const { Op } = require("sequelize");
-const bcrypt = require("bcryptjs"); // Cần bcrypt để so sánh mật khẩu
-const generateToken = require("../utils/generateToken"); // Cần để tạo lại token khi đổi email
 /**
- * @description     Admin: Lấy danh sách tất cả người dùng (có phân trang).
- * @route           GET /api/users
- * @access          Private/Admin
+ * Lấy danh sách người dùng (Phân trang)
  */
-const getAllUsers = async (request, response) => {
-  // Lấy các tham số phân trang từ query string của URL, ví dụ: /api/users?page=1&limit=10
-  const { page = 1, limit = 10 } = request.query;
-
-  // Chuyển đổi page và limit sang kiểu số nguyên
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
-
-  // Tính toán offset để bỏ qua các bản ghi của trang trước
-  const offset = (pageNum - 1) * limitNum;
-
+const getAllUsers = async (req, res) => {
   try {
-    // Sử dụng phương thức `findAndCountAll` của Sequelize.
-    // Phương thức này rất hữu ích cho việc phân trang vì nó trả về cả tổng số bản ghi và dữ liệu của trang hiện tại.
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
     const { count, rows } = await User.findAndCountAll({
-      // Chỉ lấy các thuộc tính cần thiết, loại bỏ trường 'mat_khau' để bảo mật.
-      attributes: { exclude: ["mat_khau"] },
-      // Sử dụng `include` để JOIN với bảng `roles` và lấy `ten_quyen` tương ứng.
-      include: {
-        model: Role,
-        as: "role", // <<<< Bổ sung từ khóa 'as' cho khớp với model
-        attributes: ["id", "ten_quyen"], // Lấy các thuộc tính cần thiết
-      },
-      limit: limitNum, // Giới hạn số lượng bản ghi trên một trang
-      offset: offset, // Bỏ qua bao nhiêu bản ghi
-      order: [["createdAt", "DESC"]], // Sắp xếp người dùng mới nhất lên đầu
+      include: [{ model: Role, as: "role" }],
+      limit: limit,
+      offset: offset,
+      order: [["createdAt", "DESC"]],
+      attributes: { exclude: ["mat_khau"] }, // Không trả về mật khẩu
     });
 
-    // Trả về dữ liệu cho client, bao gồm danh sách người dùng và thông tin phân trang.
-    response.status(200).json({
+    res.status(200).json({
       users: rows,
-      currentPage: pageNum,
-      totalPages: Math.ceil(count / limitNum), // Tính tổng số trang
       totalUsers: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
     });
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách người dùng:", error);
-    response.status(500).json({
-      message: "Lỗi server khi lấy danh sách người dùng.",
-      error: error.message,
-    });
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
 /**
- * @description     Admin: Lấy thông tin chi tiết của một người dùng bằng ID.
- * @route           GET /api/users/:id
- * @access          Private/Admin
+ * Lấy chi tiết 1 người dùng
  */
-const getUserById = async (request, response) => {
+const getUserById = async (req, res) => {
   try {
-    // Tìm người dùng bằng khóa chính (Primary Key)
-    const user = await User.findByPk(request.params.id, {
-      attributes: { exclude: ["mat_khau"] }, // Luôn luôn loại bỏ mật khẩu
+    const user = await User.findByPk(req.params.id, {
+      include: [{ model: Role, as: "role" }],
+      attributes: { exclude: ["mat_khau"] },
     });
-
-    if (user) {
-      response.status(200).json(user);
-    } else {
-      // Nếu không tìm thấy, trả về lỗi 404 (Not Found)
-      response.status(404).json({ message: "Không tìm thấy người dùng." });
-    }
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    res.status(200).json(user);
   } catch (error) {
-    console.error("Lỗi khi lấy thông tin người dùng bằng ID:", error);
-    response.status(500).json({ message: "Lỗi server.", error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
 /**
- * @description     Admin: Tạo một tài khoản quản lý mới (ví dụ: Admin, Editor).
- * @route           POST /api/users
- * @access          Private/Admin
+ * Tạo người dùng mới (Admin)
  */
-const createUserByAdmin = async (request, response) => {
-  // Hàm này cho phép Admin tạo tài khoản mới với vai trò được chỉ định.
-  const { ho_ten, ten_dang_nhap, email, mat_khau, role_id } = request.body;
-
-  if (!ho_ten || !ten_dang_nhap || !email || !mat_khau || !role_id) {
-    return response
-      .status(400)
-      .json({ message: "Vui lòng điền đầy đủ thông tin." });
-  }
-
+const createUser = async (req, res) => {
   try {
-    // Kiểm tra xem email hoặc tên đăng nhập đã tồn tại chưa
-    const userExists = await User.findOne({
-      where: { [Op.or]: [{ email: email }, { ten_dang_nhap: ten_dang_nhap }] },
-    });
-    if (userExists) {
-      return response
-        .status(400)
-        .json({ message: "Email hoặc Tên đăng nhập đã tồn tại." });
-    }
+    const { ho_ten, ten_dang_nhap, email, mat_khau, role_id, trang_thai } =
+      req.body;
 
-    // Tạo người dùng mới
+    // Check exist
+    const exists = await User.findOne({ where: { email } });
+    if (exists) return res.status(400).json({ message: "Email đã tồn tại" });
+
+    // Default role_id = 2 (User) if not provided
+    const finalRoleId = role_id || 2;
+
     const newUser = await User.create({
       ho_ten,
       ten_dang_nhap,
       email,
-      mat_khau,
-      role_id,
+      mat_khau, // Model hooks will hash this
+      role_id: finalRoleId,
+      trang_thai: trang_thai !== undefined ? trang_thai : true,
     });
 
-    // Tạo một bản sao của đối tượng user để có thể xóa trường mật khẩu trước khi gửi về client
-    const userResponse = { ...newUser.get({ plain: true }) };
-    delete userResponse.mat_khau;
-
-    response.status(201).json(userResponse);
+    res.status(201).json({ message: "Tạo thành công", user: newUser });
   } catch (error) {
-    console.error("Lỗi khi Admin tạo người dùng:", error);
-    response.status(500).json({ message: "Lỗi server.", error: error.message });
+    console.error("Create user error:", error);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
 /**
- * @description     Admin: Cập nhật thông tin người dùng (vai trò, trạng thái).
- * @route           PUT /api/users/:id
- * @access          Private/Admin
+ * Cập nhật người dùng
  */
-const updateUserByAdmin = async (request, response) => {
+const updateUser = async (req, res) => {
   try {
-    const user = await User.findByPk(request.params.id);
-    if (!user) {
-      return response
-        .status(404)
-        .json({ message: "Không tìm thấy người dùng." });
+    const { ho_ten, email, role_id, trang_thai, mat_khau } = req.body;
+    const user = await User.findByPk(req.params.id);
+
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+    user.ho_ten = ho_ten || user.ho_ten;
+    user.email = email || user.email;
+    user.role_id = role_id || user.role_id;
+    if (trang_thai !== undefined) user.trang_thai = trang_thai;
+
+    if (mat_khau) {
+      user.mat_khau = mat_khau; // Model hook will hash this on save
     }
 
-    // Chỉ cho phép Admin cập nhật các trường này
-    const { ho_ten, role_id, trang_thai } = request.body;
-    // Phương thức `update` sẽ cập nhật các trường được cung cấp và lưu vào CSDL
-    const updatedUser = await user.update({ ho_ten, role_id, trang_thai });
-
-    const userResponse = { ...updatedUser.get({ plain: true }) };
-    delete userResponse.mat_khau;
-
-    response.status(200).json(userResponse);
+    await user.save();
+    res.status(200).json({ message: "Cập nhật thành công", user });
   } catch (error) {
-    console.error("Lỗi khi Admin cập nhật người dùng:", error);
-    response.status(500).json({ message: "Lỗi server.", error: error.message });
+    console.error("Update user error:", error);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
@@ -264,10 +218,7 @@ const changeUserPassword = async (req, res) => {
 module.exports = {
   getAllUsers,
   getUserById,
-  createUserByAdmin,
-  updateUserByAdmin,
+  createUser,
+  updateUser,
   deleteUser,
-  getUserProfile,
-  updateUserProfile,
-  changeUserPassword,
 };

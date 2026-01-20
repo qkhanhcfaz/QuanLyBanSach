@@ -2,16 +2,9 @@
 
 <%- include('../partials/header') %>
 
-<main class="container my-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            
-            <!-- TIÊU ĐỀ -->
-            <h2 id="order-id-header">Đang tải chi tiết đơn hàng...</h2>
-            <hr>
-
-            <!-- THÔNG BÁO LỖI (quan trọng) -->
-            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+    <main class="container my-5">
+        <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+        <div class="row">
 
             <!-- THÔNG TIN CHUNG CỦA ĐƠN HÀNG -->
             <div class="card mb-4">
@@ -19,7 +12,8 @@
                 <div class="card-body">
                     <p><strong>Ngày đặt hàng:</strong> <span id="order-date"></span></p>
                     <p><strong>Trạng thái đơn hàng:</strong> <span id="order-status-badge"></span></p> <!-- Đổi ID -->
-                    <p><strong>Trạng thái thanh toán:</strong> <span id="payment-status-badge"></span></p> <!-- Dòng mới -->
+                    <p><strong>Trạng thái thanh toán:</strong> <span id="payment-status-badge"></span></p>
+                    <!-- Dòng mới -->
                 </div>
             </div>
 
@@ -64,7 +58,9 @@
                                     <strong id="subtotal"></strong>
                                 </li>
                                 <!-- Dòng mới hiển thị giảm giá (nếu có) -->
-                                <li id="discount-row" class="list-group-item d-flex justify-content-between text-success" style="display: none;">
+                                <li id="discount-row"
+                                    class="list-group-item d-flex justify-content-between text-success"
+                                    style="display: none;">
                                     <span>Giảm giá:</span>
                                     <strong id="discount-amount"></strong>
                                 </li>
@@ -84,14 +80,14 @@
 
             <!-- NÚT QUAY LẠI -->
             <div class="text-center mt-4">
-               <a href="/my-orders" class="btn btn-secondary">Quay lại lịch sử đơn hàng</a>
+                <a href="/my-orders" class="btn btn-secondary">Quay lại lịch sử đơn hàng</a>
             </div>
 
         </div>
-    </div>
-</main>
+        </div>
+    </main>
 
-<!-- Đảm bảo bạn đã nhúng file script ở cuối trang -->
-<script src="/js/order-detail.js"></script>
+    <!-- Đảm bảo bạn đã nhúng file script ở cuối trang -->
+    <script src="/js/order-detail.js"></script>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>

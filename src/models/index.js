@@ -1,17 +1,17 @@
 "use strict";
 
-const { sequelize } = require("../config/connectDB");
+const { sequelize } = require('../config/connectDB');
 
 // Import các models manually để đảm bảo thứ tự khởi tạo
-const Product = require("./productModel");
-const Category = require("./categoryModel");
-const Slideshow = require("./slideshowModel");
-const Post = require("./postModel"); // [NEW/MERGED]
-const SiteSetting = require("./siteSettingModel");
-const Role = require("./roleModel");
-const User = require("./userModel");
-const Order = require("./orderModel");
-const OrderItem = require("./orderItemModel");
+const Product = require('./productModel');
+const Category = require('./categoryModel');
+const Slideshow = require('./slideshowModel');
+const Post = require('./postModel'); // [NEW/MERGED]
+const SiteSetting = require('./siteSettingModel');
+const Role = require('./roleModel');
+const User = require('./userModel');
+const Order = require('./orderModel');
+const OrderItem = require('./orderItemModel');
 
 // Optional models (có thể chưa tồn tại ở một số branch)
 const safeRequire = (p) => {
@@ -24,16 +24,16 @@ const safeRequire = (p) => {
   }
 };
 
-const Cart = safeRequire("./cartModel");
-const CartItem = safeRequire("./cartItemModel");
-const Favorite = safeRequire("./favoriteModel");
-const Review = safeRequire("./reviewModel");
-const Receipt = safeRequire("./receiptModel");
-const ReceiptItem = safeRequire("./receiptItemModel");
-const Promotion = safeRequire("./promotionModel");
+const Cart = safeRequire('./cartModel');
+const CartItem = safeRequire('./cartItemModel');
+const Favorite = safeRequire('./favoriteModel');
+const Review = safeRequire('./reviewModel');
+const Receipt = safeRequire('./receiptModel');
+const ReceiptItem = safeRequire('./receiptItemModel');
+const Promotion = safeRequire('./promotionModel');
 
-const Message = safeRequire("./messageModel");
-const Contact = safeRequire("./contactModel"); // [NEW/MERGED]
+const Message = safeRequire('./messageModel');
+const Contact = safeRequire('./contactModel'); // [NEW/MERGED]
 
 const db = {};
 
@@ -61,19 +61,19 @@ if (Contact) db.Contact = Contact; // [NEW/MERGED]
 // Define Associations
 if (db.User && db.Message) {
   // User <-> Message
-  db.User.hasMany(db.Message, { foreignKey: "user_id", as: "messages" });
-  db.Message.belongsTo(db.User, { foreignKey: "user_id", as: "user" });
+  db.User.hasMany(db.Message, { foreignKey: 'user_id', as: 'messages' });
+  db.Message.belongsTo(db.User, { foreignKey: 'user_id', as: 'user' });
 }
 
-// [NEW/MERGED] User <-> Post (Author)
+// [NEW/MERGED] User <-> Post (Author) 
 if (db.User && db.Post) {
-  db.User.hasMany(db.Post, { foreignKey: "user_id", as: "posts" });
-  db.Post.belongsTo(db.User, { foreignKey: "user_id", as: "author" });
+  db.User.hasMany(db.Post, { foreignKey: 'user_id', as: 'posts' });
+  db.Post.belongsTo(db.User, { foreignKey: 'user_id', as: 'author' });
 }
 
 // Call associate if it exists in each model
 Object.keys(db).forEach((modelName) => {
-  if (db[modelName] && typeof db[modelName].associate === "function") {
+  if (db[modelName] && typeof db[modelName].associate === 'function') {
     db[modelName].associate(db);
   }
 });

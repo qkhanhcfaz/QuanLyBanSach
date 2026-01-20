@@ -65,6 +65,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ====================================================================
+    // PREVIEW ẢNH KHI CHỌN FILE
+    // ====================================================================
+    const imgInput = document.getElementById('img');
+    const imgPreview = document.getElementById('image-preview');
+
+    if (imgInput && imgPreview) {
+        imgInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                // Nếu người dùng cancel chọn file và không có ảnh cũ -> ẩn
+                if (imgPreview.src === '#' || imgPreview.src.endsWith('#')) {
+                    imgPreview.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // ====================================================================
     // LOGIC XỬ LÝ DANH MỤC
     // ====================================================================
     async function fetchAllCategories() {

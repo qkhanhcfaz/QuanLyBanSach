@@ -68,6 +68,11 @@
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/categories') ? 'active-admin' : '' %>">
                     <i class="fas fa-list-alt me-2"></i>Danh mục
                 </a>
+                <!-- Đánh giá -->
+                <a href="/admin/reviews"
+                    class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/reviews') ? 'active-admin' : '' %>">
+                    <i class="fas fa-star me-2"></i>Đánh giá
+                </a>
                 <!-- Đơn hàng -->
                 <a href="/admin/orders"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/orders') ? 'active-admin' : '' %>">
@@ -78,14 +83,24 @@
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/receipts') ? 'active-admin' : '' %>">
                     <i class="fas fa-receipt me-2"></i>Nhập hàng
                 </a> -->
-                <a href="/admin/promotions"
+                <!-- <a href="/admin/promotions"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/promotions') ? 'active-admin' : '' %>">
                     <i class="fas fa-tags me-2"></i>Khuyến mãi
-                </a>
+                </a> -->
                 <!-- Người dùng -->
                 <a href="/admin/users"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/users') ? 'active-admin' : '' %>">
                     <i class="fas fa-users me-2"></i>Người dùng
+                </a>
+                <!-- Bài viết (Blog) -->
+                <a href="/admin/posts"
+                    class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/posts') ? 'active-admin' : '' %>">
+                    <i class="fas fa-newspaper me-2"></i>Bài viết
+                </a>
+                <!-- Liên hệ -->
+                <a href="/admin/contacts"
+                    class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/contacts') ? 'active-admin' : '' %>">
+                    <i class="fas fa-envelope me-2"></i>Liên hệ
                 </a>
                 <!-- Cấu hình -->
                 <a href="/admin/settings"

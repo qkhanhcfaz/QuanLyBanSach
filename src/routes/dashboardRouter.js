@@ -1,11 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const dashboardController = require("../controllers/dashboardController");
+const {
+  getDashboardStats,
+  getBestSellingProducts,
+} = require("../controllers/dashboardController");
+const { protect, admin } = require("../middlewares/authMiddleware");
 
 // GET /api/dashboard/stats?startDate=...&endDate=...
-router.get("/stats", dashboardController.getDashboardStats);
+router.get("/stats", protect, admin, getDashboardStats);
 
 // GET /api/dashboard/best-selling?startDate=...&endDate=...
-router.get("/best-selling", dashboardController.getBestSellingProducts);
+router.get("/best-selling", protect, admin, getBestSellingProducts);
 
 module.exports = router;

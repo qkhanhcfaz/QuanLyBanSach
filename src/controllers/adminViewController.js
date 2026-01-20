@@ -1,7 +1,7 @@
 // File: /src/controllers/adminViewController.js
 // GIAI ĐOẠN 1: Code cơ bản - Hiển thị được dữ liệu là thành công
 const db = require('../models');
-const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, Role, sequelize } = db;
+const { Product, Category, Order, User, Receipt, ReceiptItem, Promotion, SiteSetting, Role, Review, sequelize } = db;
 
 /**
  * Render Dashboard
@@ -359,6 +359,40 @@ const renderOrderStatisticsPage = (req, res) => {
 };
 
 /**
+ * Render Danh sách Đánh giá
+ */
+const renderAdminReviewsPage = async (req, res) => {
+    try {
+        const { page = 1 } = req.query;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await Review.findAndCountAll({
+            include: [
+                { model: User, as: 'user', attributes: ['ho_ten', 'email'] },
+                { model: Product, as: 'product', attributes: ['ten_sach', 'img'] }
+            ],
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset
+        });
+
+        res.render('admin/pages/reviews', {
+            title: 'Quản lý Đánh giá',
+            user: req.user,
+            path: '/reviews',
+            reviews: rows,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(count / limit),
+            totalReviews: count
+        });
+    } catch (error) {
+        console.error("Lỗi tải đánh giá admin:", error);
+        res.status(500).send('Lỗi tải đánh giá');
+    }
+};
+
+/**
  * Render Thống kê Sản phẩm bán chạy
  */
 const renderBestSellingStatisticsPage = (req, res) => {
@@ -438,5 +472,6 @@ module.exports = {
     updateSiteSettings,
     renderRevenueStatisticsPage,
     renderOrderStatisticsPage,
+    renderAdminReviewsPage,
     renderBestSellingStatisticsPage
 };
