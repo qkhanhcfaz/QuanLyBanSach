@@ -20,11 +20,10 @@ const User = sequelize.define(
     // ============= SỬA LẠI ĐỊNH NGHĨA CỘT ROLE_ID ==============
     // ==========================================================
     // Cột 'role_id': Khóa ngoại, liên kết tới bảng 'roles'
+    // Lưu ý: Logic mặc định (khi tạo mới) sẽ được xử lý trong Hooks để tránh lỗi alter table của Postgres
     role_id: {
       type: DataTypes.BIGINT,
       allowNull: false,
-      defaultValue: 2, // Mặc định là 'User'
-      // references đã được định nghĩa trong associate, bỏ tại đây để tránh lỗi syntax khi sync alter table
     },
     // ==========================================================
 
@@ -88,6 +87,11 @@ const User = sequelize.define(
     hooks: {
       // Hook 'beforeCreate': Chạy trước khi tạo mới user vào database.
       beforeCreate: async (user) => {
+        // [FIX] Gán role mặc định là User (2) nếu chưa có
+        if (!user.role_id) {
+          user.role_id = 2;
+        }
+
         // Nếu user này có mật khẩu (tức là không phải login bằng Google/Facebook mà không có pass)
         // thì thực hiện mã hóa mật khẩu.
         if (user.mat_khau) {
