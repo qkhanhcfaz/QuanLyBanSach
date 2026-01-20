@@ -6,27 +6,42 @@
             <h1 class="text-center mb-4">Liên hệ với chúng tôi</h1>
             <div class="card shadow">
                 <div class="card-body p-5">
-                    <form id="contactForm">
-                        <div class="mb-3">
-                            <label for="ho_ten" class="form-label">Họ và Tên</label>
-                            <input type="text" class="form-control" id="ho_ten" required>
+                    <% if (user) { %>
+                        <form id="contactForm">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-user-circle me-2"></i>Xin chào <strong><%= user.ho_ten %></strong>, chúng tôi có thể giúp gì cho bạn?
+                            </div>
+                            <!-- Hidden inputs to send data easily via JS if needed, but we used readonly visible inputs -->
+                            
+                            <div class="mb-3">
+                                <label for="ho_ten" class="form-label">Họ và Tên</label>
+                                <input type="text" class="form-control bg-light" id="ho_ten" value="<%= user.ho_ten %>" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control bg-light" id="email" value="<%= user.email %>" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chu_de" class="form-label">Chủ đề (*)</label>
+                                <input type="text" class="form-control" id="chu_de" required placeholder="Vấn đề cần hỗ trợ...">
+                            </div>
+                            <div class="mb-3">
+                                <label for="noi_dung" class="form-label">Nội dung tin nhắn (*)</label>
+                                <textarea class="form-control" id="noi_dung" rows="5" required placeholder="Chi tiết nội dung..."></textarea>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Gửi liên hệ</button>
+                            </div>
+                        </form>
+                    <% } else { %>
+                        <div class="text-center py-5">
+                            <i class="fas fa-lock fa-3x text-warning mb-3"></i>
+                            <h4>Bạn cần đăng nhập để gửi liên hệ</h4>
+                            <p class="text-muted mb-4">Để chúng tôi có thể hỗ trợ và phản hồi tốt nhất, vui lòng đăng nhập tài khoản của bạn.</p>
+                            <a href="/login?redirect=/contact" class="btn btn-primary px-4 me-2">Đăng nhập</a>
+                            <a href="/register" class="btn btn-outline-secondary px-4">Đăng ký</a>
                         </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="chu_de" class="form-label">Chủ đề</label>
-                            <input type="text" class="form-control" id="chu_de" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="noi_dung" class="form-label">Nội dung tin nhắn</label>
-                            <textarea class="form-control" id="noi_dung" rows="5" required></textarea>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Gửi liên hệ</button>
-                        </div>
-                    </form>
+                    <% } %>
                 </div>
             </div>
         </div>
