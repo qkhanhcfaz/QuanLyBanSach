@@ -8,6 +8,7 @@ const {
 } = require("../models");
 const { Op } = require("sequelize");
 const { sequelize } = require("../config/connectDB"); // <--- Thêm sequelize để dùng transaction
+const momoService = require("../services/momoService");
 
 /**
  * Tạo đơn hàng mới (User)
@@ -16,7 +17,10 @@ const { sequelize } = require("../config/connectDB"); // <--- Thêm sequelize đ
 const createOrder = async (req, res) => {
   const t = await sequelize.transaction(); // Bắt đầu transaction
   try {
-    console.log("👉 createOrder Request Body:", JSON.stringify(req.body, null, 2));
+    console.log(
+      "👉 createOrder Request Body:",
+      JSON.stringify(req.body, null, 2),
+    );
 
     const {
       ten_nguoi_nhan,
@@ -149,9 +153,34 @@ const createOrder = async (req, res) => {
 
     await t.commit(); // Lưu thay đổi vào DB
 
+    let payUrl = null;
+    if (phuong_thuc_thanh_toan === "momo") {
+      try {
+        // Tạo mã đơn hàng duy nhất cho MoMo (để tránh lỗi trùng ID khi test)
+        // Format: ORDER_[ID]_[TIMESTAMP]
+        const momoOrderId = `ORDER_${newOrder.id}_${new Date().getTime()}`;
+
+        const momoResponse = await momoService.createPaymentUrl({
+          orderId: momoOrderId,
+          amount: tong_thanh_toan,
+          orderInfo: `Thanh toan don hang #${newOrder.id} - BookZone`,
+        });
+
+        if (momoResponse && momoResponse.payUrl) {
+          payUrl = momoResponse.payUrl;
+        } else {
+          console.error("MoMo response missing payUrl:", momoResponse);
+        }
+      } catch (momoError) {
+        console.error("Lỗi tạo thanh toán MoMo:", momoError);
+        // Không fail đơn hàng, chỉ log lỗi (người dùng có thể thanh toán lại sau hoặc chọn COD)
+      }
+    }
+
     res.status(201).json({
       message: "Đặt hàng thành công",
       id: newOrder.id,
+      payUrl: payUrl,
     });
   } catch (error) {
     // Chỉ rollback nếu transaction chưa commit/rollback
@@ -287,14 +316,21 @@ const getOrderById = async (req, res) => {
     }
 
     // [DEBUG] Log để kiểm tra type
-    console.log(`[AUTH CHECK] OrderUser: ${order.user_id} (${typeof order.user_id}) | RequestUser: ${req.user.id} (${typeof req.user.id}) | Role: ${req.user.role_id}`);
+    console.log(
+      `[AUTH CHECK] OrderUser: ${order.user_id} (${typeof order.user_id}) | RequestUser: ${req.user.id} (${typeof req.user.id}) | Role: ${req.user.role_id}`,
+    );
 
     // [MỚI] Check quyền xem
     // Fix lỗi so sánh type (String vs Number)
     // Nếu không phải Admin (role_id = 1) VÀ không phải chủ đơn hàng -> Chặn
-    if (String(req.user.role_id) !== '1' && String(order.user_id) !== String(req.user.id)) {
-      console.log('⛔ Truy cập bị từ chối.');
-      return res.status(403).json({ message: "Bạn không có quyền xem đơn hàng này." });
+    if (
+      String(req.user.role_id) !== "1" &&
+      String(order.user_id) !== String(req.user.id)
+    ) {
+      console.log("⛔ Truy cập bị từ chối.");
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền xem đơn hàng này." });
     }
 
     res.json(order);
