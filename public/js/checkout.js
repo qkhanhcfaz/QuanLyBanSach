@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function fetchAndRenderSummary() {
         try {
-            const response = await fetch('/api/cart', {
+            const response = await fetch('/api/cart?limit=999', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Không thể tải thông tin giỏ hàng.');
@@ -173,8 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSummary(cart, discountAmount = 0) {
         orderSummaryContainer.innerHTML = ''; // Xóa chữ "Đang tải..."
         let subtotal = 0;
-        const shipping = 30000;
-
         cart.items.forEach(item => {
             const itemTotal = item.so_luong * item.product.gia_bia;
             subtotal += itemTotal;
@@ -188,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             orderSummaryContainer.innerHTML += summaryItemHTML;
         });
 
+        const shipping = subtotal >= 300000 ? 0 : 30000;
         subtotalElement.textContent = `${subtotal.toLocaleString('vi-VN')}đ`;
         shippingElement.textContent = `${shipping.toLocaleString('vi-VN')}đ`;
 

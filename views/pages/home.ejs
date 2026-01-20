@@ -132,6 +132,7 @@
 
         <script>
             window.favoriteProductIds = <% - JSON.stringify(typeof favoriteProductIds !== 'undefined' ? favoriteProductIds : []) %>;
+            console.log('[home.ejs] Initialized favoriteProductIds:', window.favoriteProductIds);
         </script>
         <script src="/js/cart.js"></script>
         <script src="/js/favorite.js"></script>

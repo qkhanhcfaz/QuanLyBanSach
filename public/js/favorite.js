@@ -50,6 +50,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await response.json();
 
             if (data.success) {
+                // Cập nhật bộ đếm lượt thích trên trang chi tiết (nếu có)
+                const countEl = document.getElementById('product-favorite-count');
+                if (countEl) {
+                    let currentCount = parseInt(countEl.textContent) || 0;
+                    if (data.isFavorite) {
+                        countEl.textContent = currentCount + 1;
+                    } else {
+                        countEl.textContent = Math.max(0, currentCount - 1);
+                    }
+                }
+
                 if (data.isFavorite) {
                     // Đã thích -> Tím tim
                     icon.classList.remove('far');

@@ -217,6 +217,48 @@ function loadHomePageData() {
     fetchProductsAndRender('#vh-nuoc-ngoai-products-wrapper', '?category=5&limit=10');
     fetchProductsAndRender('#finance-products-wrapper', '?category=1&limit=10');
 
+    // FALLBACK: Nếu window.favoriteProductIds rỗng nhưng có token -> Fetch lại
+    const token = localStorage.getItem('token');
+    if (token && (!window.favoriteProductIds || window.favoriteProductIds.length === 0)) {
+        console.log('[main.js] No favorite IDs from server, but token found. Fetching from API...');
+        fetch('/api/favorites', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.favoriteProductIds = data.favoriteProductIds;
+                    console.log('[main.js] Recovered favoriteProductIds:', window.favoriteProductIds);
+                    // Re-render categories to update hearts (since original render might have missed them)
+                    // This is a bit inefficient but ensures the UI is correct
+                    updateHeartsOnPage();
+                }
+            })
+            .catch(err => console.error('[main.js] Error recovering favorites:', err));
+    }
+}
+
+/**
+ * Cập nhật icon trái tim trên toàn trang dựa vào window.favoriteProductIds
+ */
+function updateHeartsOnPage() {
+    const favoriteButtons = document.querySelectorAll('.btn-favorite');
+    favoriteButtons.forEach(btn => {
+        const productId = btn.getAttribute('data-id');
+        const icon = btn.querySelector('i');
+        if (!productId || !icon) return;
+
+        const isFav = window.favoriteProductIds && window.favoriteProductIds.some(fid => String(fid) === String(productId));
+        if (isFav) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            btn.setAttribute('title', 'Bỏ thích');
+        } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            btn.setAttribute('title', 'Yêu thích');
+        }
+    });
 }
 
 /**
@@ -289,14 +331,14 @@ async function fetchProductsAndRender(wrapperId, pathAndQuery) {
                                 ${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫
                             </p>
 
-                            <div class="d-flex gap-2">
+                            <div class="card-button-wrapper">
                                 <button 
                                     onclick="addToCart('${product.id}')" 
-                                    class="btn btn-sm btn-outline-primary mt-auto flex-grow-1">
+                                    class="btn btn-sm btn-primary">
                                     Thêm vào giỏ
                                 </button>
                                 ${(() => {
-                    const isFav = window.favoriteProductIds && window.favoriteProductIds.includes(product.id);
+                    const isFav = window.favoriteProductIds && window.favoriteProductIds.some(fid => String(fid) === String(product.id));
                     return `<button class="btn btn-favorite-card btn-favorite border" 
                                             data-id="${product.id}" 
                                             title="${isFav ? 'Bỏ thích' : 'Yêu thích'}">
@@ -351,7 +393,7 @@ async function fetchNewArrivals() {
                                 </h6>
                                 <p class="card-text text-danger fw-bold mb-2">${parseFloat(product.gia_bia).toLocaleString('vi-VN')}₫</p>
                                 ${(() => {
-                    const isFav = window.favoriteProductIds && window.favoriteProductIds.includes(product.id);
+                    const isFav = window.favoriteProductIds && window.favoriteProductIds.some(fid => String(fid) === String(product.id));
                     return `<button class="btn btn-favorite-card btn-favorite border float-end" 
                                             data-id="${product.id}" 
                                             title="${isFav ? 'Bỏ thích' : 'Yêu thích'}">

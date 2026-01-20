@@ -24,6 +24,7 @@ const clampMin = (n, min) => (n < min ? min : n);
 const renderHomePage = async (req, res) => {
   try {
     const favoriteProductIds = req.user ? await getMyFavoriteIds(req.user.id) : [];
+    console.log(`[renderHomePage] User: ${req.user ? req.user.id : 'Guest'}, Fav IDs: ${JSON.stringify(favoriteProductIds)}`);
 
     // 1. Slideshow
     let slides = [];
@@ -88,7 +89,7 @@ const renderHomePage = async (req, res) => {
 const renderProductListPage = async (req, res) => {
   try {
     const page = clampMin(toInt(req.query.page, 1), 1);
-    const limit = 12;
+    const limit = 10;
     const offset = (page - 1) * limit;
 
     const category = req.query.category ? toInt(req.query.category, 0) : null;
@@ -215,7 +216,7 @@ const renderProductDetailPage = async (req, res) => {
         danh_muc_id: product.danh_muc_id,
         id: { [Op.ne]: product.id }
       },
-      limit: 4,
+      limit: 10,
       order: [['createdAt', 'DESC']],
       include: [{ model: Category, as: 'category', attributes: ['id', 'ten_danh_muc'] }]
     });
@@ -336,8 +337,16 @@ const renderFavoritesPage = async (req, res) => {
       return res.redirect('/login');
     }
 
+    const page = clampMin(toInt(req.query.page, 1), 1);
+    const limit = 8;
+    const offset = (page - 1) * limit;
+
     const userId = req.user.id;
-    // Lấy danh sách yêu thích kèm thông tin sản phẩm
+
+    // Đếm tổng số yêu thích để phân trang
+    const totalCount = await Favorite.count({ where: { user_id: userId } });
+
+    // Lấy danh sách yêu thích kèm thông tin sản phẩm (có phân trang)
     const favorites = await Favorite.findAll({
       where: { user_id: userId },
       include: [
@@ -346,16 +355,31 @@ const renderFavoritesPage = async (req, res) => {
           attributes: ['id', 'ten_sach', 'gia_bia', 'img']
         }
       ],
+      limit,
+      offset,
       order: [['createdAt', 'DESC']]
     });
 
     const products = favorites.map(fav => fav.Product);
-    const favoriteProductIds = products.map(p => p.id);
+
+    // Lấy tất cả IDs yêu thích để xử lý nút heart (không phân trang phần này)
+    const allFavs = await Favorite.findAll({
+      where: { user_id: userId },
+      attributes: ['product_id']
+    });
+    const favoriteProductIds = allFavs.map(f => f.product_id);
 
     res.render('pages/favorites', {
       title: 'Sách Yêu Thích',
       products,
-      favoriteProductIds
+      favoriteProductIds,
+      queryParams: req.query,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalItems: totalCount,
+        limit
+      }
     });
 
   } catch (error) {

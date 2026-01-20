@@ -102,68 +102,55 @@ a:hover {
 }
 
 /* --- Product Card Styling --- */
-/* Áp dụng cho cả trang chủ và trang sản phẩm */
 .product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
     border: 1px solid #e9ecef;
-    /* Viền xám nhạt */
-    border-radius: 0.75rem;
-    /* Bo góc card nhiều hơn */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    padding: 0;
+    /* Xóa padding ở đây để tránh dồn nén content */
     transition: all 0.3s ease-in-out;
-    background-color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    /* Đảm bảo không bị tràn border */
 }
 
 .product-card:hover {
     transform: translateY(-5px);
-    /* Hiệu ứng "nhấc" cả card lên khi hover */
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-}
-
-.product-card .card-img-top {
-    border-top-left-radius: 0.75rem;
-    border-top-right-radius: 0.75rem;
-    height: 200px;
-    object-fit: contain;
-    /* Đổi thành contain để ảnh không bị cắt */
-    padding: 1rem;
 }
 
 .product-card .card-body {
     display: flex;
     flex-direction: column;
-    padding: 1rem;
+    padding: 12px;
+    /* Padding vừa phải cho phần thân */
+    text-align: center;
+    flex-grow: 1;
 }
 
 .product-card .card-title {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
-    flex-grow: 1;
-    /* Giúp tiêu đề chiếm không gian còn lại, đẩy giá xuống */
-    min-height: 42px;
-    /* Đảm bảo các card cao bằng nhau dù tiêu đề 1 hay 2 dòng */
+    margin-bottom: 8px;
+    min-height: 48px;
+    /* Đảm bảo độ cao cho tiêu đề */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
 }
 
 .product-card .card-title a {
     color: #212529;
-    /* Màu chữ đen cho tiêu đề sách */
 }
 
 .product-card .card-title a:hover {
     color: #0d6efd;
     text-decoration: none;
-}
-
-.product-card .card-text.text-danger {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-}
-
-.product-card .card-footer {
-    background-color: transparent;
-    border-top: none;
-    padding: 0 1rem 1rem;
 }
 
 .item-quantity {
@@ -293,62 +280,57 @@ a:hover {
 
 
 
-/* ===== CARD SẢN PHẨM – FIX TUYỆT ĐỐI KHÔNG LỆCH ===== */
-
-.product-card {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px;
-}
-
 /* KHUNG ẢNH CỐ ĐỊNH */
 .product-image {
-    height: 220px;
+    height: 180px;
+    /* Giảm nhẹ chiều cao để vừa vặn hơn */
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
+    padding: 12px;
+    background: #fdfdfd;
 }
 
 .product-image img {
     max-height: 100%;
     max-width: 100%;
     object-fit: contain;
+    transition: transform 0.3s ease;
 }
 
-/* TIÊU ĐỀ – CÂN ĐỀU */
-.product-card .card-title {
-    min-height: 48px;
-    text-align: center;
-    font-size: 0.95rem;
-    line-height: 1.35;
-    margin-bottom: 12px;
-
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-clamp: 2;
-    overflow: hidden;
+.product-card:hover .product-image img {
+    transform: scale(1.05);
 }
 
-/* GIÁ */
-.product-card .card-text {
-    text-align: center;
-    min-height: 32px;
-    margin-bottom: 16px;
-}
-
-/* NÚT LUÔN DÍNH ĐÁY */
-.product-card .btn {
+/* NÚT TRÊN 1 HÀNG */
+.card-button-wrapper {
+    display: flex;
+    gap: 4px;
+    /* Giảm gap để có thêm chỗ cho text */
+    padding: 0 8px 12px 8px;
+    /* Giảm padding trái phải dể nút rộng hơn */
     margin-top: auto;
     width: 100%;
+    /* Đảm bảo wrapper chiếm hết chiều ngang có sẵn */
+}
+
+.product-card .btn {
     white-space: nowrap;
-    padding: 0.5rem 0.5rem;
-    /* Giảm padding để chữ không bị xuống dòng */
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+    /* Giảm nhẹ font-size từ 0.85rem xuống 0.8rem */
+    padding: 0.5rem 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+
+}
+
+.product-card .btn-primary {
+    flex-grow: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* --- Custom Swiper Navigation Buttons --- */
@@ -360,6 +342,8 @@ a:hover {
     border-radius: 50%;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    top: 130px !important;
+    /* Dịch xuống thấp hơn để căn giữa tổng thể ô sản phẩm tốt hơn */
 }
 
 .swiper-button-next:after,
@@ -405,32 +389,45 @@ a:hover {
 
 /* --- Favorite Button Styling --- */
 .product-card .btn.btn-favorite-card {
-    width: 32px !important;
-    height: 32px !important;
+    width: 36px !important;
+    height: 36px !important;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
-    /* Removed absolute positioning to allow flex placement */
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    /* Bo góc vuông vắn giống nút Thêm vào giỏ */
     transition: all 0.2s ease-in-out;
     flex-shrink: 0;
-    /* Prevent shrinking in flex container */
     cursor: pointer;
-    position: relative;
-    /* Ensure z-index works */
-    z-index: 20;
-    /* Higher than swiper buttons */
     margin-top: 0;
-    /* Reset margin-top: auto from generic .btn */
 }
 
 .btn-favorite-card:hover {
     transform: scale(1.1);
     background-color: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Đảm bảo trái tim đã thích luôn hiện màu đỏ và đặc */
+.fa-heart.fas,
+.fa-heart.fa-solid {
+    color: #dc3545 !important;
+    font-weight: 900 !important;
+}
+
+/* Hiệu ứng cho nút tim ở trang chi tiết */
+.btn-favorite.active i,
+.btn-favorite .fas.fa-heart {
+    color: inherit;
+    /* Cho phép inherit từ button (ví dụ white khi hover) */
+}
+
+/* Ưu tiên màu đỏ khi không hover nếu không có text-danger */
+.btn-favorite:not(:hover) i {
+    color: #dc3545;
 }
 
 .btn-favorite-card i {

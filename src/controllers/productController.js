@@ -90,7 +90,7 @@ const createProduct = async (request, response) => {
 const getAllProducts = async (request, response) => {
     try {
         // Lấy các tham số từ query string của URL, ví dụ: /api/products?keyword=conan&category=1&minPrice=50000
-        const { keyword, category, minPrice, maxPrice, sortBy, order = 'ASC', page = 1, limit = 12 } = request.query;
+        const { keyword, category, minPrice, maxPrice, sortBy, order = 'ASC', page = 1, limit = 10 } = request.query;
 
         // 1. XÂY DỰNG ĐIỀU KIỆN LỌC (WHERE)
         const whereCondition = {};

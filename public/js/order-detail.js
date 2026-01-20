@@ -94,6 +94,28 @@ function renderOrderDetail(data) {
             const productPrice = formatCurrency(parseFloat(item.don_gia));
             const lineTotal = formatCurrency(parseFloat(item.so_luong_dat) * parseFloat(item.don_gia));
 
+            // Xử lý cột Hành động cho đơn hàng Đã giao
+            let actionHtml = '<td class="text-center">-</td>';
+            if (data.trang_thai_don_hang === 'delivered') {
+                if (item.isReviewed) {
+                    actionHtml = `
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill w-100" disabled>
+                                <i class="fas fa-check-circle me-1"></i> Đã đánh giá
+                            </button>
+                        </td>
+                    `;
+                } else {
+                    actionHtml = `
+                        <td class="text-center">
+                            <a href="/products/${item.product_id}#reviews" class="btn btn-sm btn-outline-primary rounded-pill w-100">
+                                <i class="fas fa-comment-dots me-1"></i> Bình luận
+                            </a>
+                        </td>
+                    `;
+                }
+            }
+
             const itemRowHtml = `
                 <tr>
                     <td>
@@ -108,12 +130,13 @@ function renderOrderDetail(data) {
                     </td>
                     <td class="text-end">${productPrice}</td>
                     <td class="text-end fw-bold text-dark">${lineTotal}</td>
+                    ${actionHtml}
                 </tr>
             `;
             itemsContainer.innerHTML += itemRowHtml;
         });
     } else {
-        itemsContainer.innerHTML = '<tr><td colspan="4" class="text-center py-4">Không có sản phẩm nào trong đơn hàng này.</td></tr>';
+        itemsContainer.innerHTML = '<tr><td colspan="6" class="text-center py-4">Không có sản phẩm nào trong đơn hàng này.</td></tr>';
     }
 
     // --- HIỂN THỊ TỔNG TIỀN (BAO GỒM GIẢM GIÁ) ---

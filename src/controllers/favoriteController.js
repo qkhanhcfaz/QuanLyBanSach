@@ -65,7 +65,19 @@ const getMyFavoriteIds = async (userId) => {
     }
 };
 
+const getMyFavorites = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const favorites = await getMyFavoriteIds(userId);
+        res.json({ success: true, favoriteProductIds: favorites });
+    } catch (error) {
+        console.error('Lỗi lấy danh sách yêu thích:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     toggleFavorite,
-    getMyFavoriteIds
+    getMyFavoriteIds,
+    getMyFavorites
 };

@@ -4,7 +4,8 @@ const {
     OrderItem,
     Cart,
     CartItem,
-    Product // <--- Thêm Product
+    Product,
+    Review
 } = require('../models');
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/connectDB'); // <--- Thêm sequelize để dùng transaction
@@ -85,8 +86,8 @@ const createOrder = async (req, res) => {
             await product.increment('da_ban', { by: item.so_luong, transaction: t });
         }
 
-        // 3. Tính phí ship và giảm giá (giả định)
-        const phi_van_chuyen = 30000;
+        // 3. Tính phí ship (Miễn phí từ 300k)
+        const phi_van_chuyen = tong_tien >= 300000 ? 0 : 30000;
         let giam_gia = 0;
         // Logic check ma_khuyen_mai ở đây nếu có...
 
@@ -361,7 +362,24 @@ const getOrderDetails = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng của bạn.' });
         }
 
-        res.json(order);
+        // Kiểm tra xem sản phẩm nào đã được đánh giá bởi user này chưa
+        // Chuyển order thành object thuần để thêm thuộc tính isReviewed
+        const orderData = order.toJSON();
+
+        // Lấy danh sách các product_id đã được user review
+        const reviewedProductIds = await Review.findAll({
+            where: { user_id: userId },
+            attributes: ['product_id']
+        }).then(reviews => reviews.map(r => r.product_id));
+
+        orderData.orderItems = orderData.orderItems.map(item => {
+            return {
+                ...item,
+                isReviewed: reviewedProductIds.includes(item.product_id)
+            };
+        });
+
+        res.json(orderData);
     } catch (error) {
         console.error('Lỗi get order details:', error);
         res.status(500).json({ message: 'Lỗi server khi lấy chi tiết đơn hàng.' });

@@ -75,7 +75,12 @@ const getCart = async (request, response) => {
                 totalItems: totalItems,
                 limit: limit
             },
-            subtotal: subtotal
+            subtotal: subtotal,
+            allItemSummaries: allItems.map(item => ({
+                id: item.id,
+                price: parseFloat(item.product.gia_bia),
+                quantity: item.so_luong
+            }))
         });
 
     } catch (error) {
@@ -126,7 +131,7 @@ const addToCart = async (request, response) => {
         }
 
         if (newQuantity > product.so_luong_ton_kho) {
-            return response.status(400).json({ 
+            return response.status(400).json({
                 message: `Kho chỉ còn ${product.so_luong_ton_kho} sản phẩm. (Giỏ hàng của bạn đang có: ${cartItem ? cartItem.so_luong : 0})`
             });
         }
@@ -181,9 +186,9 @@ const updateCartItem = async (request, response) => {
         // --- BẮT ĐẦU CHECK TỒN KHO ---
         const product = await Product.findByPk(cartItem.product_id);
         const newQuantity = parseInt(soLuong);
-        
+
         if (product && newQuantity > product.so_luong_ton_kho) {
-             return response.status(400).json({ 
+            return response.status(400).json({
                 message: `Số lượng yêu cầu vượt quá tồn kho. (Còn lại: ${product.so_luong_ton_kho})`
             });
         }

@@ -148,4 +148,41 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }, 3000); // Cập nhật mỗi 3 giây
     }
+
+    // === SWIPER CHO SẢN PHẨM LIÊN QUAN ===
+    const relatedSwiper = new Swiper('.relatedProductsSwiper', {
+        slidesPerView: 2,
+        spaceBetween: 20,
+        loop: true,
+        autoplay: {
+            delay: 3000,
+            disableOnInteraction: false,
+        },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 2,
+                spaceBetween: 20,
+            },
+            768: {
+                slidesPerView: 3,
+                spaceBetween: 30,
+            },
+            1024: {
+                slidesPerView: 4,
+                spaceBetween: 30,
+            },
+            1200: {
+                slidesPerView: 5,
+                spaceBetween: 30,
+            },
+        }
+    });
 });

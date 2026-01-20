@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDiscountAmount = 0; // Số tiền được giảm
     // let serverSubtotal = 0; // KHÔNG DÙNG SERVER SUBTOTAL NỮA, TÍNH THEO SELECTION
 
+    // MỚI: Lưu toàn bộ item ID và giá/số lượng để tính subtotal global
+    let globalItemSummaries = [];
+
     // Set lưu trữ các ID sản phẩm đang được chọn
     let selectedItemsSet = new Set();
 
@@ -72,9 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable bulk controls
         if (selectAllCheckbox) {
             selectAllCheckbox.disabled = false;
-            // Kiểm tra xem tất cả items trong trang này có được chọn hết không
-            const allSelected = items.every(item => selectedItemsSet.has(item.id.toString()));
-            selectAllCheckbox.checked = items.length > 0 && allSelected;
+            // Kiểm tra xem TẤT CẢ items trong GIỎ HÀNG (global) có được chọn hết không
+            const allGlobalIds = globalItemSummaries.map(s => s.id.toString());
+            const allSelectedGlobally = allGlobalIds.length > 0 && allGlobalIds.every(id => selectedItemsSet.has(id));
+            selectAllCheckbox.checked = allSelectedGlobally;
         }
         if (deleteSelectedBtn) deleteSelectedBtn.disabled = true;
 
@@ -129,23 +133,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Hàm tính tổng tiền dựa trên các item ĐANG ĐƯỢC CHỌN (checked)
+     * Hàm tính tổng tiền dựa trên các item ĐANG ĐƯỢC CHỌN (trong selectedItemsSet)
+     * Sử dụng globalItemSummaries để tính cho TẤT CẢ các trang.
      */
     function calculateSelectedSubtotal() {
         let subtotal = 0;
-        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
 
-        checkboxes.forEach(checkbox => {
-            const row = checkbox.closest('tr');
-            const price = parseFloat(row.dataset.price);
-            // Lấy quantity từ input vì nó có thể thay đổi (dù user chưa reload) 
-            // Tuy nhiên logic hiện tại input change -> gọi API update -> reload cart. 
-            // Nên lấy từ dataset cũng ok, hoặc lấy từ input value cho chính xác visual.
-            const quantityInput = row.querySelector('.item-quantity');
-            const quantity = parseInt(quantityInput.value);
-
-            subtotal += price * quantity;
+        globalItemSummaries.forEach(item => {
+            if (selectedItemsSet.has(item.id.toString())) {
+                subtotal += item.price * item.quantity;
+            }
         });
+
         return subtotal;
     }
 
@@ -157,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Tính Subtotal dựa trên SELECTION
         const subtotal = calculateSelectedSubtotal();
 
-        const shippingFee = (subtotal > 0) ? 30000 : 0; // Chỉ tính phí ship khi có hàng được chọn.
+        const shippingFee = (subtotal > 0 && subtotal < 300000) ? 30000 : 0; // Miễn phí giao hàng từ 300k
 
         // Cập nhật giao diện
         subtotalEl.textContent = formatCurrency(subtotal);
@@ -205,7 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cartResponse = await response.json();
 
             currentCart = { items: cartResponse.items };
-            // serverSubtotal = parseFloat(cartResponse.subtotal || 0); // Không dùng nữa
+            // Cập nhật registry global để tính tiền chính xác
+            globalItemSummaries = cartResponse.allItemSummaries || [];
 
             renderCartItems(cartResponse.items);
             // updateOrderSummary(); // Đã gọi trong renderCartItems
@@ -317,16 +317,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // === BƯỚC 4: GẮN CÁC BỘ LẮNG NGHE SỰ KIỆN (EVENT LISTENERS) ===
 
     function updateBulkActionState() {
-        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        // checkedCount ở đây chỉ là số item ĐANG HIỂN THỊ trên trang này mà được chọn
+        // Dùng để update text "Xóa đã chọn (N)"
+        const checkedOnPageCount = document.querySelectorAll('.item-checkbox:checked').length;
+
+        // NHƯNG để update nút xóa có disabled hay không và text chính xác, 
+        // ta nên dựa vào selectedItemsSet.size (toàn bộ các trang)
+        const totalSelectedCount = selectedItemsSet.size;
+
         if (deleteSelectedBtn) {
-            deleteSelectedBtn.disabled = checkedCount === 0;
-            deleteSelectedBtn.innerHTML = `<i class="fas fa-trash-alt me-1"></i> Xóa đã chọn (${checkedCount})`;
+            deleteSelectedBtn.disabled = totalSelectedCount === 0;
+            deleteSelectedBtn.innerHTML = `<i class="fas fa-trash-alt me-1"></i> Xóa đã chọn (${totalSelectedCount})`;
         }
 
-        // Kiểm tra xem đã check hết chưa để update Select All checkbox
-        const totalItems = document.querySelectorAll('.item-checkbox').length;
-        if (selectAllCheckbox && totalItems > 0) {
-            selectAllCheckbox.checked = checkedCount === totalItems;
+        // Kiểm tra xem ĐÃ CHỌN TẤT CẢ (global) chưa để update Select All checkbox
+        if (selectAllCheckbox && globalItemSummaries.length > 0) {
+            selectAllCheckbox.checked = (totalSelectedCount === globalItemSummaries.length);
         }
     }
 
@@ -430,21 +436,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Sự kiện check từng item
         document.querySelectorAll('.item-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', () => {
+                const itemId = checkbox.value.toString();
+                if (checkbox.checked) {
+                    selectedItemsSet.add(itemId);
+                } else {
+                    selectedItemsSet.delete(itemId);
+                }
+
                 // Update Select All checkbox state
                 updateBulkActionState();
                 // Update Total Money
                 updateOrderSummary();
-
-                // Disable/Enable input quantity nếu cần? (Yêu cầu nói: "nếu sản phẩm đó không được chọn thì các trường trong đó không được select")
-                // User requirement: "user muốn mỗi sản phẩm trong giỏ hàng sẽ có một nút select chọn trước sản phẩm, chỉ khi được chọn thì sản phẩm đó mới được tính vào hóa đơn, nếu sản phẩm đó không được chọn thì các trường trong đó không được select"
-                // "không được select" -> có thể hiểu là disabled input?
-                const row = checkbox.closest('tr');
-                const qtyInput = row.querySelector('.item-quantity');
-                if (qtyInput) {
-                    // qtyInput.disabled = !checkbox.checked; // Nếu muốn disable thật
-                    // Tạm thời ko disable input vì logic update quantity -> reload page -> mất check state.
-                    // Nếu disable input thì user phải check mới sửa được quantity.
-                }
             });
         });
     }
@@ -453,10 +455,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
+
+            if (isChecked) {
+                // Thêm TẤT CẢ item IDs từ global registry vào Set
+                globalItemSummaries.forEach(item => {
+                    selectedItemsSet.add(item.id.toString());
+                });
+            } else {
+                // Xóa TẤT CẢ (hoặc chỉ xóa những item global đang có?)
+                // Thường "bỏ chọn tất cả" là reset Set
+                selectedItemsSet.clear();
+            }
+
+            // Sync UI checkboxes trên trang hiện tại
             const checkboxes = document.querySelectorAll('.item-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = isChecked;
             });
+
             updateBulkActionState();
             updateOrderSummary();
         });
@@ -464,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (deleteSelectedBtn) {
         deleteSelectedBtn.addEventListener('click', () => {
-            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            const selectedIds = Array.from(selectedItemsSet);
             if (selectedIds.length === 0) return;
 
             Swal.fire({
@@ -598,14 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // LƯU Ý: Ở bước này, code backend checkout cần biết user mua những item nào.
-            // Hiện tại code backend có thể lấy TOÀN BỘ item trong cart.
-            // Để hỗ trợ partial checkout, ta nên lưu list selected item IDs vào sessionStorage 
-            // và sửa backend checkout để chỉ xử lý các item đó.
-            // Tuy nhiên user request không yêu cầu sửa backend checkout.
             // "chỉ khi được chọn thì sản phẩm đó mới được tính vào hóa đơn" -> Hàm ý quan trọng.
-            // Nếu backend checkout lấy tất cả item, thì việc chọn ở frontend chỉ là ảo.
-            // Tạm thời ta cứ lưu vào session storage, nếu backend chưa hỗ trợ thì đây là limit của scope hiện tại.
-            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            const selectedIds = Array.from(selectedItemsSet);
             sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedIds));
         });
     }

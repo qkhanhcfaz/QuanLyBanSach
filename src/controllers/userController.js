@@ -161,6 +161,46 @@ const getUserProfile = async (req, res) => {
 };
 
 /**
+ * Đổi mật khẩu của chính mình
+ */
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới' });
+        }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        // Kiểm tra mật khẩu cũ
+        let isMatch = await user.matchPassword(currentPassword);
+
+        // Fallback cho mật khẩu cũ chưa mã hóa (giống login)
+        if (!isMatch && currentPassword === user.mat_khau) {
+            isMatch = true;
+        }
+
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu cũ không chính xác' });
+        }
+
+        // Cập nhật mật khẩu mới
+        user.mat_khau = newPassword; // Hooks will hash this
+        await user.save();
+
+        res.status(200).json({ message: 'Đổi mật khẩu thành công!' });
+
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ message: 'Lỗi server khi đổi mật khẩu' });
+    }
+};
+
+/**
  * Cập nhật thông tin profile của chính mình
  */
 const updateUserProfile = async (req, res) => {
@@ -216,5 +256,6 @@ module.exports = {
     updateUser,
     deleteUser,
     getUserProfile,
-    updateUserProfile
+    updateUserProfile,
+    changePassword
 };
