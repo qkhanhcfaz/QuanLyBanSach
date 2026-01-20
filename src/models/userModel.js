@@ -50,7 +50,11 @@ const User = sequelize.define(
 
     img: {
       type: DataTypes.STRING,
-      defaultValue: 'default_avatar.png'
+      defaultValue: "default_avatar.png",
+    },
+    so_dien_thoai: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
     },
     dia_chi: {
       type: DataTypes.STRING,
@@ -100,7 +104,7 @@ const User = sequelize.define(
         }
       },
     },
-  }
+  },
 );
 
 // --- CÁC PHƯƠNG THỨC MỞ RỘNG (INSTANCE METHODS) ---

@@ -1,6 +1,7 @@
 const db = require("../models");
 const { User, Role, Cart, CartItem } = db;
 const bcrypt = require("bcryptjs");
+const generateToken = require("../utils/generateToken");
 
 /**
  * Lấy danh sách người dùng (Phân trang)
@@ -157,7 +158,7 @@ const updateUserProfile = async (req, res) => {
     }
 
     user.ho_ten = req.body.ho_ten || user.ho_ten;
-    user.phone = req.body.phone || user.phone;
+    user.so_dien_thoai = req.body.so_dien_thoai || user.so_dien_thoai;
     user.dia_chi = req.body.dia_chi || user.dia_chi;
     user.ngay_sinh = req.body.ngay_sinh || user.ngay_sinh;
     user.gioi_tinh = req.body.gioi_tinh || user.gioi_tinh;
@@ -173,6 +174,22 @@ const updateUserProfile = async (req, res) => {
       user.email = req.body.email;
     }
 
+    // Xử lý khi đổi tên đăng nhập
+    if (
+      req.body.ten_dang_nhap &&
+      req.body.ten_dang_nhap !== user.ten_dang_nhap
+    ) {
+      const usernameExists = await User.findOne({
+        where: { ten_dang_nhap: req.body.ten_dang_nhap },
+      });
+      if (usernameExists) {
+        return res
+          .status(400)
+          .json({ message: "Tên đăng nhập này đã được sử dụng." });
+      }
+      user.ten_dang_nhap = req.body.ten_dang_nhap;
+    }
+
     const updatedUser = await user.save();
 
     // Trả về thông tin user và một token MỚI (nếu email thay đổi)
@@ -183,7 +200,7 @@ const updateUserProfile = async (req, res) => {
       ten_dang_nhap: updatedUser.ten_dang_nhap,
       role_id: updatedUser.role_id,
       ngay_sinh: updatedUser.ngay_sinh,
-      token: generateToken(updatedUser.id), // Tạo token mới để client cập nhật
+      token: generateToken(updatedUser.id, updatedUser.role_id), // Tạo token mới để client cập nhật
     });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -221,4 +238,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  getUserProfile,
+  updateUserProfile,
+  changeUserPassword,
 };

@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Các ô input trong form thông tin cá nhân
   const hoTenInput = document.getElementById("ho_ten");
   const emailInput = document.getElementById("email");
-  const phoneInput = document.getElementById("phone");
+  const phoneInput = document.getElementById("so_dien_thoai");
   const diaChiInput = document.getElementById("dia_chi");
   const ngaySinhInput = document.getElementById("ngay_sinh");
   const gioiTinhInput = document.getElementById("gioi_tinh"); // Thêm input giới tính
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Điền thông tin vào các ô input
       hoTenInput.value = user.ho_ten || "";
       emailInput.value = user.email || "";
-      phoneInput.value = user.phone || "";
+      phoneInput.value = user.so_dien_thoai || "";
       diaChiInput.value = user.dia_chi || "";
       ngaySinhInput.value = user.ngay_sinh || "";
       gioiTinhInput.value = user.gioi_tinh || ""; // Điền giới tính
@@ -81,10 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const updatedData = {
       ho_ten: hoTenInput.value.trim(),
       email: emailInput.value.trim(),
-      phone: phoneInput.value.trim(),
+      so_dien_thoai: phoneInput.value.trim(),
       dia_chi: diaChiInput.value.trim(),
       ngay_sinh: ngaySinhInput.value,
       gioi_tinh: gioiTinhInput.value, // Lấy giá trị giới tính
+      ten_dang_nhap: tenDangNhapInput.value.trim(),
     };
 
     try {
