@@ -1,78 +1,152 @@
 <%- include('../partials/header') %>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h1 class="text-center mb-4">Liên hệ với chúng tôi</h1>
-            <div class="card shadow">
-                <div class="card-body p-5">
-                    <form id="contactForm">
-                        <div class="mb-3">
-                            <label for="ho_ten" class="form-label">Họ và Tên</label>
-                            <input type="text" class="form-control" id="ho_ten" required>
+    <div class="container py-5">
+        <div class="row g-4">
+            <!-- Cột Left: Thông tin liên hệ -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body p-4 text-center text-lg-start">
+                        <h3 class="mb-4 fw-bold">Thông tin liên hệ</h3>
+
+                        <div class="d-flex align-items-center mb-4 flex-column flex-lg-row">
+                            <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded-circle mb-3 mb-lg-0">
+                                <i class="fas fa-map-marker-alt fs-4 text-primary"></i>
+                            </div>
+                            <div class="ms-lg-3">
+                                <h5 class="mb-1 fw-bold">Địa chỉ</h5>
+                                <p class="text-muted mb-0 small">
+                                    <%= site ? site.dia_chi : 'Quận 7, TP. Hồ Chí Minh' %>
+                                </p>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" required>
+
+                        <div class="d-flex align-items-center mb-4 flex-column flex-lg-row">
+                            <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded-circle mb-3 mb-lg-0">
+                                <i class="fas fa-phone-alt fs-4 text-success"></i>
+                            </div>
+                            <div class="ms-lg-3">
+                                <h5 class="mb-1 fw-bold">Số điện thoại</h5>
+                                <p class="text-muted mb-0 small">
+                                    <%= site ? site.so_dien_thoai : '0969 671 344' %>
+                                </p>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="chu_de" class="form-label">Chủ đề</label>
-                            <input type="text" class="form-control" id="chu_de" required>
+
+                        <div class="d-flex align-items-center mb-4 flex-column flex-lg-row">
+                            <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded-circle mb-3 mb-lg-0">
+                                <i class="fas fa-envelope fs-4 text-info"></i>
+                            </div>
+                            <div class="ms-lg-3">
+                                <h5 class="mb-1 fw-bold">Email</h5>
+                                <p class="text-muted mb-0 small">
+                                    <%= site ? site.email : 'bookzonestore07@gmail.com' %>
+                                </p>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="noi_dung" class="form-label">Nội dung tin nhắn</label>
-                            <textarea class="form-control" id="noi_dung" rows="5" required></textarea>
+
+                        <hr class="my-4 opactiy-25">
+
+                        <h5 class="mb-3 fw-bold">Vị trí của chúng tôi</h5>
+                        <div class="map-container overflow-hidden rounded-3 shadow-sm border" style="height: 250px;">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.95441552034!2d106.6778321!3d10.730248!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f6398d36323%3A0x70529dcf11425178!2zbmcgVHLhu4tuaCBRdWFuZyBOZ2jhu4ssIFBoxrDhu51uZyA3LCBRdeG6rW4gOCwgSOG7kyBDaMOtIE1pbmgsIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1715654321012!5m2!1svi!2s"
+                                width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
                         </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Gửi liên hệ</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Right: Form liên hệ -->
+            <div class="col-lg-8">
+                <div class="ps-lg-4">
+                    <h1 class="mb-2 fw-bold text-primary">Gửi tin nhắn cho chúng tôi</h1>
+                    <p class="text-muted mb-4">Chúng tôi luôn sẵn sàng lắng nghe ý kiến và thắc mắc của bạn.</p>
+                    <div class="card shadow-lg border-0 rounded-4">
+                        <div class="card-body p-4 p-md-5">
+                            <form id="contactForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <label for="ho_ten" class="form-label fw-semibold">Họ và Tên</label>
+                                        <input type="text"
+                                            class="form-control form-control-lg bg-light border-0 shadow-none rounded-3"
+                                            id="ho_ten" placeholder="Nhập họ tên của bạn" required>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label for="email" class="form-label fw-semibold">Email</label>
+                                        <input type="email"
+                                            class="form-control form-control-lg bg-light border-0 shadow-none rounded-3"
+                                            id="email" placeholder="Nhập email của bạn" required>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="chu_de" class="form-label fw-semibold">Chủ đề</label>
+                                    <input type="text"
+                                        class="form-control form-control-lg bg-light border-0 shadow-none rounded-3"
+                                        id="chu_de" placeholder="Bạn muốn liên hệ về chủ đề gì?" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="noi_dung" class="form-label fw-semibold">Nội dung tin nhắn</label>
+                                    <textarea
+                                        class="form-control form-control-lg bg-light border-0 shadow-none rounded-3"
+                                        id="noi_dung" rows="5" placeholder="Viết nội dung tin nhắn của bạn tại đây..."
+                                        required></textarea>
+                                </div>
+                                <div class="d-grid mt-2">
+                                    <button type="submit"
+                                        class="btn btn-primary btn-lg py-3 rounded-pill fw-bold shadow">
+                                        <i class="fas fa-paper-plane me-2"></i> Gửi liên hệ ngay
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>
 
-<script>
-    document.getElementById('contactForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const data = {
-            ho_ten: document.getElementById('ho_ten').value,
-            email: document.getElementById('email').value,
-            chu_de: document.getElementById('chu_de').value,
-            noi_dung: document.getElementById('noi_dung').value
-        };
+        <script>
+            document.getElementById('contactForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-        try {
-            const res = await fetch('/api/contacts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                const data = {
+                    ho_ten: document.getElementById('ho_ten').value,
+                    email: document.getElementById('email').value,
+                    chu_de: document.getElementById('chu_de').value,
+                    noi_dung: document.getElementById('noi_dung').value
+                };
+
+                try {
+                    const res = await fetch('/api/contacts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        Swal.fire('Thành công!', 'Tin nhắn của bạn đã được gửi.', 'success');
+                        document.getElementById('contactForm').reset();
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    Swal.fire('Lỗi!', error.message || 'Có lỗi xảy ra', 'error');
+                }
             });
-            
-            const result = await res.json();
-            
-            if (res.ok) {
-                Swal.fire('Thành công!', 'Tin nhắn của bạn đã được gửi.', 'success');
-                document.getElementById('contactForm').reset();
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error) {
-            Swal.fire('Lỗi!', error.message || 'Có lỗi xảy ra', 'error');
-        }
-    });
 
-    // Tự động điền email nếu user đã đăng nhập (lấy từ localStorage hoặc DOM nếu có)
-     const user = localStorage.getItem('user');
-     if (user) {
-         try {
-             const u = JSON.parse(user);
-             if (u.ho_ten) document.getElementById('ho_ten').value = u.ho_ten;
-             if (u.email) document.getElementById('email').value = u.email;
-         } catch(e){}
-     }
-</script>
+            // Tự động điền email nếu user đã đăng nhập
+            const user = localStorage.getItem('user');
+            if (user) {
+                try {
+                    const u = JSON.parse(user);
+                    if (u.ho_ten) document.getElementById('ho_ten').value = u.ho_ten;
+                    if (u.email) document.getElementById('email').value = u.email;
+                } catch (e) { }
+            }
+        </script>

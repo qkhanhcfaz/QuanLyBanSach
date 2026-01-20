@@ -67,12 +67,17 @@ const getPostDetail = async (req, res) => {
 const createPost = async (req, res) => {
     try {
         const { tieu_de, tom_tat, noi_dung, hinh_anh, trang_thai } = req.body;
-        
+
+        let imageUrl = hinh_anh; // Giá trị cũ từ text input (nếu có)
+        if (req.file) {
+            imageUrl = '/images/' + req.file.filename;
+        }
+
         const newPost = await Post.create({
             tieu_de,
             tom_tat,
             noi_dung,
-            hinh_anh,
+            hinh_anh: imageUrl,
             trang_thai: trang_thai === 'true' || trang_thai === true,
             user_id: req.user ? req.user.id : null
         });
@@ -96,7 +101,15 @@ const updatePost = async (req, res) => {
         post.tieu_de = tieu_de;
         post.tom_tat = tom_tat;
         post.noi_dung = noi_dung;
-        if (hinh_anh) post.hinh_anh = hinh_anh;
+
+        // Ưu tiên file upload -> sau đó đến value từ input hidden/text
+        if (req.file) {
+            post.hinh_anh = '/images/' + req.file.filename;
+        } else if (hinh_anh) {
+            // Nếu không upload file mới, nhưng có gửi link ảnh (via text)
+            post.hinh_anh = hinh_anh;
+        }
+
         post.trang_thai = trang_thai === 'true' || trang_thai === true;
 
         await post.save();

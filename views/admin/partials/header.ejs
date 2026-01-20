@@ -97,10 +97,15 @@
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/posts') ? 'active-admin' : '' %>">
                     <i class="fas fa-newspaper me-2"></i>Bài viết
                 </a>
+                <!-- Chat Support (Mới) -->
+                <a href="/admin/chat"
+                    class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/chat') ? 'active-admin' : '' %>">
+                    <i class="fas fa-comments me-2"></i>CHAT TRỰC TUYẾN
+                </a>
                 <!-- Liên hệ -->
                 <a href="/admin/contacts"
                     class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/contacts') ? 'active-admin' : '' %>">
-                    <i class="fas fa-envelope me-2"></i>Liên hệ
+                    <i class="fas fa-envelope-open-text me-2"></i>Đơn Liên Hệ (Email)
                 </a>
                 <!-- Cấu hình -->
                 <a href="/admin/settings"

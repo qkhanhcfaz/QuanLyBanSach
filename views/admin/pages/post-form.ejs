@@ -1,121 +1,153 @@
 <%- include('../partials/header') %>
 
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
-    </div>
+    <div class="container-fluid">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">
+                <%= title %>
+            </h1>
+        </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <form id="postForm">
-                <input type="hidden" id="postId" value="<%= typeof post !== 'undefined' ? post.id : '' %>">
-                
-                <div class="mb-3">
-                    <label for="tieu_de" class="form-label">Tiêu đề bài viết (*)</label>
-                    <input type="text" class="form-control" id="tieu_de" required 
-                           value="<%= typeof post !== 'undefined' ? post.tieu_de : '' %>">
-                </div>
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <form id="postForm">
+                    <input type="hidden" id="postId" value="<%= typeof post !== 'undefined' ? post.id : '' %>">
 
-                <div class="mb-3">
-                    <label for="hinh_anh" class="form-label">Link Ảnh bìa</label>
-                    <input type="text" class="form-control" id="hinh_anh" 
-                           value="<%= typeof post !== 'undefined' ? post.hinh_anh : '' %>">
-                </div>
+                    <div class="mb-3">
+                        <label for="tieu_de" class="form-label">Tiêu đề bài viết (*)</label>
+                        <input type="text" class="form-control" id="tieu_de" required
+                            value="<%= typeof post !== 'undefined' ? post.tieu_de : '' %>">
+                    </div>
 
-                <div class="mb-3">
-                    <label for="tom_tat" class="form-label">Tóm tắt ngắn</label>
-                    <textarea class="form-control" id="tom_tat" rows="3"><%= typeof post !== 'undefined' ? post.tom_tat : '' %></textarea>
-                </div>
+                    <div class="mb-3">
+                        <label for="imgUpload" class="form-label">Ảnh bìa</label>
+                        <input type="file" class="form-control" id="imgUpload" accept="image/*">
+                        <input type="hidden" id="hinh_anh"
+                            value="<%= typeof post !== 'undefined' ? post.hinh_anh : '' %>">
 
-                <div class="mb-3">
-                    <label for="noi_dung" class="form-label">Nội dung chi tiết (HTML)</label>
-                    <!-- Simple textarea for now, could interface with CKEditor/TinyMCE if requested -->
-                    <textarea class="form-control" id="noi_dung" rows="10" required><%= typeof post !== 'undefined' ? post.noi_dung : '' %></textarea>
-                    <small class="text-muted">Hỗ trợ mã HTML cơ bản.</small>
-                </div>
+                        <div class="mt-3">
+                            <% if (typeof post !=='undefined' && post.hinh_anh) { %>
+                                <img src="<%= post.hinh_anh %>" id="imgPreview" class="img-thumbnail"
+                                    style="max-height: 200px;">
+                                <% } else { %>
+                                    <img src="" id="imgPreview" class="img-thumbnail d-none" style="max-height: 200px;">
+                                    <% } %>
+                        </div>
+                    </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="trang_thai" 
-                           <%= (typeof post !== 'undefined' && post.trang_thai) ? 'checked' : '' %>>
-                    <label class="form-check-label" for="trang_thai">Xuất bản ngay (Hiển thị lên trang chủ)</label>
-                </div>
+                    <div class="mb-3">
+                        <label for="tom_tat" class="form-label">Tóm tắt ngắn</label>
+                        <textarea class="form-control" id="tom_tat"
+                            rows="3"><%= typeof post !== 'undefined' ? post.tom_tat : '' %></textarea>
+                    </div>
 
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Lưu bài viết
-                </button>
-                <a href="/admin/posts" class="btn btn-secondary">Hủy</a>
-            </form>
+                    <div class="mb-3">
+                        <label for="noi_dung" class="form-label">Nội dung chi tiết (HTML)</label>
+                        <textarea class="form-control" id="noi_dung"
+                            rows="10"><%= typeof post !== 'undefined' ? post.noi_dung : '' %></textarea>
+                        <small class="text-muted">Hỗ trợ mã HTML cơ bản.</small>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="trang_thai" <%=(typeof post !=='undefined'
+                            && post.trang_thai) ? 'checked' : '' %>>
+                        <label class="form-check-label" for="trang_thai">Xuất bản ngay (Hiển thị lên trang chủ)</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Lưu bài viết
+                    </button>
+                    <a href="/admin/posts" class="btn btn-secondary">Hủy</a>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>
 
+        <script src="https://cdn.tiny.cloud/1/6jxj84yhnkoprhrf3zff9cou3kt0p192bxg8k6xfdq8mlem7/tinymce/6/tinymce.min.js"
+            referrerpolicy="origin"></script>
 
-<script src="https://cdn.tiny.cloud/1/6jxj84yhnkoprhrf3zff9cou3kt0p192bxg8k6xfdq8mlem7/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-
-<script>
-// Initialize TinyMCE
-tinymce.init({
-    selector: '#noi_dung',
-    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
-    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
-    height: 500,
-    menubar: false,
-    setup: function (editor) {
-        editor.on('change', function () {
-            editor.save(); // Sync content to textarea
-        });
-    }
-});
-
-document.getElementById('postForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // Ensure TinyMCE updates the textarea before we grab the value
-    tinymce.triggerSave();
-
-    const id = document.getElementById('postId').value;
-    const token = localStorage.getItem('token');
-    
-    const data = {
-        tieu_de: document.getElementById('tieu_de').value,
-        hinh_anh: document.getElementById('hinh_anh').value,
-        tom_tat: document.getElementById('tom_tat').value,
-        noi_dung: document.getElementById('noi_dung').value, // This now gets value from TinyMCE
-        trang_thai: document.getElementById('trang_thai').checked
-    };
-
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/posts/${id}` : '/api/posts';
-
-    try {
-        const res = await fetch(url, {
-            method: method,
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-        
-        if (res.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Thành công!',
-                text: result.message,
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                window.location.href = '/admin/posts';
+        <script>
+            // Initialize TinyMCE
+            tinymce.init({
+                selector: '#noi_dung',
+                plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+                height: 500,
+                menubar: false,
+                setup: function (editor) {
+                    editor.on('change', function () {
+                        editor.save();
+                    });
+                }
             });
-        } else {
-            throw new Error(result.message);
-        }
-    } catch (error) {
-        Swal.fire('Lỗi!', error.message, 'error');
-    }
-});
-</script>
+
+            // Image Preview Logic
+            document.getElementById('imgUpload').addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                const preview = document.getElementById('imgPreview');
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.classList.remove('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            document.getElementById('postForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                tinymce.triggerSave();
+
+                const id = document.getElementById('postId').value;
+                const token = localStorage.getItem('token');
+
+                // Use FormData for file upload
+                const formData = new FormData();
+                formData.append('tieu_de', document.getElementById('tieu_de').value);
+                formData.append('tom_tat', document.getElementById('tom_tat').value);
+                formData.append('noi_dung', document.getElementById('noi_dung').value);
+                formData.append('trang_thai', document.getElementById('trang_thai').checked);
+
+                const fileInput = document.getElementById('imgUpload');
+                if (fileInput.files.length > 0) {
+                    formData.append('hinh_anh', fileInput.files[0]);
+                } else {
+                    // Keep old image URL if no new file
+                    formData.append('hinh_anh', document.getElementById('hinh_anh').value);
+                }
+
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/api/posts/${id}` : '/api/posts';
+
+                try {
+                    const res = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                            // Content-Type is auto-set by browser for FormData
+                        },
+                        body: formData
+                    });
+
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công!',
+                            text: result.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.href = '/admin/posts';
+                        });
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    Swal.fire('Lỗi!', error.message, 'error');
+                }
+            });
+        </script>

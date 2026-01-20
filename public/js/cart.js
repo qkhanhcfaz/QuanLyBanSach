@@ -726,7 +726,7 @@ async function addToCart(productId, quantity = 1) {
             cancelButtonText: 'Để sau'
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '/login';
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
             }
         });
         return;

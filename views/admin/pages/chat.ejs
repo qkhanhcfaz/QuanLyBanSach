@@ -1,94 +1,95 @@
 <%- include('../partials/header') %>
 
-<div class="container-fluid" style="height: 80vh;">
+    <div class="container-fluid" style="height: 80vh;">
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Hỗ trợ khách hàng</h1>
-    </div>
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Hỗ trợ khách hàng</h1>
+        </div>
 
-    <div class="row h-100 pb-4">
-        <!-- User List (Sidebar) -->
-        <div class="col-md-4 h-100">
-            <div class="card shadow h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">DS Khách hàng</h6>
-                </div>
-                <div class="card-body p-0" style="overflow-y: auto;">
-                    <div class="list-group list-group-flush" id="user-list">
-                        <div class="text-center p-3">Đang tải...</div>
+        <div class="row h-100 pb-4">
+            <!-- User List (Sidebar) -->
+            <div class="col-md-4 h-100">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">DS Khách hàng</h6>
+                    </div>
+                    <div class="card-body p-0" style="overflow-y: auto;">
+                        <div class="list-group list-group-flush" id="user-list">
+                            <div class="text-center p-3">Đang tải...</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Chat Area -->
-        <div class="col-md-8 h-100">
-            <div class="card shadow h-100">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary" id="chat-header-name">Chọn khách hàng để chat</h6>
-                </div>
-                
-                <!-- Chat Messages -->
-                <div class="card-body bg-light" id="admin-chat-messages" style="overflow-y: auto; height: 100%;">
-                    <div class="text-center text-muted mt-5">Chưa chọn cuộc hội thoại nào</div>
-                </div>
+            <!-- Chat Area -->
+            <div class="col-md-8 h-100">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary" id="chat-header-name">Chọn khách hàng để chat</h6>
+                    </div>
 
-                <!-- Input Area -->
-                <div class="card-footer" style="display: none;" id="admin-chat-footer">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="admin-chat-input" placeholder="Nhập tin nhắn...">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" id="admin-chat-send-btn">
-                                <i class="fas fa-paper-plane"></i> Gửi
-                            </button>
+                    <!-- Chat Messages -->
+                    <div class="card-body bg-light" id="admin-chat-messages" style="overflow-y: auto; height: 100%;">
+                        <div class="text-center text-muted mt-5">Chưa chọn cuộc hội thoại nào</div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="card-footer" style="display: none;" id="admin-chat-footer">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="admin-chat-input"
+                                placeholder="Nhập tin nhắn...">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" id="admin-chat-send-btn">
+                                    <i class="fas fa-paper-plane"></i> Gửi
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
-</div>
+    <%- include('../partials/footer') %>
 
-<%- include('../partials/footer') %>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const userListContainer = document.getElementById('user-list');
+                const chatMessagesContainer = document.getElementById('admin-chat-messages');
+                const chatHeaderName = document.getElementById('chat-header-name');
+                const chatFooter = document.getElementById('admin-chat-footer');
+                const chatInput = document.getElementById('admin-chat-input');
+                const sendBtn = document.getElementById('admin-chat-send-btn');
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const userListContainer = document.getElementById('user-list');
-    const chatMessagesContainer = document.getElementById('admin-chat-messages');
-    const chatHeaderName = document.getElementById('chat-header-name');
-    const chatFooter = document.getElementById('admin-chat-footer');
-    const chatInput = document.getElementById('admin-chat-input');
-    const sendBtn = document.getElementById('admin-chat-send-btn');
+                let currentUserId = null;
+                let pollInterval = null;
 
-    let currentUserId = null;
-    let pollInterval = null;
+                // 1. Fetch Conversations
+                async function fetchConversations() {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch('/api/chat/conversations', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const conversations = await response.json();
+                        renderUserList(conversations);
+                    } catch (error) {
+                        console.error('Error fetching conversations:', error);
+                    }
+                }
 
-    // 1. Fetch Conversations
-    async function fetchConversations() {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/chat/conversations', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const conversations = await response.json();
-            renderUserList(conversations);
-        } catch (error) {
-            console.error('Error fetching conversations:', error);
-        }
-    }
+                // 2. Render User List
+                function renderUserList(conversations) {
+                    userListContainer.innerHTML = '';
+                    conversations.forEach(convo => {
+                        const user = convo.user;
+                        const item = document.createElement('a');
+                        item.href = '#';
+                        item.className = 'list-group-item list-group-item-action d-flex align-items-center';
+                        if (currentUserId == user.id) item.classList.add('active');
 
-    // 2. Render User List
-    function renderUserList(conversations) {
-        userListContainer.innerHTML = '';
-        conversations.forEach(convo => {
-            const user = convo.user;
-            const item = document.createElement('a');
-            item.href = '#';
-            item.className = 'list-group-item list-group-item-action d-flex align-items-center';
-            if (currentUserId == user.id) item.classList.add('active');
-            
-            item.innerHTML = `
+                        item.innerHTML = `
                 <div class="mr-3">
                     <div class="btn-circle btn-sm btn-primary">
                         ${user.ho_ten.charAt(0).toUpperCase()}
@@ -105,108 +106,113 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                selectUser(user.id, user.ho_ten);
-            });
-            userListContainer.appendChild(item);
-        });
-    }
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            selectUser(user.id, user.ho_ten);
+                        });
+                        userListContainer.appendChild(item);
+                    });
+                }
 
-    // 3. Select User & Load Chat
-    function selectUser(userId, userName) {
-        currentUserId = userId;
-        chatHeaderName.textContent = `Chat với: ${userName}`;
-        chatFooter.style.display = 'block';
-        chatInput.focus();
-        
-        // Refresh List to update active state
-        fetchConversations();
-        
-        // Start Polling Messages
-        loadMessages();
-        startPolling();
-    }
+                // 3. Select User & Load Chat
+                function selectUser(userId, userName) {
+                    currentUserId = userId;
+                    chatHeaderName.textContent = `Chat với: ${userName}`;
+                    chatFooter.style.display = 'block';
+                    chatInput.focus();
 
-    // 4. Load Messages
-    async function loadMessages() {
-        if (!currentUserId) return;
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`/api/chat/messages?userId=${currentUserId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const messages = await response.json();
-            renderMessages(messages);
-        } catch (error) {
-            console.error('Error loading messages:', error);
-        }
-    }
+                    // Refresh List to update active state
+                    fetchConversations();
 
-    function renderMessages(messages) {
-        chatMessagesContainer.innerHTML = '';
-        if (messages.length === 0) {
-            chatMessagesContainer.innerHTML = '<div class="text-center text-muted mt-5">Chưa có tin nhắn nào.</div>';
-            return;
-        }
+                    // Start Polling Messages
+                    loadMessages();
+                    startPolling();
+                }
 
-        messages.forEach(msg => {
-            const isMe = msg.sender_type === 'admin';
-            const div = document.createElement('div');
-            div.className = `d-flex mb-3 ${isMe ? 'justify-content-end' : 'justify-content-start'}`;
-            
-            div.innerHTML = `
-                <div class="${isMe ? 'bg-primary text-white' : 'bg-white border text-gray-900'}" 
-                     style="padding: 10px 15px; border-radius: 20px; max-width: 70%;">
-                    <div>${msg.message}</div>
+                // 4. Load Messages
+                async function loadMessages() {
+                    if (!currentUserId) return;
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`/api/chat/messages?userId=${currentUserId}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const messages = await response.json();
+                        renderMessages(messages);
+                    } catch (error) {
+                        console.error('Error loading messages:', error);
+                    }
+                }
+
+                function renderMessages(messages) {
+                    chatMessagesContainer.innerHTML = '';
+                    if (messages.length === 0) {
+                        chatMessagesContainer.innerHTML = '<div class="text-center text-muted mt-5">Chưa có tin nhắn nào.</div>';
+                        return;
+                    }
+
+                    messages.forEach(msg => {
+                        console.log('Message:', msg.message, 'Sender:', msg.sender_type); // DEBUG
+                        const isAdmin = msg.sender_type === 'admin';
+                        const div = document.createElement('div');
+                        div.className = `d-flex mb-3 ${isAdmin ? 'justify-content-end' : 'justify-content-start'}`;
+
+                        // Admin: Right side, blue gradient. User: Left side, light gray
+                        const bgStyle = isAdmin
+                            ? 'background: linear-gradient(135deg, #4e73df 0%, #2e59d9 100%); color: white; border-radius: 18px 18px 2px 18px;'
+                            : 'background: #f1f3f5; color: #333; border: 1px solid #e3e6f0; border-radius: 18px 18px 18px 2px;';
+
+                        div.innerHTML = `
+                <div style="padding: 12px 18px; max-width: 70%; ${bgStyle} box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <div style="word-wrap: break-word;">${msg.message}</div>
                     <div style="font-size: 0.7rem; opacity: 0.7; text-align: right; margin-top: 5px;">
-                        ${new Date(msg.createdAt).toLocaleTimeString()}
+                        ${new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
             `;
-            chatMessagesContainer.appendChild(div);
-        });
-        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-    }
+                        chatMessagesContainer.appendChild(div);
+                    });
+                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                }
 
-    // 5. Send Message
-    async function sendMessage() {
-        const text = chatInput.value.trim();
-        if (!text || !currentUserId) return;
+                // 5. Send Message
+                async function sendMessage() {
+                    const text = chatInput.value.trim();
+                    if (!text || !currentUserId) return;
 
-        try {
-            const token = localStorage.getItem('token');
-            await fetch('/api/chat/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    message: text,
-                    receiver_id: currentUserId 
-                })
+                    try {
+                        const token = localStorage.getItem('token');
+                        await fetch('/api/chat/send', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                message: text,
+                                receiver_id: currentUserId
+                            })
+                        });
+                        chatInput.value = '';
+                        loadMessages(); // Reload immediately
+                    } catch (error) {
+                        console.error('Send error:', error);
+                    }
+                }
+
+                sendBtn.addEventListener('click', sendMessage);
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendMessage();
+                });
+
+                // Polling Logic
+                function startPolling() {
+                    if (pollInterval) clearInterval(pollInterval);
+                    pollInterval = setInterval(loadMessages, 3000); // 3 seconds
+                }
+
+                // Initial Load
+                fetchConversations();
+                setInterval(fetchConversations, 10000); // Refresh User List every 10s
             });
-            chatInput.value = '';
-            loadMessages(); // Reload immediately
-        } catch (error) {
-            console.error('Send error:', error);
-        }
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
-
-    // Polling Logic
-    function startPolling() {
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(loadMessages, 3000); // 3 seconds
-    }
-
-    // Initial Load
-    fetchConversations();
-    setInterval(fetchConversations, 10000); // Refresh User List every 10s
-});
-</script>
+        </script>

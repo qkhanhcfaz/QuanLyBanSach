@@ -58,7 +58,7 @@ if (loginForm) {
         const mat_khau = document.getElementById('mat_khau').value;
         const alertBox = document.getElementById('alertBox');
         const submitBtn = loginForm.querySelector('button[type="submit"]');
-        
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xử lý...';
         try {
@@ -91,7 +91,11 @@ if (loginForm) {
                     if (data.isAdmin || data.role_id === 1) {
                         window.location.href = '/admin'; // Admin vào trang quản trị
                     } else {
-                        window.location.href = '/'; // User thường về trang chủ
+                        // Ưu tiên chuyển hướng về trang trước đó nếu có
+                        const previousPath = document.getElementById('previousPath')
+                            ? document.getElementById('previousPath').value
+                            : '/';
+                        window.location.href = previousPath;
                     }
                 });
 
@@ -120,7 +124,7 @@ if (forgotPasswordForm) {
         const email = document.getElementById('email').value;
         const alertBox = document.getElementById('alertBox');
         const submitBtn = forgotPasswordForm.querySelector('button[type="submit"]');
-        
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang gửi...';
 
@@ -163,7 +167,7 @@ if (resetPasswordForm) {
             alertBox.style.display = 'block';
             return;
         }
-        
+
         // Lấy token từ URL
         const resetToken = window.location.pathname.split('/')[2];
 
@@ -175,7 +179,7 @@ if (resetPasswordForm) {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
-            
+
             await Swal.fire('Thành công!', 'Mật khẩu của bạn đã được cập nhật.', 'success');
             window.location.href = '/login';
 

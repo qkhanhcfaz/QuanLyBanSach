@@ -6,6 +6,7 @@ const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 
 // Kích hoạt dotenv ngay lập tức để đọc biến môi trường
 dotenv.config();
@@ -62,6 +63,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
+
+// Cấu hình Session
+app.use(
+  session({
+    secret: "bookzone_secret_key_2026",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 1 ngày
+  })
+);
+
+// Middleware theo dõi previousPath (cho logic đếm view)
+app.use((req, res, next) => {
+  res.on("finish", () => {
+    // Chỉ track GET requests, loại trừ API, Static files và trang Auth
+    if (
+      req.method === "GET" &&
+      !req.originalUrl.startsWith("/api") &&
+      !req.originalUrl.match(/\.(css|js|jpg|png|gif|ico)$/) &&
+      !["/login", "/register", "/forgot-password"].includes(
+        req.originalUrl.split("?")[0]
+      )
+    ) {
+      req.session.previousPath = req.originalUrl;
+    }
+  });
+  next();
+});
 // Middleware checkUser để lấy thông tin user từ token (nếu có) cho mọi request
 app.use(checkUser);
 

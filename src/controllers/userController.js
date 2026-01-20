@@ -141,10 +141,99 @@ const deleteUser = async (req, res) => {
     }
 };
 
+/**
+ * Lấy thông tin profile của User đang login
+ */
+const getProfile = async (req, res) => {
+    try {
+        // req.user đã được populate bởi middleware checkUser hoặc protect
+        // Tuy nhiên checkUser đôi khi chỉ lấy thông tin cơ bản, nên query lại cho chắc
+        const user = await User.findByPk(req.user.id, {
+            attributes: { exclude: ['mat_khau'] }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        // Map so_dien_thoai sang phone để frontend (profile.js) hiểu
+        const userData = user.toJSON();
+        userData.phone = user.so_dien_thoai || '';
+
+        res.status(200).json(userData);
+    } catch (error) {
+        console.error('Get Profile Error:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
+
+/**
+ * Cập nhật thông tin profile
+ */
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const { ho_ten, email, phone, dia_chi, ngay_sinh } = req.body;
+
+        user.ho_ten = ho_ten || user.ho_ten;
+        user.email = email || user.email;
+        user.dia_chi = dia_chi || user.dia_chi;
+        if (ngay_sinh) user.ngay_sinh = ngay_sinh;
+
+        // Cập nhật số điện thoại (nếu model có trường so_dien_thoai)
+        // Lưu ý: Nếu model chưa có thì dòng này không có tác dụng lưu vào DB, nhưng cũng không lỗi
+        if (phone) user.so_dien_thoai = phone;
+
+        await user.save();
+
+        // Trả về data mới
+        const userData = user.toJSON();
+        userData.phone = user.so_dien_thoai || '';
+
+        // Nếu email thay đổi, có thể cần cấp lại token (tùy logic), nhưng ở đây tạm thời trả về user
+        res.status(200).json(userData);
+    } catch (error) {
+        console.error('Update Profile Error:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
+
+/**
+ * Đổi mật khẩu
+ */
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Check password cũ
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
+        }
+
+        // Cập nhật password mới
+        user.mat_khau = newPassword; // Hook beforeUpdate sẽ hash
+        await user.save();
+
+        res.status(200).json({ message: 'Đổi mật khẩu thành công' });
+    } catch (error) {
+        console.error('Change Password Error:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    getProfile,
+    updateProfile,
+    changePassword
 };

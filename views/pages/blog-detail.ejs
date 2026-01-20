@@ -1,37 +1,47 @@
 <%- include('../partials/header') %>
 
-<div class="container py-5">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="/blog">Tin tức</a></li>
-            <li class="breadcrumb-item active" aria-current="page"><%= post.tieu_de %></li>
-        </ol>
-    </nav>
+    <div class="container py-5" style="max-width: 900px;">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb bg-transparent p-0">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="/blog" class="text-decoration-none text-muted">Tin tức</a></li>
+                <li class="breadcrumb-item active text-dark" aria-current="page">Bài viết</li>
+            </ol>
+        </nav>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <article class="blog-post">
-                <h1 class="blog-post-title mb-3"><%= post.tieu_de %></h1>
-                <p class="blog-post-meta text-muted mb-4">
-                    <i class="far fa-calendar-alt"></i> <%= new Date(post.createdAt).toLocaleDateString('vi-VN') %> 
-                    by <strong><%= post.author ? post.author.ho_ten : 'Admin' %></strong>
-                </p>
+        <article class="blog-post bg-white p-4 p-md-5 rounded-3 shadow-sm border-0">
+            <header class="mb-4 text-center">
+                <h1 class="fw-bold mb-3 display-5">
+                    <%= post.tieu_de %>
+                </h1>
+                <div class="text-muted small text-uppercase fw-bold ls-1">
+                    <span class="me-3"><i class="far fa-calendar-alt me-1"></i>
+                        <%= new Date(post.createdAt).toLocaleDateString('vi-VN') %>
+                    </span>
+                    <span><i class="fas fa-user me-1"></i>
+                        <%= post.author ? post.author.ho_ten : 'Admin' %>
+                    </span>
+                </div>
+            </header>
 
-                <% if (post.hinh_anh) { %>
-                    <img src="<%= post.hinh_anh %>" class="img-fluid rounded mb-4 w-100" alt="<%= post.tieu_de %>" style="max-height: 500px; object-fit: cover;">
+            <% if (post.hinh_anh) { %>
+                <figure class="figure w-100 text-center mb-5 bg-light rounded-3 p-3">
+                    <img src="<%= post.hinh_anh %>" class="figure-img img-fluid rounded shadow-sm"
+                        alt="<%= post.tieu_de %>" style="max-height: 400px; object-fit: contain;">
+                </figure>
                 <% } %>
 
-                <div class="blog-content fs-5" style="line-height: 1.8;">
-                    <%- post.noi_dung %>
-                </div>
-            </article>
+                    <div class="blog-content fs-5 text-secondary" style="line-height: 1.8; text-align: justify;">
+                        <%- post.noi_dung %>
+                    </div>
 
-            <div class="mt-5 text-center">
-                <a href="/blog" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
-            </div>
-        </div>
+                    <hr class="my-5">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="/blog" class="btn btn-outline-dark rounded-pill px-4"><i
+                                class="fas fa-arrow-left me-2"></i> Quay lại tin tức</a>
+                    </div>
+        </article>
     </div>
-</div>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>

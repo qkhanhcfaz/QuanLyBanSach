@@ -221,10 +221,25 @@ const renderProductDetailPage = async (req, res) => {
 };
 
 const renderLoginPage = (req, res) => {
-  res.render("pages/login", { title: "Đăng Nhập", user: req.user });
+  if (req.user) {
+    const redirectPath = req.query.redirect || '/';
+    return res.redirect(redirectPath);
+  }
+  const previousPath = req.query.redirect || req.session.previousPath || '/';
+  res.render("pages/login", { title: "Đăng Nhập", user: req.user, previousPath });
 };
 
 const renderRegisterPage = (req, res) => {
+  console.log('Rendering Register Page. User state:', req.user ? 'Logged In' : 'Not Logged In');
+
+  // Commenting out redirect to allow users to see the form even if a session/cookie exists
+  /*
+  if (req.user) {
+    const redirectPath = req.query.redirect || '/';
+    return res.redirect(redirectPath);
+  }
+  */
+
   res.render("pages/register", { title: "Đăng Ký", user: req.user });
 };
 
