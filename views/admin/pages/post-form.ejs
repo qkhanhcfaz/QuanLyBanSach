@@ -17,9 +17,13 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="hinh_anh" class="form-label">Link Ảnh bìa</label>
-                    <input type="text" class="form-control" id="hinh_anh" 
-                           value="<%= typeof post !== 'undefined' ? post.hinh_anh : '' %>">
+                    <label for="hinh_anh" class="form-label">Ảnh bìa</label>
+                    <% if (typeof post !== 'undefined' && post.hinh_anh) { %>
+                        <div class="mb-2">
+                             <img src="<%= post.hinh_anh %>" alt="Current Image" style="max-height: 150px;">
+                        </div>
+                    <% } %>
+                    <input type="file" class="form-control" id="hinh_anh" accept="image/*">
                 </div>
 
                 <div class="mb-3">
@@ -30,7 +34,7 @@
                 <div class="mb-3">
                     <label for="noi_dung" class="form-label">Nội dung chi tiết (HTML)</label>
                     <!-- Simple textarea for now, could interface with CKEditor/TinyMCE if requested -->
-                    <textarea class="form-control" id="noi_dung" rows="10" required><%= typeof post !== 'undefined' ? post.noi_dung : '' %></textarea>
+                    <textarea class="form-control" id="noi_dung" rows="10"><%= typeof post !== 'undefined' ? post.noi_dung : '' %></textarea>
                     <small class="text-muted">Hỗ trợ mã HTML cơ bản.</small>
                 </div>
 
@@ -78,13 +82,17 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     const id = document.getElementById('postId').value;
     const token = localStorage.getItem('token');
     
-    const data = {
-        tieu_de: document.getElementById('tieu_de').value,
-        hinh_anh: document.getElementById('hinh_anh').value,
-        tom_tat: document.getElementById('tom_tat').value,
-        noi_dung: document.getElementById('noi_dung').value, // This now gets value from TinyMCE
-        trang_thai: document.getElementById('trang_thai').checked
-    };
+    // Construct FormData
+    const formData = new FormData();
+    formData.append('tieu_de', document.getElementById('tieu_de').value);
+    formData.append('tom_tat', document.getElementById('tom_tat').value);
+    formData.append('noi_dung', document.getElementById('noi_dung').value);
+    formData.append('trang_thai', document.getElementById('trang_thai').checked);
+
+    const fileInput = document.getElementById('hinh_anh');
+    if (fileInput.files.length > 0) {
+        formData.append('hinh_anh', fileInput.files[0]);
+    }
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/posts/${id}` : '/api/posts';
@@ -93,10 +101,10 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         const res = await fetch(url, {
             method: method,
             headers: { 
-                'Content-Type': 'application/json',
+                // 'Content-Type': 'multipart/form-data', // Do NOT set this header manually when using FormData
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(data)
+            body: formData
         });
 
         const result = await res.json();
