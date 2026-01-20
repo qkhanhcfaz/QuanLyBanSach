@@ -200,9 +200,10 @@ function initializeAllSwipers() {
   };
 
   new Swiper("#bestseller-swiper", productSwiperOptions);
-  new Swiper("#vh-vietnam-swiper", productSwiperOptions);
-  new Swiper("#vh-nuoc-ngoai-swiper", productSwiperOptions);
-  new Swiper("#finance-swiper", productSwiperOptions);
+  // Các swiper danh mục nổi bật giờ được init trực tiếp trong EJS (inline script) vì ID động
+  // new Swiper("#vh-vietnam-swiper", productSwiperOptions);
+  // new Swiper("#vh-nuoc-ngoai-swiper", productSwiperOptions);
+  // new Swiper("#finance-swiper", productSwiperOptions);
 }
 
 /**
@@ -218,15 +219,15 @@ function loadHomePageData() {
 
   // Tải dữ liệu cho cột phải
   // fetchProductsAndRender('#bestseller-products-wrapper', '/bestsellers?limit=10'); // Đã chuyển sang SSR
-  fetchProductsAndRender(
-    "#vh-vietnam-products-wrapper",
-    "?category=31&limit=10",
-  );
-  fetchProductsAndRender(
-    "#vh-nuoc-ngoai-products-wrapper",
-    "?category=5&limit=10",
-  );
-  fetchProductsAndRender("#finance-products-wrapper", "?category=1&limit=10");
+  // fetchProductsAndRender(
+  //   "#vh-vietnam-products-wrapper",
+  //   "?category=31&limit=10",
+  // );
+  // fetchProductsAndRender(
+  //   "#vh-nuoc-ngoai-products-wrapper",
+  //   "?category=5&limit=10",
+  // );
+  // fetchProductsAndRender("#finance-products-wrapper", "?category=1&limit=10");
 }
 
 /**

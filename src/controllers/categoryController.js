@@ -1,10 +1,26 @@
-const { Category } = require("../models");
+const { Category, sequelize } = require("../models");
+const db = require("../models");
 
 // GET /api/categories
 const getAllCategories = async (req, res) => {
   try {
     const categories = await Category.findAll({
-      attributes: ["id", "ten_danh_muc", "mo_ta", "danh_muc_cha_id"], // Removed "img"
+      attributes: [
+        "id",
+        "ten_danh_muc",
+        "mo_ta",
+        "danh_muc_cha_id",
+        "is_featured",
+        [sequelize.fn("COUNT", sequelize.col("products.id")), "productCount"],
+      ],
+      include: [
+        {
+          model: db.Product,
+          as: "products",
+          attributes: [],
+        },
+      ],
+      group: ["Category.id"],
       order: [["id", "ASC"]],
     });
 
@@ -62,7 +78,11 @@ const updateCategory = async (req, res) => {
     } else {
       category.danh_muc_cha_id = danh_muc_cha_id;
     }
-    // Removed img update logic
+
+    // [NEW] Handle is_featured update
+    if (req.body.is_featured !== undefined) {
+      category.is_featured = req.body.is_featured;
+    }
 
     await category.save();
 

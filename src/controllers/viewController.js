@@ -84,11 +84,26 @@ const renderHomePage = async (req, res) => {
       bestSellers = allTimeBestSellers;
     }
 
+    // 3. Lấy danh sách Danh Mục Nổi Bật (có kèm sản phẩm)
+    const featuredCategories = await Category.findAll({
+      where: { is_featured: true },
+      include: [
+        {
+          model: Product,
+          as: "products",
+          limit: 6, // [UPDATED] Giới hạn 6 sản phẩm
+          order: [["createdAt", "DESC"]], // Lấy sản phẩm mới nhất của danh mục đó
+        },
+      ],
+      order: [["id", "ASC"]], // Hoặc sắp xếp theo thứ tự ưu tiên nếu có cột 'priority'
+    });
+
     res.render("pages/home", {
       title: "Trang Chủ",
       slides,
       newProducts,
-      bestSellers, // Pass bestSellers to view
+      bestSellers,
+      featuredCategories, // Pass featured categories
       user: req.user,
     });
   } catch (error) {

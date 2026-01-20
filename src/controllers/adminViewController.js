@@ -115,10 +115,14 @@ const renderProductFormPage = async (req, res) => {
  */
 const renderAdminCategoriesPage = async (req, res) => {
   try {
+    const categories = await Category.findAll({
+      order: [["id", "ASC"]],
+    });
     res.render("admin/pages/categories", {
       title: "Quản lý Danh mục",
       user: req.user,
       path: "/categories",
+      categories, // Pass categories to view
     });
   } catch (error) {
     res.status(500).send("Lỗi");
