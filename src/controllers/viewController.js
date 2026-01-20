@@ -34,10 +34,61 @@ const renderHomePage = async (req, res) => {
       ],
     });
 
+    // 2. Lấy danh sách Top Bán Chạy Trong Tháng
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const bestSellersData = await db.OrderItem.findAll({
+      attributes: [
+        "product_id",
+        [
+          db.sequelize.fn("SUM", db.sequelize.col("so_luong_dat")),
+          "total_sold",
+        ],
+      ],
+      include: [
+        {
+          model: Product,
+          as: "product",
+          attributes: ["id", "ten_sach", "gia_bia", "img"],
+        },
+        {
+          model: db.Order,
+          as: "order",
+          where: {
+            createdAt: { [Op.gte]: startOfMonth },
+            trang_thai_don_hang: { [Op.in]: ["delivered", "shipping"] },
+          },
+          attributes: [],
+        },
+      ],
+      group: ["product_id", "product.id"],
+      order: [
+        [db.sequelize.fn("SUM", db.sequelize.col("so_luong_dat")), "DESC"],
+      ],
+      limit: 10,
+      raw: true,
+      nest: true,
+    });
+
+    // Nếu trong tháng chưa có đơn nào, fallback về top bán chạy toàn thời gian
+    let bestSellers = bestSellersData.map((item) => item.product);
+
+    if (bestSellers.length === 0) {
+      const allTimeBestSellers = await Product.findAll({
+        limit: 10,
+        order: [["da_ban", "DESC"]],
+        attributes: ["id", "ten_sach", "gia_bia", "img"],
+      });
+      bestSellers = allTimeBestSellers;
+    }
+
     res.render("pages/home", {
       title: "Trang Chủ",
       slides,
       newProducts,
+      bestSellers, // Pass bestSellers to view
       user: req.user,
     });
   } catch (error) {
