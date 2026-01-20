@@ -1,12 +1,12 @@
 // File: /public/js/admin-product.js 
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // ====================================================================
     // LOGIC XỬ LÝ FORM SẮP XẾP
     // ====================================================================
     const sortSelect = document.getElementById('sort-select');
     if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
+        sortSelect.addEventListener('change', function () {
             const form = document.getElementById('sort-form');
             if (!form) {
                 console.error('Không tìm thấy form#sort-form');
@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const lastUnderscoreIndex = selectedValue.lastIndexOf('_');
 
             // sortByValue sẽ là phần từ đầu đến dấu gạch dưới cuối cùng
-            const sortByValue = selectedValue.substring(0, lastUnderscoreIndex); 
-            
+            const sortByValue = selectedValue.substring(0, lastUnderscoreIndex);
+
             // orderValue sẽ là phần từ sau dấu gạch dưới cuối cùng
             const orderValue = selectedValue.substring(lastUnderscoreIndex + 1);
             // ==========================================================
@@ -57,17 +57,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // ====================================================================
     const productTableBody = document.getElementById('products-table-body');
     if (productTableBody) {
-        productTableBody.addEventListener('click', async function(event) {
+        productTableBody.addEventListener('click', async function (event) {
             const deleteButton = event.target.closest('.delete-product-btn');
             if (!deleteButton) {
                 return;
             }
 
             const productId = deleteButton.dataset.id;
-            
+
             const result = await Swal.fire({
                 title: 'Bạn có chắc chắn?',
-                text: `Sản phẩm có ID: ${productId} sẽ bị xóa vĩnh viễn!`,
+                text: `Sản phẩm có ID: ${productId} sẽ được chuyển sang trạng thái ngưng hoạt động và không còn hiển thị cho khách hàng!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -104,6 +104,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch (error) {
                     Swal.fire('Lỗi kết nối!', 'Không thể kết nối đến server.', 'error');
                 }
+            }
+        });
+    }
+
+    // ====================================================================
+    // LOGIC XỬ LÝ THAY ĐỔI TRẠNG THÁI SẢN PHẨM
+    // ====================================================================
+    if (productTableBody) {
+        productTableBody.addEventListener('change', async function (event) {
+            const statusSelect = event.target.closest('.status-select');
+            if (!statusSelect) return;
+
+            const productId = statusSelect.dataset.id;
+            const newStatus = statusSelect.value;
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`/api/products/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ trang_thai: newStatus })
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Cập nhật trạng thái thành công',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                } else {
+                    const resultData = await response.json();
+                    Swal.fire('Thất bại!', resultData.message || 'Không thể cập nhật trạng thái.', 'error');
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật trạng thái:', error);
+                Swal.fire('Lỗi kết nối!', 'Không thể kết nối đến server.', 'error');
+                window.location.reload();
             }
         });
     }

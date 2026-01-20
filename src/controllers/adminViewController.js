@@ -31,13 +31,32 @@ const { Op } = require('sequelize');
  */
 const renderAdminProducts = async (req, res) => {
     try {
-        const { keyword, page = 1, sortBy = 'createdAt', order = 'DESC' } = req.query;
+        const { keyword, page = 1, sortBy = 'createdAt', order = 'DESC', minPrice, maxPrice, minStock, maxStock, status } = req.query;
         const limit = 10;
         const offset = (page - 1) * limit;
 
         const whereCondition = {};
         if (keyword) {
             whereCondition.ten_sach = { [Op.iLike]: `%${keyword}%` };
+        }
+
+        // Lọc theo giá
+        if (minPrice || maxPrice) {
+            whereCondition.gia_bia = {};
+            if (minPrice) whereCondition.gia_bia[Op.gte] = minPrice;
+            if (maxPrice) whereCondition.gia_bia[Op.lte] = maxPrice;
+        }
+
+        // Lọc theo tồn kho
+        if (minStock || maxStock) {
+            whereCondition.so_luong_ton_kho = {};
+            if (minStock) whereCondition.so_luong_ton_kho[Op.gte] = minStock;
+            if (maxStock) whereCondition.so_luong_ton_kho[Op.lte] = maxStock;
+        }
+
+        // Lọc theo trạng thái
+        if (status !== undefined && status !== '') {
+            whereCondition.trang_thai = status;
         }
 
         const { count, rows } = await Product.findAndCountAll({
@@ -58,7 +77,12 @@ const renderAdminProducts = async (req, res) => {
             totalProducts: count,
             keyword,
             sortBy,
-            order
+            order,
+            minPrice,
+            maxPrice,
+            minStock,
+            maxStock,
+            status
         });
     } catch (error) {
         console.error("Lỗi tải sản phẩm admin:", error);
@@ -243,7 +267,7 @@ const renderPromotionFormPage = async (req, res) => {
             title = 'Sửa Khuyến mãi';
         }
 
-        const products = await Product.findAll();
+        const products = await Product.findAll({ where: { trang_thai: 1 } });
         const categories = await Category.findAll();
 
         res.render('admin/pages/promotion-form', {
@@ -352,7 +376,7 @@ const renderOrderStatisticsPage = (req, res) => {
  */
 const renderAdminReviewsPage = async (req, res) => {
     try {
-        const { page = 1, keyword, productId, rating, date, sortBy = 'createdAt', order = 'DESC' } = req.query;
+        const { page = 1, keyword, productId, rating, date, status, sortBy = 'createdAt', order = 'DESC' } = req.query;
         const limit = 10;
         const offset = (page - 1) * limit;
 
@@ -381,6 +405,11 @@ const renderAdminReviewsPage = async (req, res) => {
                     sequelize.where(sequelize.fn('DATE', sequelize.col('Review.createdAt')), '=', date)
                 ]
             };
+        }
+
+        // Lọc theo trạng thái
+        if (status !== undefined && status !== '') {
+            whereCondition.trang_thai = parseInt(status);
         }
 
         const { count, rows } = await Review.findAndCountAll({
@@ -415,6 +444,7 @@ const renderAdminReviewsPage = async (req, res) => {
             productId,
             rating,
             date,
+            status,
             sortBy,
             order
         });

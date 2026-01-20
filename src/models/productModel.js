@@ -85,6 +85,14 @@ const Product = sequelize.define('Product', {
     danh_muc_id: {
         type: DataTypes.BIGINT,
         allowNull: false
+    },
+
+    // Trường trạng thái để soft-delete
+    trang_thai: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1, // 1: Đang bán, 0: Ngưng bán (Đã xóa)
+        comment: 'Trạng thái: 1 cho hoạt động, 0 cho ngưng hoạt động'
     }
 
 }, {

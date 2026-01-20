@@ -29,6 +29,12 @@ const Review = sequelize.define('Review', {
     comment: {
         type: DataTypes.TEXT,
         allowNull: true
+    },
+    trang_thai: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1,
+        comment: 'Trạng thái: 1 cho hiển thị, 0 cho đã ẩn (soft delete)'
     }
 }, {
     tableName: 'reviews',

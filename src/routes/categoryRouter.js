@@ -9,8 +9,25 @@ const { Category } = require('../models');
 // GET /api/categories - Lấy tất cả danh mục từ database
 router.get('/', async (req, res) => {
     try {
+        const { sequelize } = require('../models');
         const categories = await Category.findAll({
-            attributes: ['id', 'ten_danh_muc', 'mo_ta', 'danh_muc_cha_id']
+            attributes: [
+                'id',
+                'ten_danh_muc',
+                'mo_ta',
+                'danh_muc_cha_id',
+                'img',
+                [
+                    sequelize.literal(`(
+                        SELECT COUNT(*)
+                        FROM products AS p
+                        WHERE p.danh_muc_id = "Category".id
+                        AND p.trang_thai = 1
+                    )`),
+                    'productCount'
+                ]
+            ],
+            order: [['id', 'ASC']]
         });
 
         res.json(categories);

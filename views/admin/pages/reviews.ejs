@@ -53,6 +53,16 @@
                             value="<%= typeof date !== 'undefined' ? date : '' %>">
                     </div>
 
+                    <!-- LỌC THEO TRẠNG THÁI -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Trạng thái</label>
+                        <select name="status" class="form-select filter-select">
+                            <option value="">Tất cả</option>
+                            <option value="1" <%=status==='1' ? 'selected' : '' %>>Hiển thị</option>
+                            <option value="0" <%=status==='0' ? 'selected' : '' %>>Ẩn</option>
+                        </select>
+                    </div>
+
                     <!-- SẮP XẾP -->
                     <div class="col-md-2">
                         <label class="form-label small fw-bold">Sắp xếp</label>
@@ -82,6 +92,7 @@
                             <th>Đánh giá</th>
                             <th style="width: 250px;">Bình luận</th>
                             <th>Ngày tạo</th>
+                            <th>Trạng thái</th>
                             <th>Thao tác</th>
                         </tr>
                     </thead>
@@ -139,16 +150,28 @@
                                         <%= new Date(review.createdAt).toLocaleDateString('vi-VN') %>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-danger delete-review-btn"
-                                            data-id="<%= review.id %>" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <select class="form-select form-select-sm status-select"
+                                            data-review-id="<%= review.id %>" style="width: 120px;">
+                                            <option value="1" <%=review.trang_thai===1 ? 'selected' : '' %>>Hiển thị
+                                            </option>
+                                            <option value="0" <%=review.trang_thai===0 ? 'selected' : '' %>>Ẩn</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <% if (review.trang_thai===1) { %>
+                                            <button class="btn btn-sm btn-danger delete-review-btn"
+                                                data-id="<%= review.id %>" title="Xóa vĩnh viễn">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            <% } else { %>
+                                                <span class="text-muted small">Đã ẩn</span>
+                                                <% } %>
                                     </td>
                                 </tr>
                                 <% }) %>
                                     <% } else { %>
                                         <tr>
-                                            <td colspan="7" class="text-center py-4">
+                                            <td colspan="8" class="text-center py-4">
                                                 <div class="text-muted">
                                                     <i class="fas fa-comment-slash fa-2x mb-3 d-block"></i>
                                                     Không tìm thấy đánh giá nào phù hợp bộ lọc.

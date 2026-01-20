@@ -93,7 +93,9 @@ const getAllProducts = async (request, response) => {
         const { keyword, category, minPrice, maxPrice, sortBy, order = 'ASC', page = 1, limit = 10 } = request.query;
 
         // 1. XÂY DỰNG ĐIỀU KIỆN LỌC (WHERE)
-        const whereCondition = {};
+        const whereCondition = {
+            trang_thai: 1 // Chỉ lấy sản phẩm đang hoạt động
+        };
 
         // Lọc theo từ khóa (tìm kiếm tên sách)
         if (keyword) {
@@ -168,7 +170,8 @@ const getAllProducts = async (request, response) => {
  */
 const getProductById = async (request, response) => {
     try {
-        const product = await Product.findByPk(request.params.id, {
+        const product = await Product.findOne({
+            where: { id: request.params.id, trang_thai: 1 },
             include: { // Lấy cả thông tin danh mục
                 model: Category,
                 as: 'category'
@@ -243,10 +246,24 @@ const updateProduct = async (request, response) => {
  */
 const deleteProduct = async (request, response) => {
     try {
-        const product = await Product.findByPk(request.params.id);
+        const productId = request.params.id;
+
+        // KIỂM TRA: Sản phẩm có trong giỏ hàng của ai không?
+        const cartItemCount = await db.CartItem.count({
+            where: { product_id: productId }
+        });
+
+        if (cartItemCount > 0) {
+            return response.status(400).json({
+                message: "Không thể xóa sản phẩm này vì sản phẩm đang tồn tại trong giỏ hàng của khách hàng."
+            });
+        }
+
+        const product = await Product.findByPk(productId);
         if (product) {
-            await product.destroy();
-            response.status(200).json({ message: "Xóa sản phẩm thành công." });
+            // SOFT DELETE: Chỉ chuyển trạng thái về 0
+            await product.update({ trang_thai: 0 });
+            response.status(200).json({ message: "Xóa sản phẩm thành công (đã chuyển sang trạng thái ngưng hoạt động)." });
         } else {
             response.status(404).json({ message: "Không tìm thấy sản phẩm." });
         }
@@ -264,6 +281,7 @@ const deleteProduct = async (request, response) => {
 const exportProductsToExcel = async (request, response) => {
     try {
         const products = await Product.findAll({
+            where: { trang_thai: 1 },
             include: { model: Category, as: 'category', attributes: ['ten_danh_muc'] },
             order: [['ten_sach', 'ASC']]
         });
@@ -327,7 +345,12 @@ const getBestsellerProducts = async (req, res) => {
             ],
             include: [
                 // Quan trọng: Phải include Product ở đây để lấy được thông tin
-                { model: db.Product, as: 'product', attributes: ['id', 'ten_sach', 'gia_bia', 'img'] },
+                {
+                    model: db.Product,
+                    as: 'product',
+                    where: { trang_thai: 1 },
+                    attributes: ['id', 'ten_sach', 'gia_bia', 'img']
+                },
                 {
                     model: db.Order, as: 'order',
                     where: {
@@ -366,7 +389,10 @@ const getAllPublishers = async (req, res) => {
             attributes: [
                 [sequelize.fn('DISTINCT', sequelize.col('nha_xuat_ban')), 'publisher_name']
             ],
-            where: { nha_xuat_ban: { [Op.not]: null, [Op.ne]: '' } }, // Lọc bỏ NXB null hoặc rỗng
+            where: {
+                nha_xuat_ban: { [Op.not]: null, [Op.ne]: '' },
+                trang_thai: 1
+            }, // Lọc bỏ NXB null hoặc rỗng và sản phẩm đã xóa
             order: [['nha_xuat_ban', 'ASC']],
             raw: true
         });
@@ -466,4 +492,6 @@ module.exports = {
     exportProductsToExcel,
     getBestsellerProducts,
     createReview,
+    getAllPublishers,
+    getProductStock,
 };

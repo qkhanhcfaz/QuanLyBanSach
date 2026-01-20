@@ -40,6 +40,7 @@ const renderHomePage = async (req, res) => {
 
     // 2. Sách Mới (8 cuốn)
     const newProducts = await Product.findAll({
+      where: { trang_thai: 1 },
       limit: 8,
       order: [['createdAt', 'DESC']],
       include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
@@ -47,6 +48,7 @@ const renderHomePage = async (req, res) => {
 
     // 3. Best Sellers (Logic tạm: lấy mới nhất)
     const bestSellers = await Product.findAll({
+      where: { trang_thai: 1 },
       limit: 8,
       order: [['createdAt', 'DESC']],
       include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
@@ -57,7 +59,7 @@ const renderHomePage = async (req, res) => {
     let featuredCategoryProducts = [];
     try {
       featuredCategoryProducts = await Product.findAll({
-        where: { danh_muc_id: 4 },
+        where: { danh_muc_id: 4, trang_thai: 1 },
         limit: 4,
         order: [['createdAt', 'DESC']],
         include: [{ model: Category, as: 'category', attributes: ['ten_danh_muc', 'id'] }]
@@ -103,7 +105,7 @@ const renderProductListPage = async (req, res) => {
     const sortBy = allowedSortFields.includes(sortByRaw) ? sortByRaw : 'createdAt';
     const order = orderRaw === 'ASC' ? 'ASC' : 'DESC';
 
-    const where = {};
+    const where = { trang_thai: 1 };
     if (category && category > 0) where.danh_muc_id = category;
 
     if (minPrice > 0 || maxPrice > 0) {
@@ -175,7 +177,8 @@ const renderProductDetailPage = async (req, res) => {
       return res.status(404).render('pages/error', { message: 'Product not found', user: req.user });
     }
 
-    const product = await Product.findByPk(id, {
+    const product = await Product.findOne({
+      where: { id, trang_thai: 1 },
       include: [{ model: Category, as: 'category' }],
     });
 
@@ -188,7 +191,7 @@ const renderProductDetailPage = async (req, res) => {
     try {
       if (Review) {
         reviews = await Review.findAll({
-          where: { [REVIEW_FOREIGN_KEY]: id },
+          where: { [REVIEW_FOREIGN_KEY]: id, trang_thai: 1 },
           include: [{ model: User, as: 'user', attributes: ['ho_ten'] }],
           order: [['createdAt', 'DESC']],
         });
@@ -214,7 +217,8 @@ const renderProductDetailPage = async (req, res) => {
     const relatedProducts = await Product.findAll({
       where: {
         danh_muc_id: product.danh_muc_id,
-        id: { [Op.ne]: product.id }
+        id: { [Op.ne]: product.id },
+        trang_thai: 1
       },
       limit: 10,
       order: [['createdAt', 'DESC']],
@@ -240,7 +244,8 @@ const renderProductDetailPage = async (req, res) => {
       const existingReviewCount = await db.Review.count({
         where: {
           user_id: req.user.id,
-          product_id: id
+          product_id: id,
+          trang_thai: 1
         }
       });
 
@@ -352,6 +357,7 @@ const renderFavoritesPage = async (req, res) => {
       include: [
         {
           model: Product,
+          where: { trang_thai: 1 },
           attributes: ['id', 'ten_sach', 'gia_bia', 'img']
         }
       ],
