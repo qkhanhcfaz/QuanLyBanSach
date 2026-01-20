@@ -91,7 +91,7 @@
                         <img id="image-preview" src="<%= (product && product.img) ? product.img : '#' %>" 
                              alt="Ảnh xem trước" 
                              class="img-thumbnail mt-2" 
-                             style="max-width: 100%; <%= (product && product.img) ? '' : 'display: none;' %>">
+                             style="max-width: 100%; display: <%= (product && product.img) ? 'block' : 'none' %>;">
                     </div>
                 </div>
             </div>
