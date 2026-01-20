@@ -352,18 +352,53 @@ const renderOrderStatisticsPage = (req, res) => {
  */
 const renderAdminReviewsPage = async (req, res) => {
     try {
-        const { page = 1 } = req.query;
+        const { page = 1, keyword, productId, rating, date, sortBy = 'createdAt', order = 'DESC' } = req.query;
         const limit = 10;
         const offset = (page - 1) * limit;
 
+        const whereCondition = {};
+        const userWhere = {};
+        const productWhere = {};
+
+        if (keyword) {
+            whereCondition[Op.or] = [
+                { '$user.ho_ten$': { [Op.iLike]: `%${keyword}%` } },
+                { '$product.ten_sach$': { [Op.iLike]: `%${keyword}%` } }
+            ];
+        }
+
+        if (productId) {
+            whereCondition.product_id = productId;
+        }
+
+        if (rating) {
+            whereCondition.rating = rating;
+        }
+
+        if (date) {
+            whereCondition.createdAt = {
+                [Op.and]: [
+                    sequelize.where(sequelize.fn('DATE', sequelize.col('Review.createdAt')), '=', date)
+                ]
+            };
+        }
+
         const { count, rows } = await Review.findAndCountAll({
+            where: whereCondition,
             include: [
-                { model: User, as: 'user', attributes: ['ho_ten', 'email'] },
-                { model: Product, as: 'product', attributes: ['ten_sach', 'img'] }
+                { model: User, as: 'user', attributes: ['ho_ten', 'email'], where: userWhere, required: false },
+                { model: Product, as: 'product', attributes: ['id', 'ten_sach', 'img'], where: productWhere, required: false }
             ],
-            order: [['createdAt', 'DESC']],
+            order: [[sortBy, order]],
             limit,
-            offset
+            offset,
+            subQuery: false // Important when filtering by included model fields
+        });
+
+        // Lấy danh sách sản phẩm để filter dropdown
+        const products = await Product.findAll({
+            attributes: ['id', 'ten_sach'],
+            order: [['ten_sach', 'ASC']]
         });
 
         res.render('admin/pages/reviews', {
@@ -373,7 +408,15 @@ const renderAdminReviewsPage = async (req, res) => {
             reviews: rows,
             currentPage: parseInt(page),
             totalPages: Math.ceil(count / limit),
-            totalReviews: count
+            totalReviews: count,
+            products,
+            // Query params để giữ trạng thái form
+            keyword,
+            productId,
+            rating,
+            date,
+            sortBy,
+            order
         });
     } catch (error) {
         console.error("Lỗi tải đánh giá admin:", error);

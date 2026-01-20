@@ -61,4 +61,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+    // ====================================================================
+    // LOGIC AUTO-SUBMIT BỘ LỌC
+    // ====================================================================
+    const filterForm = document.getElementById('filter-form');
+    if (filterForm) {
+        const filterSelects = filterForm.querySelectorAll('.filter-select');
+        filterSelects.forEach(select => {
+            select.addEventListener('change', () => {
+                filterForm.submit();
+            });
+        });
+    }
 });

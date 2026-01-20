@@ -5,6 +5,72 @@
     </div>
 
     <div class="card">
+        <!-- ========================================================== -->
+        <!-- ================ KHUNG TÌM KIẾM & BỘ LỌC ================ -->
+        <!-- ========================================================== -->
+        <div class="card-header bg-light">
+            <form id="filter-form" action="/admin/reviews" method="GET">
+                <div class="row g-3 align-items-end">
+                    <!-- TÌM KIẾM KEYWORD -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Tìm kiếm</label>
+                        <input type="search" name="keyword" class="form-control" placeholder="Sản phẩm, khách hàng..."
+                            value="<%= typeof keyword !== 'undefined' ? keyword : '' %>">
+                    </div>
+
+                    <!-- LỌC THEO SẢN PHẨM -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Sản phẩm</label>
+                        <select name="productId" class="form-select filter-select">
+                            <option value="">Tất cả sản phẩm</option>
+                            <% if (products && products.length> 0) { %>
+                                <% products.forEach(p=> { %>
+                                    <option value="<%= p.id %>" <%=productId==p.id ? 'selected' : '' %>><%= p.ten_sach
+                                            %>
+                                    </option>
+                                    <% }) %>
+                                        <% } %>
+                        </select>
+                    </div>
+
+                    <!-- LỌC THEO SỐ SAO -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Đánh giá</label>
+                        <select name="rating" class="form-select filter-select">
+                            <option value="">Tất cả sao</option>
+                            <option value="5" <%=rating=='5' ? 'selected' : '' %>>5 sao</option>
+                            <option value="4" <%=rating=='4' ? 'selected' : '' %>>4 sao</option>
+                            <option value="3" <%=rating=='3' ? 'selected' : '' %>>3 sao</option>
+                            <option value="2" <%=rating=='2' ? 'selected' : '' %>>2 sao</option>
+                            <option value="1" <%=rating=='1' ? 'selected' : '' %>>1 sao</option>
+                        </select>
+                    </div>
+
+                    <!-- LỌC THEO NGÀY -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Ngày</label>
+                        <input type="date" name="date" class="form-control filter-select"
+                            value="<%= typeof date !== 'undefined' ? date : '' %>">
+                    </div>
+
+                    <!-- SẮP XẾP -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Sắp xếp</label>
+                        <select name="order" class="form-select filter-select">
+                            <option value="DESC" <%=order==='DESC' ? 'selected' : '' %>>Mới nhất</option>
+                            <option value="ASC" <%=order==='ASC' ? 'selected' : '' %>>Cũ nhất</option>
+                        </select>
+                        <input type="hidden" name="sortBy" value="createdAt">
+                    </div>
+
+                    <div class="col-12 text-end">
+                        <a href="/admin/reviews" class="btn btn-secondary btn-sm me-2">Xóa bộ lọc</a>
+                        <button type="submit" class="btn btn-primary btn-sm">Áp dụng</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
@@ -14,7 +80,7 @@
                             <th>Khách hàng</th>
                             <th>Sản phẩm</th>
                             <th>Đánh giá</th>
-                            <th>Bình luận</th>
+                            <th style="width: 250px;">Bình luận</th>
                             <th>Ngày tạo</th>
                             <th>Thao tác</th>
                         </tr>
@@ -43,8 +109,9 @@
                                             <div class="d-flex align-items-center">
                                                 <img src="<%= review.product.img %>"
                                                     alt="<%= review.product.ten_sach %>" width="40"
-                                                    class="me-2 rounded">
-                                                <span class="text-truncate" style="max-width: 150px;">
+                                                    class="me-2 rounded shadow-sm">
+                                                <span class="text-truncate" style="max-width: 150px;"
+                                                    title="<%= review.product.ten_sach %>">
                                                     <%= review.product.ten_sach %>
                                                 </span>
                                             </div>
@@ -81,7 +148,12 @@
                                 <% }) %>
                                     <% } else { %>
                                         <tr>
-                                            <td colspan="7" class="text-center py-4">Chưa có đánh giá nào.</td>
+                                            <td colspan="7" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-comment-slash fa-2x mb-3 d-block"></i>
+                                                    Không tìm thấy đánh giá nào phù hợp bộ lọc.
+                                                </div>
+                                            </td>
                                         </tr>
                                         <% } %>
                     </tbody>
@@ -95,17 +167,20 @@
                 <nav aria-label="Page navigation">
                     <ul class="pagination justify-content-end mb-0">
                         <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                            <a class="page-link" href="?page=<%= currentPage - 1 %>">Trước</a>
+                            <a class="page-link"
+                                href="?page=<%= currentPage - 1 %>&keyword=<%= keyword %>&productId=<%= productId %>&rating=<%= rating %>&date=<%= date %>&order=<%= order %>">Trước</a>
                         </li>
                         <% for(let i=1; i <=totalPages; i++) { %>
                             <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                                <a class="page-link" href="?page=<%= i %>">
+                                <a class="page-link"
+                                    href="?page=<%= i %>&keyword=<%= keyword %>&productId=<%= productId %>&rating=<%= rating %>&date=<%= date %>&order=<%= order %>">
                                     <%= i %>
                                 </a>
                             </li>
                             <% } %>
                                 <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                                    <a class="page-link" href="?page=<%= currentPage + 1 %>">Sau</a>
+                                    <a class="page-link"
+                                        href="?page=<%= currentPage + 1 %>&keyword=<%= keyword %>&productId=<%= productId %>&rating=<%= rating %>&date=<%= date %>&order=<%= order %>">Sau</a>
                                 </li>
                     </ul>
                 </nav>
