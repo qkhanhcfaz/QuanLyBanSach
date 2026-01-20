@@ -6,6 +6,7 @@ const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 
 // Kích hoạt dotenv ngay lập tức để đọc biến môi trường
 dotenv.config();
@@ -62,6 +63,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
+// Cấu hình express-session
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "bookzone_secret_key", // Nên đặt trong file .env
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Chỉ dùng secure cookie khi deploy https
+      maxAge: 24 * 60 * 60 * 1000, // 24 giờ
+    },
+  }),
+);
 // Middleware checkUser để lấy thông tin user từ token (nếu có) cho mọi request
 app.use(checkUser);
 
