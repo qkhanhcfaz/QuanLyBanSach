@@ -1,7 +1,7 @@
 <!-- File: /views/pages/product-detail.ejs (Phiên bản đã fix - không bị lặp) -->
 <%- include('../partials/header') %>
 
-  <div class="container my-5">
+  <div class="container my-5" id="product-detail-container" data-product-id="<%= product.id %>">
     <div class="row">
 
       <!-- CỘT TRÁI: HÌNH ẢNH SẢN PHẨM -->
@@ -51,7 +51,7 @@
             </div>
             <div class="me-3" title="Lượt thích">
               <i class="fas fa-heart text-danger me-1"></i>
-              <span>
+              <span id="favorite-count">
                 <%= favoriteCount %>
               </span>
             </div>

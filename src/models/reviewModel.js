@@ -33,6 +33,10 @@ const Review = sequelize.define(
       type: DataTypes.BIGINT,
       allowNull: true,
     },
+    trang_thai: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

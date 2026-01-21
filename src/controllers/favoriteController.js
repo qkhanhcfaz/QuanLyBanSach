@@ -25,14 +25,16 @@ const toggleFavorite = async (req, res) => {
         if (existingFavorite) {
             // Đã thích -> Xóa (Unlike)
             await existingFavorite.destroy();
-            return res.json({ success: true, isFavorite: false, message: 'Đã xóa khỏi danh sách yêu thích' });
+            const totalFavorites = await Favorite.count({ where: { product_id: productId } });
+            return res.json({ success: true, isFavorite: false, totalFavorites, message: 'Đã xóa khỏi danh sách yêu thích' });
         } else {
             // Chưa thích -> Tạo mới (Like)
             await Favorite.create({
                 user_id: userId,
                 product_id: productId
             });
-            return res.json({ success: true, isFavorite: true, message: 'Đã thêm vào danh sách yêu thích' });
+            const totalFavorites = await Favorite.count({ where: { product_id: productId } });
+            return res.json({ success: true, isFavorite: true, totalFavorites, message: 'Đã thêm vào danh sách yêu thích' });
         }
 
     } catch (error) {

@@ -4,6 +4,82 @@
         <h1 class="h3 mb-0">Quản lý Đánh giá</h1>
     </div>
 
+    <!-- BỘ LỌC & TÌM KIẾM -->
+    <div class="card shadow-sm mb-4 border-left-primary">
+        <div class="card-header py-3 bg-white">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-filter me-2"></i>Bộ lọc & Tìm kiếm</h6>
+        </div>
+        <div class="card-body">
+            <form id="filter-form" method="GET">
+                <div class="row g-3">
+                    <!-- Tìm kiếm -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Tìm kiếm nhanh</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control"
+                                placeholder="Tên khách, tên sản phẩm..." value="<%= filters.search %>">
+                        </div>
+                    </div>
+
+                    <!-- Lọc theo sản phẩm -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Sản phẩm</label>
+                        <select name="productId" class="form-select">
+                            <option value="">Tất cả sản phẩm</option>
+                            <% allProducts.forEach(prod=> { %>
+                                <option value="<%= prod.id %>" <%=filters.productId==prod.id ? 'selected' : '' %>><%=
+                                        prod.ten_sach %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+
+                    <!-- Lọc theo số sao -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Số sao</label>
+                        <select name="rating" class="form-select">
+                            <option value="">Tất cả mức sao</option>
+                            <% [5, 4, 3, 2, 1].forEach(s=> { %>
+                                <option value="<%= s %>" <%=filters.rating==s ? 'selected' : '' %>><%= s %> sao</option>
+                                <% }) %>
+                        </select>
+                    </div>
+
+                    <!-- Lọc theo ngày -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Khoảng thời gian</label>
+                        <div class="input-group">
+                            <input type="date" name="startDate" class="form-control form-control-sm"
+                                value="<%= filters.startDate %>">
+                            <span class="input-group-text">~</span>
+                            <input type="date" name="endDate" class="form-control form-control-sm"
+                                value="<%= filters.endDate %>">
+                        </div>
+                    </div>
+
+                    <!-- Sắp xếp -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Sắp xếp theo</label>
+                        <select name="sort" class="form-select">
+                            <option value="newest" <%=filters.sort==='newest' ? 'selected' : '' %>>Mới nhất</option>
+                            <option value="oldest" <%=filters.sort==='oldest' ? 'selected' : '' %>>Cũ nhất</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                        <a href="/admin/reviews" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i>Xóa lọc
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-search me-1"></i>Lọc ngay
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -16,6 +92,7 @@
                             <th>Đánh giá</th>
                             <th>Bình luận</th>
                             <th>Ngày tạo</th>
+                            <th>Trạng thái</th>
                             <th>Thao tác</th>
                         </tr>
                     </thead>
@@ -72,16 +149,25 @@
                                         <%= new Date(review.createdAt).toLocaleDateString('vi-VN') %>
                                     </td>
                                     <td>
+                                        <select
+                                            class="form-select form-select-sm status-select <%= review.trang_thai ? 'bg-success text-white' : 'bg-secondary text-white' %>"
+                                            data-id="<%= review.id %>" style="width: 110px;">
+                                            <option value="true" <%=review.trang_thai ? 'selected' : '' %>>Hiển thị
+                                            </option>
+                                            <option value="false" <%=!review.trang_thai ? 'selected' : '' %>>Ẩn</option>
+                                        </select>
+                                    </td>
+                                    <td>
                                         <button class="btn btn-sm btn-danger delete-review-btn"
-                                            data-id="<%= review.id %>" title="Xóa">
-                                            <i class="fas fa-trash"></i>
+                                            data-id="<%= review.id %>" title="Ẩn (Xóa mềm)">
+                                            <i class="fas fa-eye-slash"></i>
                                         </button>
                                     </td>
                                 </tr>
                                 <% }) %>
                                     <% } else { %>
                                         <tr>
-                                            <td colspan="7" class="text-center py-4">Chưa có đánh giá nào.</td>
+                                            <td colspan="8" class="text-center py-4">Chưa có đánh giá nào.</td>
                                         </tr>
                                         <% } %>
                     </tbody>
@@ -95,17 +181,20 @@
                 <nav aria-label="Page navigation">
                     <ul class="pagination justify-content-end mb-0">
                         <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                            <a class="page-link" href="?page=<%= currentPage - 1 %>">Trước</a>
+                            <a class="page-link"
+                                href="?page=<%= currentPage - 1 %>&search=<%= filters.search %>&rating=<%= filters.rating %>&startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&sort=<%= filters.sort %>&productId=<%= filters.productId %>">Trước</a>
                         </li>
                         <% for(let i=1; i <=totalPages; i++) { %>
                             <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                                <a class="page-link" href="?page=<%= i %>">
+                                <a class="page-link"
+                                    href="?page=<%= i %>&search=<%= filters.search %>&rating=<%= filters.rating %>&startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&sort=<%= filters.sort %>&productId=<%= filters.productId %>">
                                     <%= i %>
                                 </a>
                             </li>
                             <% } %>
                                 <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                                    <a class="page-link" href="?page=<%= currentPage + 1 %>">Sau</a>
+                                    <a class="page-link"
+                                        href="?page=<%= currentPage + 1 %>&search=<%= filters.search %>&rating=<%= filters.rating %>&startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&sort=<%= filters.sort %>&productId=<%= filters.productId %>">Sau</a>
                                 </li>
                     </ul>
                 </nav>

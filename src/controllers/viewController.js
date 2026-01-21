@@ -144,7 +144,7 @@ const renderProductDetailPage = async (req, res) => {
     let reviews = [];
     try {
       reviews = await Review.findAll({
-        where: { product_id: id },
+        where: { product_id: id, trang_thai: true },
         include: [{ model: User, as: "user", attributes: ["ho_ten"] }], // Lấy tên người review
         order: [["createdAt", "DESC"]],
       });
@@ -202,12 +202,17 @@ const renderProductDetailPage = async (req, res) => {
       avgRating = (totalRating / reviews.length).toFixed(1);
     }
 
+    // [MỚI] Tính lượt yêu thích
+    const favoriteCount = await db.Favorite.count({
+      where: { product_id: id }
+    });
+
     return res.render('pages/product-detail', {
       title: product.ten_sach || 'Product Detail',
       product,
       reviews,
       relatedProducts,
-      favoriteCount: 0, // Fallback
+      favoriteCount,
       favoriteProductIds: req.user ? await getMyFavoriteIds(req.user.id) : [],
       user: req.user,
       canReview,

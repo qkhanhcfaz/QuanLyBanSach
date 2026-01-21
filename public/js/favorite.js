@@ -50,6 +50,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await response.json();
 
             if (data.success) {
+                // [CẬP NHẬT REALTIME] Cập nhật số lượng yêu thích nếu đang ở trang chi tiết sản phẩm ĐÓ
+                const detailContainer = document.getElementById('product-detail-container');
+                const countEl = document.getElementById('favorite-count');
+
+                if (detailContainer && countEl && typeof data.totalFavorites !== 'undefined') {
+                    const mainProductId = detailContainer.getAttribute('data-product-id');
+                    if (String(mainProductId) === String(productId)) {
+                        countEl.textContent = data.totalFavorites;
+                    }
+                }
+
                 if (data.isFavorite) {
                     // Đã thích -> Tím tim
                     icon.classList.remove('far');

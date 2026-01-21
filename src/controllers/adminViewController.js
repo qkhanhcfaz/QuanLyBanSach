@@ -359,22 +359,82 @@ const renderOrderStatisticsPage = (req, res) => {
 };
 
 /**
- * Render Danh sách Đánh giá
+ * Render Danh sách Đánh giá với Bộ lọc và Tìm kiếm
  */
 const renderAdminReviewsPage = async (req, res) => {
     try {
-        const { page = 1 } = req.query;
+        const {
+            page = 1,
+            search = '',
+            rating = '',
+            startDate = '',
+            endDate = '',
+            sort = 'newest',
+            productId = ''
+        } = req.query;
+
         const limit = 10;
         const offset = (page - 1) * limit;
 
+        // --- BƯỚC 1: XÂY DỰNG ĐIỀU KIỆN KHOẢNG TRẮNG ---
+        let whereCondition = {};
+        let productWhereCondition = {};
+        let userWhereCondition = {};
+
+        // 1. Lọc theo số sao
+        if (rating) {
+            whereCondition.rating = parseInt(rating);
+        }
+
+        // 2. Lọc theo sản phẩm cụ thể
+        if (productId) {
+            whereCondition.product_id = productId;
+        }
+
+        // 3. Lọc theo ngày tháng
+        if (startDate || endDate) {
+            whereCondition.createdAt = {};
+            if (startDate) {
+                whereCondition.createdAt[Op.gte] = new Date(startDate);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                whereCondition.createdAt[Op.lte] = end;
+            }
+        }
+
+        // 4. Tìm kiếm (Tên sản phẩm hoặc Tên khách hàng)
+        if (search) {
+            whereCondition[Op.or] = [
+                { '$product.ten_sach$': { [Op.iLike]: `%${search}%` } },
+                { '$user.ho_ten$': { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        // --- BƯỚC 2: XÁC ĐỊNH THỨ TỰ SẮP XẾP ---
+        let order = [['createdAt', 'DESC']];
+        if (sort === 'oldest') {
+            order = [['createdAt', 'ASC']];
+        }
+
+        // --- BƯỚC 3: TRUY VẤN DỮ LIỆU ---
         const { count, rows } = await Review.findAndCountAll({
+            where: whereCondition,
             include: [
                 { model: User, as: 'user', attributes: ['ho_ten', 'email'] },
                 { model: Product, as: 'product', attributes: ['ten_sach', 'img'] }
             ],
-            order: [['createdAt', 'DESC']],
+            order,
             limit,
-            offset
+            offset,
+            subQuery: false // Cần thiết khi dùng Op ở các bảng associate
+        });
+
+        // Lấy danh sách tất cả sản phẩm để hiển thị trong dropdown bộ lọc
+        const allProducts = await Product.findAll({
+            attributes: ['id', 'ten_sach'],
+            order: [['ten_sach', 'ASC']]
         });
 
         res.render('admin/pages/reviews', {
@@ -382,9 +442,12 @@ const renderAdminReviewsPage = async (req, res) => {
             user: req.user,
             path: '/reviews',
             reviews: rows,
+            allProducts,
             currentPage: parseInt(page),
             totalPages: Math.ceil(count / limit),
-            totalReviews: count
+            totalReviews: count,
+            // Gửi lại các giá trị lọc để giữ trạng thái trên UI
+            filters: { search, rating, startDate, endDate, sort, productId }
         });
     } catch (error) {
         console.error("Lỗi tải đánh giá admin:", error);

@@ -34,6 +34,10 @@ Hệ thống hỗ trợ quản lý sản phẩm, người dùng và các chức 
 4. Chạy lệnh:
    ```bash
    npm install
-   npm start
+
+   "Chạy câu lệnh dưới trước khi chạy: npm start."
    node scripts/add_product_trang_thai.js
+   node scripts/add_review_trang_thai.js
+   npm start
+   
    ```
