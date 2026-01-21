@@ -311,9 +311,26 @@ const getOrderById = async (req, res) => {
  */
 const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.findAll({
-      where: { user_id: req.user.id },
+    const { page = 1, limit = 5, status } = req.query;
+    const offset = (page - 1) * limit;
+
+    const whereCondition = { user_id: req.user.id };
+
+    // Lọc theo trạng thái nếu có
+    if (status && status !== 'all') {
+      if (status === 'pending') {
+        // Pending bao gồm cả chờ thanh toán
+        whereCondition.trang_thai_don_hang = { [Op.in]: ['pending', 'pending_payment'] };
+      } else {
+        whereCondition.trang_thai_don_hang = status;
+      }
+    }
+
+    const { count, rows } = await Order.findAndCountAll({
+      where: whereCondition,
       order: [["createdAt", "DESC"]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
       include: [
         {
           model: OrderItem,
@@ -322,10 +339,150 @@ const getMyOrders = async (req, res) => {
         },
       ],
     });
-    res.json(orders);
+
+    res.json({
+      orders: rows,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalOrders: count,
+        limit: parseInt(limit)
+      }
+    });
   } catch (error) {
     console.error("Lỗi get my orders:", error);
     res.status(500).json({ message: "Lỗi server khi lấy lịch sử đơn hàng" });
+  }
+};
+
+/**
+ * Hủy đơn hàng (User)
+ * POST /api/orders/:id/cancel
+ */
+const cancelOrder = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id, {
+      include: [{ model: OrderItem, as: "orderItems" }],
+    });
+
+    if (!order) {
+      await t.rollback();
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    }
+
+    // 1. Kiểm tra quyền sở hữu
+    if (String(order.user_id) !== String(req.user.id)) {
+      await t.rollback();
+      return res.status(403).json({ message: "Bạn không có quyền hủy đơn hàng này." });
+    }
+
+    // 2. Kiểm tra trạng thái (Chỉ được hủy khi đang chờ xác nhận)
+    if (order.trang_thai_don_hang !== "pending" && order.trang_thai_don_hang !== "pending_payment") {
+      await t.rollback();
+      return res.status(400).json({ message: "Chỉ có thể hủy đơn hàng đang ở trạng thái chờ xác nhận." });
+    }
+
+    // 3. Hoàn lại tồn kho
+    for (const item of order.orderItems) {
+      const product = await Product.findByPk(item.product_id);
+      if (product) {
+        await product.increment("so_luong_ton_kho", {
+          by: item.so_luong_dat,
+          transaction: t,
+        });
+        // Giảm lại số lượng đã bán
+        await product.decrement("da_ban", {
+          by: item.so_luong_dat,
+          transaction: t,
+        });
+      }
+    }
+
+    // 4. Cập nhật trạng thái
+    order.trang_thai_don_hang = "cancelled";
+    await order.save({ transaction: t });
+
+    await t.commit();
+    res.json({ message: "Hủy đơn hàng thành công.", order });
+  } catch (error) {
+    if (t && !t.finished) await t.rollback();
+    console.error("❌ Lỗi cancelOrder:", error);
+    res.status(500).json({ message: "Lỗi server khi hủy đơn hàng: " + error.message });
+  }
+};
+
+/**
+ * Mua lại đơn hàng (User)
+ * POST /api/orders/:id/reorder
+ * Copy all items from an old order into the current cart
+ */
+const reorder = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // 1. Lấy thông tin đơn hàng cũ
+    const order = await Order.findByPk(id, {
+      include: [{ model: OrderItem, as: "orderItems" }],
+    });
+
+    if (!order) {
+      await t.rollback();
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    }
+
+    // 2. Kiểm tra quyền sở hữu
+    if (String(order.user_id) !== String(userId)) {
+      await t.rollback();
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này." });
+    }
+
+    // 3. Kiểm tra trạng thái (Chỉ cho phép mua lại từ đơn đã hủy)
+    if (order.trang_thai_don_hang !== "cancelled") {
+      await t.rollback();
+      return res.status(400).json({ message: "Chỉ có thể mua lại đơn hàng đã hủy." });
+    }
+
+    // 4. Kiểm tra tồn kho cho tất cả sản phẩm
+    for (const item of order.orderItems) {
+      const product = await Product.findByPk(item.product_id);
+      if (!product || product.so_luong_ton_kho < item.so_luong_dat) {
+        await t.rollback();
+        return res.status(400).json({
+          message: `Sản phẩm "${product ? product.ten_sach : 'Không xác định'}" không đủ hàng trong kho (Còn lại: ${product ? product.so_luong_ton_kho : 0}).`
+        });
+      }
+    }
+
+    // 5. Trừ kho và cập nhật số lượng đã bán
+    for (const item of order.orderItems) {
+      const product = await Product.findByPk(item.product_id);
+      await product.decrement("so_luong_ton_kho", {
+        by: item.so_luong_dat,
+        transaction: t,
+      });
+      await product.increment("da_ban", {
+        by: item.so_luong_dat,
+        transaction: t,
+      });
+    }
+
+    // 6. Cập nhật trạng thái đơn hàng về 'pending' (Chờ xác nhận)
+    // Cập nhật lại ngày đặt hàng sang hiện tại để đơn hàng mới nhảy lên đầu
+    order.trang_thai_don_hang = "pending";
+    order.createdAt = new Date();
+    await order.save({ transaction: t });
+
+    await t.commit();
+    res.json({ message: "Đã đặt lại đơn hàng thành công!", orderId: order.id });
+
+  } catch (error) {
+    if (t && !t.finished) await t.rollback();
+    console.error("❌ Lỗi reorder:", error);
+    res.status(500).json({ message: "Lỗi server khi mua lại đơn hàng: " + error.message });
   }
 };
 
@@ -335,4 +492,6 @@ module.exports = {
   createOrder,
   getOrderById,
   getMyOrders,
+  cancelOrder,
+  reorder,
 };

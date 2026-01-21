@@ -23,8 +23,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (currentValue < maxQuantity) {
                 quantityInput.value = currentValue + 1;
             } else {
-                // Có thể thêm thông báo cho người dùng ở đây
-                alert('Số lượng đã đạt tối đa trong kho.');
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Giới hạn số lượng',
+                    text: 'Số lượng sách trong kho đã đạt mức tối đa.',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
             }
         });
     }
@@ -54,7 +61,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const productId = window.location.pathname.split('/').pop();
 
             if (!rating && !comment) {
-                alert('Vui lòng chọn số sao hoặc viết nhận xét.');
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Thông tin trống',
+                    text: 'Vui lòng chọn số sao hoặc viết nhận xét.'
+                });
                 return;
             }
 

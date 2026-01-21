@@ -46,12 +46,10 @@ function handleAuthLinks() {
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                     Xin chào, ${user.ho_ten}
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/profile">Thông tin tài khoản</a></li>
-                    <li><a class="dropdown-item" href="/favorites">Sách yêu thích</a></li>
-                    <li><a class="dropdown-item" href="/my-orders">Lịch sử đơn hàng</a></li>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><a class="dropdown-item py-2" href="/profile"><i class="fas fa-user-circle me-2"></i> Tài khoản</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#" id="logout-btn">Đăng xuất</a></li>
+                    <li><a class="dropdown-item py-2 text-danger" href="#" id="logout-btn"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
                 </ul>
             </div>
         `;
@@ -83,7 +81,7 @@ function handlePopupLogin() {
 
     popupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const email = popupForm.email.value;
         const mat_khau = popupForm.mat_khau.value;
         const alertBox = document.getElementById('popup-alert');

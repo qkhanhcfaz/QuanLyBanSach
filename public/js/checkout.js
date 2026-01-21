@@ -247,7 +247,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressDetailValue = addressDetailInput.value.trim();
 
     if (!addressDetailValue || provinceSelect.value === "" || districtSelect.value === "" || wardSelect.value === "") {
-      alert("Vui lòng điền đầy đủ thông tin địa chỉ.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Thiếu thông tin',
+        text: 'Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã và nhập địa chỉ chi tiết.'
+      });
       return;
     }
 

@@ -1,0 +1,30 @@
+<!-- File: /views/partials/profile-sidebar.ejs -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush rounded">
+            <a href="/profile" class="list-group-item list-group-item-action py-3 <%= typeof activePage !== 'undefined' && activePage === 'profile' ? 'active disabled' : '' %>">
+                <i class="fas fa-user-circle me-3"></i> Thông tin tài khoản
+            </a>
+            <a href="/my-orders" class="list-group-item list-group-item-action py-3 <%= typeof activePage !== 'undefined' && activePage === 'orders' ? 'active disabled' : '' %>">
+                <i class="fas fa-shopping-bag me-3"></i> Đơn hàng
+            </a>
+            <a href="/favorites" class="list-group-item list-group-item-action py-3 <%= typeof activePage !== 'undefined' && activePage === 'favorites' ? 'active disabled' : '' %>">
+                <i class="fas fa-heart me-3"></i> Danh sách yêu thích
+            </a>
+            <a href="/" class="list-group-item list-group-item-action py-3 text-primary mt-2">
+                <i class="fas fa-home me-3"></i> Quay lại trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item.active {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .list-group-item-action:hover:not(.active) {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+    }
+</style>

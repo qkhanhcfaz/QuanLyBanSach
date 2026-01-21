@@ -6,6 +6,8 @@ const {
   createOrder,
   getOrderById,
   getMyOrders,
+  cancelOrder,
+  reorder,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
 
@@ -20,6 +22,12 @@ router.get("/myorders", protect, getMyOrders);
 
 // GET /api/orders/:id - Lấy chi tiết đơn hàng (Admin hoặc Owner)
 router.get("/:id", protect, getOrderById);
+
+// POST /api/orders/:id/cancel - Hủy đơn hàng (Owner)
+router.post("/:id/cancel", protect, cancelOrder);
+
+// POST /api/orders/:id/reorder - Mua lại đơn hàng (Owner)
+router.post("/:id/reorder", protect, reorder);
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Chỉ Admin)
 router.put("/:id/status", protect, admin, updateOrderStatus);

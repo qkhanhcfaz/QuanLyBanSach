@@ -367,9 +367,13 @@ const renderFavoritesPage = async (req, res) => {
       return res.redirect('/login');
     }
 
+    const { page = 1 } = req.query;
+    const limit = 8;
+    const offset = (page - 1) * limit;
     const userId = req.user.id;
-    // Lấy danh sách yêu thích kèm thông tin sản phẩm
-    const favorites = await Favorite.findAll({
+
+    // Lấy danh sách yêu thích kèm thông tin sản phẩm và phân trang
+    const { count, rows } = await Favorite.findAndCountAll({
       where: { user_id: userId },
       include: [
         {
@@ -377,16 +381,24 @@ const renderFavoritesPage = async (req, res) => {
           attributes: ['id', 'ten_sach', 'gia_bia', 'img']
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+      offset: offset
     });
 
-    const products = favorites.map(fav => fav.Product);
+    const products = rows.map(fav => fav.Product);
     const favoriteProductIds = products.map(p => p.id);
 
     res.render('pages/favorites', {
       title: 'Sách Yêu Thích',
       products,
-      favoriteProductIds
+      favoriteProductIds,
+      totalCount: count,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        limit
+      }
     });
 
   } catch (error) {

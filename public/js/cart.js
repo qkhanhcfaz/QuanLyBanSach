@@ -291,7 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (reload) fetchAndRenderCart(currentPage);
                 return true;
             } else {
-                if (reload) alert('Xóa sản phẩm thất bại. Vui lòng thử lại.');
+                if (reload) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Thất bại',
+                        text: 'Xóa sản phẩm thất bại. Vui lòng thử lại.'
+                    });
+                }
                 return false;
             }
         } catch (error) {
@@ -317,7 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Sau khi update quantity, giá tiền thay đổi -> gọi lại render để update UI và subtotal
                 fetchAndRenderCart(currentPage);
             } else {
-                alert('Cập nhật số lượng thất bại. Vui lòng thử lại.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi cập nhật',
+                    text: 'Cập nhật số lượng thất bại. Vui lòng thử lại.'
+                });
                 fetchAndRenderCart(currentPage);
             }
         } catch (error) {

@@ -60,11 +60,11 @@ function renderOrderDetail(data) {
     // --- HIỂN THỊ THÔNG TIN CHUNG ---
     setText('order-id-header', `Chi tiết đơn hàng #${data.id}`);
     setText('order-date', new Date(data.createdAt).toLocaleDateString('vi-VN'));
-    
+
     // --- XỬ LÝ VÀ HIỂN THỊ CÁC BADGE TRẠNG THÁI ---
     const orderStatusInfo = getStatusInfo(data.trang_thai_don_hang);
     const paymentStatusInfo = getPaymentStatusInfo(data.trang_thai_thanh_toan);
-    
+
     const orderStatusBadgeEl = document.getElementById('order-status-badge');
     if (orderStatusBadgeEl) {
         orderStatusBadgeEl.innerHTML = `<span class="badge ${orderStatusInfo.className}">${orderStatusInfo.text}</span>`;
@@ -86,32 +86,44 @@ function renderOrderDetail(data) {
 
     if (data.orderItems && Array.isArray(data.orderItems) && data.orderItems.length > 0) {
         data.orderItems.forEach(item => {
-            const productName = item.product ? item.product.ten_sach : 'Sản phẩm không còn tồn tại';
+            const product = item.product || {};
+            const productName = product.ten_sach || 'Sản phẩm không còn tồn tại';
+            const productImg = product.img || '/images/placeholder.png';
             const productPrice = formatCurrency(parseFloat(item.don_gia));
             const lineTotal = formatCurrency(parseFloat(item.so_luong_dat) * parseFloat(item.don_gia));
 
+            // Chỉ hiện nút đánh giá cho đơn hàng đã giao (delivered)
+            const canReview = data.trang_thai_don_hang === 'delivered';
+            const actionHtml = canReview
+                ? `<a href="/products/${product.id}" class="btn btn-sm btn-outline-primary">Đánh giá</a>`
+                : '<span class="text-muted small">---</span>';
+
             const itemRowHtml = `
                 <tr>
-                    <td>${productName}</td>
-                    <td class="text-center">${item.so_luong_dat}</td>
-                    <td class="text-end">${productPrice}</td>
-                    <td class="text-end">${lineTotal}</td>
+                    <td class="align-middle text-center">
+                        <img src="${productImg}" alt="${productName}" style="width: 50px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                    </td>
+                    <td class="align-middle fw-medium">${productName}</td>
+                    <td class="align-middle text-center">${item.so_luong_dat}</td>
+                    <td class="align-middle text-end text-nowrap">${productPrice}</td>
+                    <td class="align-middle text-end text-nowrap fw-bold">${lineTotal}</td>
+                    <td class="align-middle text-center">${actionHtml}</td>
                 </tr>
             `;
             itemsContainer.innerHTML += itemRowHtml;
         });
     } else {
-        itemsContainer.innerHTML = '<tr><td colspan="4" class="text-center">Không có sản phẩm nào trong đơn hàng này.</td></tr>';
+        itemsContainer.innerHTML = '<tr><td colspan="6" class="text-center p-4">Không có sản phẩm nào trong đơn hàng này.</td></tr>';
     }
 
     // --- HIỂN THỊ TỔNG TIỀN (BAO GỒM GIẢM GIÁ) ---
     setText('subtotal', formatCurrency(parseFloat(data.tong_tien_hang)));
     setText('shipping-fee', formatCurrency(parseFloat(data.phi_van_chuyen)));
     setText('total-price', formatCurrency(parseFloat(data.tong_thanh_toan)));
-    
+
     const discountRow = document.getElementById('discount-row');
     const discountAmountEl = document.getElementById('discount-amount');
-    
+
     if (data.so_tien_giam_gia && parseFloat(data.so_tien_giam_gia) > 0) {
         discountAmountEl.textContent = `- ${formatCurrency(parseFloat(data.so_tien_giam_gia))}`;
         discountRow.style.display = 'flex'; // Sử dụng flex để căn chỉnh
