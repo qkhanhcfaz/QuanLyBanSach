@@ -24,6 +24,7 @@ const getCart = async (request, response) => {
                 id: null,
                 user_id: userId,
                 items: [],
+                allItemSummaries: [], // Thêm mảng rỗng nếu ko có giỏ hàng
                 pagination: {
                     currentPage: 1,
                     totalPages: 0,
@@ -50,16 +51,23 @@ const getCart = async (request, response) => {
             offset: offset
         });
 
-        // 4. Tính tống tiền của TOÀN BỘ giỏ hàng (không chỉ trang hiện tại)
-        // Cần query riêng hoặc dùng sum aggregate
+        // 4. Lấy tóm tắt TOÀN BỘ giỏ hàng để frontend quản lý chọn (allItemSummaries)
         const allItems = await CartItem.findAll({
             where: { cart_id: cart.id },
             include: {
                 model: Product,
                 as: 'product',
-                attributes: ['gia_bia']
+                attributes: ['gia_bia', 'so_luong_ton_kho'] // THÊM: so_luong_ton_kho
             }
         });
+
+        // Map lại thành mảng gọn nhẹ chỉ chứa thông tin cần để tính tiền ở frontend
+        const allItemSummaries = allItems.map(item => ({
+            id: item.id.toString(),
+            price: parseFloat(item.product.gia_bia),
+            quantity: item.so_luong,
+            stock: item.product.so_luong_ton_kho // MỚI: Thêm tồn kho
+        }));
 
         const subtotal = allItems.reduce((sum, item) => {
             return sum + (item.so_luong * parseFloat(item.product.gia_bia));
@@ -69,6 +77,7 @@ const getCart = async (request, response) => {
             id: cart.id,
             user_id: userId,
             items: items,
+            allItemSummaries: allItemSummaries, // Trả về tóm tắt tất cả item
             pagination: {
                 currentPage: page,
                 totalPages: Math.ceil(totalItems / limit),
@@ -126,7 +135,7 @@ const addToCart = async (request, response) => {
         }
 
         if (newQuantity > product.so_luong_ton_kho) {
-            return response.status(400).json({ 
+            return response.status(400).json({
                 message: `Kho chỉ còn ${product.so_luong_ton_kho} sản phẩm. (Giỏ hàng của bạn đang có: ${cartItem ? cartItem.so_luong : 0})`
             });
         }
@@ -181,9 +190,9 @@ const updateCartItem = async (request, response) => {
         // --- BẮT ĐẦU CHECK TỒN KHO ---
         const product = await Product.findByPk(cartItem.product_id);
         const newQuantity = parseInt(soLuong);
-        
+
         if (product && newQuantity > product.so_luong_ton_kho) {
-             return response.status(400).json({ 
+            return response.status(400).json({
                 message: `Số lượng yêu cầu vượt quá tồn kho. (Còn lại: ${product.so_luong_ton_kho})`
             });
         }

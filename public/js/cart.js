@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     sessionStorage.removeItem('promoCodeToCheckout');
     sessionStorage.removeItem('discountAmountApplied');
+    sessionStorage.removeItem('selectedCartItemIds'); // MỚI: Xóa lựa chọn khi load lại trang giỏ hàng theo yêu cầu
     // Các element mới cho phần tóm tắt đơn hàng
     const subtotalEl = document.getElementById('cart-subtotal');
     const shippingFeeEl = document.getElementById('shipping-fee');
@@ -40,7 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Biến để lưu trữ trạng thái của giỏ hàng và khuyến mãi trên toàn trang.
     let currentCart = null;
+    let allItemSummaries = []; // MỚI: Lưu tóm tắt tất cả item (id, price, quantity)
     let currentDiscountAmount = 0; // Số tiền được giảm
+    let currentPage = 1; // MỚI: Theo dõi trang hiện tại
     // let serverSubtotal = 0; // KHÔNG DÙNG SERVER SUBTOTAL NỮA, TÍNH THEO SELECTION
 
     // Set lưu trữ các ID sản phẩm đang được chọn
@@ -50,6 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
+
+    /**
+     * MỚI: Đồng bộ Set lựa chọn vào sessionStorage để phòng trường hợp chuyển trang nhanh
+     */
+    function syncSelectionWithSession() {
+        const selectedIds = Array.from(selectedItemsSet).map(id => String(id));
+        sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedIds));
+    }
 
 
     // === BƯỚC 2: CÁC HÀM XỬ LÝ GIAO DIỆN (RENDER) ===
@@ -72,15 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable bulk controls
         if (selectAllCheckbox) {
             selectAllCheckbox.disabled = false;
-            // Kiểm tra xem tất cả items trong trang này có được chọn hết không
-            const allSelected = items.every(item => selectedItemsSet.has(item.id.toString()));
-            selectAllCheckbox.checked = items.length > 0 && allSelected;
+            // MỚI: Chỉ kiểm tra những item CÓ HÀNG trong kho (stock > 0)
+            const selectableItems = allItemSummaries.filter(item => item.stock > 0);
+            const allSelected = selectableItems.length > 0 && selectableItems.every(item => selectedItemsSet.has(item.id));
+            selectAllCheckbox.checked = allSelected;
         }
         if (deleteSelectedBtn) deleteSelectedBtn.disabled = true;
 
         items.forEach(item => {
             const itemTotal = item.so_luong * item.product.gia_bia;
-            const isChecked = selectedItemsSet.has(item.id.toString()); // Convert id to string for consistency
+            const isChecked = selectedItemsSet.has(String(item.id)); // Đảm bảo luôn ép về string để so sánh Set
 
             const cartItemHTML = `
                 <tr class="cart-item-row" data-id="${item.id}" data-price="${item.product.gia_bia}" data-quantity="${item.so_luong}">
@@ -133,19 +145,15 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function calculateSelectedSubtotal() {
         let subtotal = 0;
-        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
 
-        checkboxes.forEach(checkbox => {
-            const row = checkbox.closest('tr');
-            const price = parseFloat(row.dataset.price);
-            // Lấy quantity từ input vì nó có thể thay đổi (dù user chưa reload) 
-            // Tuy nhiên logic hiện tại input change -> gọi API update -> reload cart. 
-            // Nên lấy từ dataset cũng ok, hoặc lấy từ input value cho chính xác visual.
-            const quantityInput = row.querySelector('.item-quantity');
-            const quantity = parseInt(quantityInput.value);
-
-            subtotal += price * quantity;
+        // Duyệt qua Set các ID được chọn và cộng dồn tiền từ allItemSummaries
+        selectedItemsSet.forEach(id => {
+            const item = allItemSummaries.find(i => i.id === id);
+            if (item) {
+                subtotal += item.price * item.quantity;
+            }
         });
+
         return subtotal;
     }
 
@@ -157,7 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Tính Subtotal dựa trên SELECTION
         const subtotal = calculateSelectedSubtotal();
 
-        const shippingFee = (subtotal > 0) ? 30000 : 0; // Chỉ tính phí ship khi có hàng được chọn.
+        // MỚI: Miễn phí vận chuyển nếu tạm tính >= 300.000đ
+        const shippingFee = (subtotal > 0 && subtotal < 300000) ? 30000 : 0;
 
         // Cập nhật giao diện
         subtotalEl.textContent = formatCurrency(subtotal);
@@ -207,7 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cartResponse = await response.json();
 
             currentCart = { items: cartResponse.items };
-            // serverSubtotal = parseFloat(cartResponse.subtotal || 0); // Không dùng nữa
+            allItemSummaries = cartResponse.allItemSummaries || []; // Lưu tóm tắt tất cả item
+            currentPage = cartResponse.pagination.currentPage; // Cập nhật trang hiện tại
 
             renderCartItems(cartResponse.items);
             // updateOrderSummary(); // Đã gọi trong renderCartItems
@@ -278,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
-                if (reload) fetchAndRenderCart();
+                if (reload) fetchAndRenderCart(currentPage);
                 return true;
             } else {
                 if (reload) alert('Xóa sản phẩm thất bại. Vui lòng thử lại.');
@@ -305,10 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (response.ok) {
                 // Sau khi update quantity, giá tiền thay đổi -> gọi lại render để update UI và subtotal
-                fetchAndRenderCart();
+                fetchAndRenderCart(currentPage);
             } else {
                 alert('Cập nhật số lượng thất bại. Vui lòng thử lại.');
-                fetchAndRenderCart();
+                fetchAndRenderCart(currentPage);
             }
         } catch (error) {
             console.error('Lỗi API khi cập nhật số lượng:', error);
@@ -319,16 +329,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // === BƯỚC 4: GẮN CÁC BỘ LẮNG NGHE SỰ KIỆN (EVENT LISTENERS) ===
 
     function updateBulkActionState() {
-        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        const checkedCount = selectedItemsSet.size; // Đếm số item được chọn trong Set (toàn bộ các trang)
         if (deleteSelectedBtn) {
             deleteSelectedBtn.disabled = checkedCount === 0;
             deleteSelectedBtn.innerHTML = `<i class="fas fa-trash-alt me-1"></i> Xóa đã chọn (${checkedCount})`;
         }
 
-        // Kiểm tra xem đã check hết chưa để update Select All checkbox
-        const totalItems = document.querySelectorAll('.item-checkbox').length;
-        if (selectAllCheckbox && totalItems > 0) {
-            selectAllCheckbox.checked = checkedCount === totalItems;
+        // Kiểm tra xem đã check hết TẤT CẢ các item trong giỏ chưa để update Select All checkbox
+        if (selectAllCheckbox && allItemSummaries.length > 0) {
+            // MỚI: Chỉ quan tâm các item có hàng
+            const selectableItems = allItemSummaries.filter(item => item.stock > 0);
+            selectAllCheckbox.checked = selectableItems.length > 0 && selectableItems.every(item => selectedItemsSet.has(item.id));
         }
     }
 
@@ -431,22 +442,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 3. Sự kiện check từng item
         document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', () => {
+            checkbox.addEventListener('change', (e) => {
+                const itemId = e.target.value;
+                if (e.target.checked) {
+                    selectedItemsSet.add(itemId);
+                } else {
+                    selectedItemsSet.delete(itemId);
+                }
+
                 // Update Select All checkbox state
                 updateBulkActionState();
                 // Update Total Money
                 updateOrderSummary();
-
-                // Disable/Enable input quantity nếu cần? (Yêu cầu nói: "nếu sản phẩm đó không được chọn thì các trường trong đó không được select")
-                // User requirement: "user muốn mỗi sản phẩm trong giỏ hàng sẽ có một nút select chọn trước sản phẩm, chỉ khi được chọn thì sản phẩm đó mới được tính vào hóa đơn, nếu sản phẩm đó không được chọn thì các trường trong đó không được select"
-                // "không được select" -> có thể hiểu là disabled input?
-                const row = checkbox.closest('tr');
-                const qtyInput = row.querySelector('.item-quantity');
-                if (qtyInput) {
-                    // qtyInput.disabled = !checkbox.checked; // Nếu muốn disable thật
-                    // Tạm thời ko disable input vì logic update quantity -> reload page -> mất check state.
-                    // Nếu disable input thì user phải check mới sửa được quantity.
-                }
+                // MỚI: Đồng bộ ngay lập tức
+                syncSelectionWithSession();
             });
         });
     }
@@ -455,18 +464,40 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
+
+            if (isChecked) {
+                // Thêm item IDs vào Set - CHỈ THÊM NHỮNG MÓN CÒN HÀNG
+                allItemSummaries.forEach(item => {
+                    if (item.stock > 0) {
+                        selectedItemsSet.add(item.id);
+                    }
+                });
+            } else {
+                // Xóa SẠCH Set
+                selectedItemsSet.clear();
+            }
+
+            // Đồng bộ UI các checkbox đang hiện ở trang hiện tại
             const checkboxes = document.querySelectorAll('.item-checkbox');
             checkboxes.forEach(cb => {
-                cb.checked = isChecked;
+                // MỚI: Chỉ tự động check những checkbox KHÔNG bị disabled (còn hàng)
+                if (!cb.disabled) {
+                    cb.checked = isChecked;
+                } else {
+                    cb.checked = false; // Luôn uncheck nếu disabled
+                }
             });
+
             updateBulkActionState();
             updateOrderSummary();
+            // MỚI: Đồng bộ ngay lập tức
+            syncSelectionWithSession();
         });
     }
 
     if (deleteSelectedBtn) {
         deleteSelectedBtn.addEventListener('click', () => {
-            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            const selectedIds = Array.from(selectedItemsSet); // Lấy từ Set thay vì lấy từ DOM
             if (selectedIds.length === 0) return;
 
             Swal.fire({
@@ -479,16 +510,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmButtonText: 'Xóa tất cả'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    // Xóa lần lượt (hoặc dùng API bulk delete nếu có)
-                    // Hiện tại chưa có API bulk delete, loop xóa từng cái
-                    // Để tránh reload nhiều lần, ta sẽ set reload=false và reload cuối cùng
+                    // Xóa xong thì xóa khỏi Set
                     let successCount = 0;
                     for (const id of selectedIds) {
                         const success = await removeItemFromCart(id, false);
-                        if (success) successCount++;
+                        if (success) {
+                            successCount++;
+                            selectedItemsSet.delete(id);
+                        }
                     }
                     // Reload cart
-                    fetchAndRenderCart();
+                    fetchAndRenderCart(currentPage);
+                    syncSelectionWithSession(); // MỚI: Đồng bộ sau khi xóa
                     Swal.fire('Đã xóa!', `Đã xóa ${successCount} sản phẩm.`, 'success');
                 }
             });
@@ -578,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkoutButton) {
         checkoutButton.addEventListener('click', (e) => {
             // Validate: Phải chọn ít nhất 1 sản phẩm
-            const selectedCount = document.querySelectorAll('.item-checkbox:checked').length;
+            const selectedCount = selectedItemsSet.size;
             if (selectedCount === 0) {
                 e.preventDefault(); // Chặn chuyển trang
                 Swal.fire({
@@ -599,16 +632,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.removeItem('discountAmountApplied');
             }
 
-            // LƯU Ý: Ở bước này, code backend checkout cần biết user mua những item nào.
-            // Hiện tại code backend có thể lấy TOÀN BỘ item trong cart.
-            // Để hỗ trợ partial checkout, ta nên lưu list selected item IDs vào sessionStorage 
-            // và sửa backend checkout để chỉ xử lý các item đó.
-            // Tuy nhiên user request không yêu cầu sửa backend checkout.
-            // "chỉ khi được chọn thì sản phẩm đó mới được tính vào hóa đơn" -> Hàm ý quan trọng.
-            // Nếu backend checkout lấy tất cả item, thì việc chọn ở frontend chỉ là ảo.
-            // Tạm thời ta cứ lưu vào session storage, nếu backend chưa hỗ trợ thì đây là limit của scope hiện tại.
-            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            // Lưu list selected item IDs vào sessionStorage
+            // MỚI: Đảm bảo toàn bộ ID là string để so sánh nhất quán trên checkout page
+            const selectedIds = Array.from(selectedItemsSet).map(id => String(id));
             sessionStorage.setItem('selectedCartItemIds', JSON.stringify(selectedIds));
+            // console.log("Sau khi bấm Thanh toán, lưu IDs:", selectedIds);
         });
     }
 

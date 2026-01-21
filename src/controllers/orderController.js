@@ -46,9 +46,9 @@ const createOrder = async (req, res) => {
     // Nếu client gửi lên danh sách ID được chọn, thì lọc theo đó
     if (
       selectedCartItemIds &&
-      Array.isArray(selectedCartItemIds) &&
-      selectedCartItemIds.length > 0
+      Array.isArray(selectedCartItemIds)
     ) {
+      // NGAY CẢ KHI MẢNG RỖNG, ta vẫn set để query trả về rỗng thay vì trả về toàn bộ
       queryOptions.where.id = selectedCartItemIds;
     }
 
@@ -96,8 +96,9 @@ const createOrder = async (req, res) => {
       await product.increment("da_ban", { by: item.so_luong, transaction: t });
     }
 
-    // 3. Tính phí ship và giảm giá (giả định)
-    const phi_van_chuyen = 30000;
+    // 3. Tính phí ship và giảm giá
+    // MỚI: Miễn phí vận chuyển nếu tổng tiền hàng >= 300.000đ
+    const phi_van_chuyen = (tong_tien >= 300000) ? 0 : 30000;
     let giam_gia = 0;
     // Logic check ma_khuyen_mai ở đây nếu có...
 

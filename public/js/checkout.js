@@ -111,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function fetchAndRenderSummary() {
     try {
-      const response = await fetch('/api/cart', {
+      // MỚI: Thêm limit=1000 để lấy TOÀN BỘ item trong giỏ hàng (không bị giới hạn 5 item của phân trang)
+      const response = await fetch('/api/cart?limit=1000', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Không thể tải thông tin giỏ hàng.');
@@ -134,14 +135,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedIdsJSON) {
         try {
           selectedIds = JSON.parse(selectedIdsJSON);
+          // console.log("IDs nhận được từ session:", selectedIds);
+
           // Convert to string set for easier lookup
-          const selectedSet = new Set(selectedIds.map(String));
+          const selectedSet = new Set(selectedIds.map(id => String(id).trim()));
 
           // Lọc cart items
-          cart.items = cart.items.filter(item => selectedSet.has(String(item.id)));
+          cart.items = cart.items.filter(item => {
+            const itemIdStr = String(item.id).trim();
+            const match = selectedSet.has(itemIdStr);
+            console.log(`Matching CartItem ID: ${itemIdStr}, Result: ${match}`); // MỚI: Log để debug
+            return match;
+          });
         } catch (e) {
           console.error("Lỗi parsing selectedCartItemIds", e);
+          cart.items = []; // Nếu lỗi parse thì coi như ko chọn gì
         }
+      } else {
+        console.warn("Không tìm thấy selectedCartItemIds trong sessionStorage."); // MỚI: Log cảnh báo
+        // MỚI: Nếu không có selected IDs trong session, coi như không chọn gì
+        // Điều này ngăn chặn việc hiển thị toàn bộ giỏ hàng
+        cart.items = [];
       }
 
       if (!cart.items || cart.items.length === 0) {
@@ -176,11 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderSummary(cart, discountAmount = 0) {
     orderSummaryContainer.innerHTML = ''; // Xóa chữ "Đang tải..."
     let subtotal = 0;
-    const shipping = 30000;
+
+    // Tính subtotal trước để quyết định phí ship
+    cart.items.forEach(item => {
+      subtotal += item.so_luong * item.product.gia_bia;
+    });
+
+    // MỚI: Miễn phí vận chuyển nếu tạm tính >= 300.000đ
+    const shipping = (subtotal >= 300000 || subtotal === 0) ? 0 : 30000;
 
     cart.items.forEach(item => {
       const itemTotal = item.so_luong * item.product.gia_bia;
-      subtotal += itemTotal;
 
       const summaryItemHTML = `
                 <div class="d-flex justify-content-between">
@@ -278,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response.ok) {
         sessionStorage.removeItem('promoCodeToCheckout');
         sessionStorage.removeItem('discountAmountApplied');
+        sessionStorage.removeItem('selectedCartItemIds'); // MỚI: Xóa IDs sau khi thanh toán thành công
         if (data.payUrl) {
           // Nếu server trả về payUrl (trường hợp thanh toán MoMo)
           // Chuyển hướng người dùng đến trang thanh toán của MoMo
