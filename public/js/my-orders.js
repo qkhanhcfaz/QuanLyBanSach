@@ -72,15 +72,24 @@ document.addEventListener("DOMContentLoaded", () => {
       // <<< TẠO BADGE CHO TRẠNG THÁI THANH TOÁN >>>
       const paymentBadgeHTML = `<span class="badge rounded-pill ${paymentStatusInfo.className}">${paymentStatusInfo.text}</span>`;
 
+      // <<< NÚT HỦY ĐƠN: Chỉ hiện khi Chờ xác nhận hoặc Đã xác nhận >>>
+      let actionButtons = `<a href="/orders/${order.id}" class="btn btn-sm btn-info text-white">Xem chi tiết</a>`;
+      if (
+        order.trang_thai_don_hang === "pending" ||
+        order.trang_thai_don_hang === "confirmed"
+      ) {
+        actionButtons += ` 
+              <button onclick="cancelOrder(${order.id})" class="btn btn-sm btn-danger ms-2">Hủy đơn</button>
+          `;
+      }
+
       ordersHTML += `
                 <tr>
                     <th scope="row">#${order.id}</th>
                     <td>${orderDate}</td>
                     <td>${totalAmount}</td>
                     <td>${statusBadgeHTML}</td> 
-                    <td>
-                        <a href="/orders/${order.id}" class="btn btn-sm btn-info text-white">Xem chi tiết</a>
-                    </td>
+                    <td>${actionButtons}</td>
                 </tr>
             `;
     });
@@ -123,5 +132,44 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Chạy hàm fetch lần đầu
+  // Chạy hàm fetch lần đầu
   fetchAndRenderOrders();
 });
+
+// Hàm hủy đơn hàng
+window.cancelOrder = async (orderId) => {
+  const confirmResult = await Swal.fire({
+    title: "Hủy đơn hàng?",
+    text: "Bạn có chắc chắn muốn hủy đơn hàng này không?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Đồng ý hủy",
+    cancelButtonText: "Không",
+  });
+
+  if (confirmResult.isConfirmed) {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await Swal.fire("Đã hủy!", data.message, "success");
+        window.location.reload();
+      } else {
+        Swal.fire("Lỗi!", data.message || "Không thể hủy đơn hàng.", "error");
+      }
+    } catch (error) {
+      console.error("Lỗi khi hủy đơn:", error);
+      Swal.fire("Lỗi!", "Đã có lỗi xảy ra.", "error");
+    }
+  }
+};

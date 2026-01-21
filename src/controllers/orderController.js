@@ -364,10 +364,58 @@ const getMyOrders = async (req, res) => {
   }
 };
 
+/**
+ * Hủy đơn hàng của tôi (User)
+ * PUT /api/orders/:id/cancel
+ */
+const cancelMyOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    }
+
+    // Kiểm tra quyền sở hữu
+    if (String(order.user_id) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền hủy đơn hàng này." });
+    }
+
+    // Kiểm tra trạng thái
+    if (
+      order.trang_thai_don_hang !== "pending" &&
+      order.trang_thai_don_hang !== "confirmed"
+    ) {
+      return res.status(400).json({
+        message:
+          "Chỉ có thể hủy đơn hàng khi đang chờ xác nhận hoặc đã xác nhận.",
+      });
+    }
+
+    // Thực hiện hủy
+    order.trang_thai_don_hang = "cancelled";
+    await order.save();
+
+    // (Optional) Logic hoàn lại kho hoặc hoàn tiền nếu cần có thể thêm ở đây
+    // Ví dụ: Duyệt orderItems và increment lại product.so_luong_ton_kho
+
+    res.json({ message: "Hủy đơn hàng thành công.", order });
+  } catch (error) {
+    console.error("Lỗi cancel my order:", error);
+    res.status(500).json({ message: "Lỗi server khi hủy đơn hàng." });
+  }
+};
+
 module.exports = {
   updateOrderStatus,
   getAllOrders,
   createOrder,
   getOrderById,
   getMyOrders,
+  cancelMyOrder,
 };
