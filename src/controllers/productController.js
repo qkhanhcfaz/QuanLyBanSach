@@ -93,7 +93,7 @@ const getAllProducts = async (request, response) => {
         const { keyword, category, minPrice, maxPrice, sortBy, order = 'ASC', page = 1, limit = 12 } = request.query;
 
         // 1. XÂY DỰNG ĐIỀU KIỆN LỌC (WHERE)
-        const whereCondition = {};
+        const whereCondition = { trang_thai: true };
 
         // Lọc theo từ khóa (tìm kiếm tên sách)
         if (keyword) {
@@ -168,7 +168,8 @@ const getAllProducts = async (request, response) => {
  */
 const getProductById = async (request, response) => {
     try {
-        const product = await Product.findByPk(request.params.id, {
+        const product = await Product.findOne({
+            where: { id: request.params.id, trang_thai: true },
             include: { // Lấy cả thông tin danh mục
                 model: Category,
                 as: 'category'
@@ -245,14 +246,38 @@ const deleteProduct = async (request, response) => {
     try {
         const product = await Product.findByPk(request.params.id);
         if (product) {
-            await product.destroy();
-            response.status(200).json({ message: "Xóa sản phẩm thành công." });
+            // Chuyển sang xóa mềm: Ẩn sản phẩm thay vì xóa vĩnh viễn
+            await product.update({ trang_thai: false });
+            response.status(200).json({ message: "Sản phẩm đã được ẩn (xóa mềm) thành công." });
         } else {
             response.status(404).json({ message: "Không tìm thấy sản phẩm." });
         }
     } catch (error) {
         console.error("Lỗi khi xóa sản phẩm:", error);
         response.status(500).json({ message: "Lỗi server khi xóa sản phẩm.", error: error.message });
+    }
+};
+
+/**
+ * @description     Admin: Cập nhật trạng thái sản phẩm (Hiển thị/Ẩn)
+ * @route           PATCH /api/products/:id/status
+ */
+const updateProductStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { trang_thai } = req.body; // true hoặc false
+
+        const product = await Product.findByPk(id);
+        if (!product) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm.' });
+        }
+
+        await product.update({ trang_thai: trang_thai === true || trang_thai === 'true' });
+        res.json({ message: 'Cập nhật trạng thái thành công.', product });
+
+    } catch (error) {
+        console.error('Lỗi cập nhật trạng thái:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái.' });
     }
 };
 
@@ -327,7 +352,7 @@ const getBestsellerProducts = async (req, res) => {
             ],
             include: [
                 // Quan trọng: Phải include Product ở đây để lấy được thông tin
-                { model: db.Product, as: 'product', attributes: ['id', 'ten_sach', 'gia_bia', 'img'] },
+                { model: db.Product, as: 'product', attributes: ['id', 'ten_sach', 'gia_bia', 'img'], where: { trang_thai: true } },
                 {
                     model: db.Order, as: 'order',
                     where: {
@@ -466,4 +491,7 @@ module.exports = {
     exportProductsToExcel,
     getBestsellerProducts,
     createReview,
+    updateProductStatus,
+    getAllPublishers,
+    getProductStock,
 };

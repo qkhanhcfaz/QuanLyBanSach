@@ -83,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable bulk controls
         if (selectAllCheckbox) {
             selectAllCheckbox.disabled = false;
-            // MỚI: Chỉ kiểm tra những item CÓ HÀNG trong kho (stock > 0)
-            const selectableItems = allItemSummaries.filter(item => item.stock > 0);
+            // MỚI: Chỉ kiểm tra những item CÓ HÀNG trong kho (stock > 0) VÀ đang KINH DOANH (trang_thai: true)
+            const selectableItems = allItemSummaries.filter(item => item.stock > 0 && item.trang_thai !== false);
             const allSelected = selectableItems.length > 0 && selectableItems.every(item => selectedItemsSet.has(item.id));
             selectAllCheckbox.checked = allSelected;
         }
@@ -92,37 +92,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         items.forEach(item => {
             const itemTotal = item.so_luong * item.product.gia_bia;
-            const isChecked = selectedItemsSet.has(String(item.id)); // Đảm bảo luôn ép về string để so sánh Set
+            const isChecked = selectedItemsSet.has(String(item.id));
+            const isDiscontinued = item.product.trang_thai === false;
+            const isOutOfStock = item.product.so_luong_ton_kho <= 0;
 
             const cartItemHTML = `
                 <tr class="cart-item-row" data-id="${item.id}" data-price="${item.product.gia_bia}" data-quantity="${item.so_luong}">
                     <td class="text-center">
-                        <input class="form-check-input item-checkbox" type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} ${item.product.so_luong_ton_kho <= 0 ? 'disabled' : ''}>
+                        <input class="form-check-input item-checkbox" type="checkbox" value="${item.id}" 
+                               ${isChecked ? 'checked' : ''} 
+                               ${(isOutOfStock || isDiscontinued) ? 'disabled' : ''}>
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <img src="${item.product.img || '/images/placeholder.png'}" alt="" style="width: 70px; height: 100px; object-fit: cover" class="rounded-3"/>
+                            <img src="${item.product.img || '/images/placeholder.png'}" alt="" style="width: 70px; height: 100px; object-fit: cover" class="rounded-3 ${isDiscontinued ? 'opacity-50' : ''}"/>
                             <div class="ms-3">
-                                <p class="fw-bold mb-1">${item.product.ten_sach}</p>
-                                <small class="text-muted">Kho: ${item.product.so_luong_ton_kho}</small>
+                                <p class="fw-bold mb-1 ${isDiscontinued ? 'text-muted' : ''}">${item.product.ten_sach}</p>
+                                ${isDiscontinued ? '<span class="badge bg-danger">Ngừng kinh doanh</span>' : `<small class="text-muted">Kho: ${item.product.so_luong_ton_kho}</small>`}
                             </div>
                         </div>
                     </td>
                     <td>
-                        <p class="fw-normal mb-1">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</p>
+                        <p class="fw-normal mb-1 ${isDiscontinued ? 'text-decoration-line-through text-muted' : ''}">${parseFloat(item.product.gia_bia).toLocaleString('vi-VN')}đ</p>
                     </td>
                     <td>
-                        ${item.product.so_luong_ton_kho > 0 ? `
-                        <div class="input-group input-group-sm" style="width: 120px;">
-                            <button class="btn btn-outline-secondary btn-decrease-qty" type="button" data-item-id="${item.id}">-</button>
-                            <input type="number" class="form-control text-center item-quantity" value="${item.so_luong}" 
-                                min="1" max="${item.product.so_luong_ton_kho}" data-item-id="${item.id}">
-                            <button class="btn btn-outline-secondary btn-increase-qty" type="button" data-item-id="${item.id}">+</button>
-                        </div>
-                        ` : `<span class="text-danger fw-bold">Hết hàng</span>`}
+                        ${isDiscontinued ? `
+                            <span class="text-danger small fw-bold">Ngừng kinh doanh</span>
+                        ` : (isOutOfStock ? `
+                            <span class="text-danger fw-bold">Hết hàng</span>
+                        ` : `
+                            <div class="input-group input-group-sm" style="width: 120px;">
+                                <button class="btn btn-outline-secondary btn-decrease-qty" type="button" data-item-id="${item.id}">-</button>
+                                <input type="number" class="form-control text-center item-quantity" value="${item.so_luong}" 
+                                    min="1" max="${item.product.so_luong_ton_kho}" data-item-id="${item.id}">
+                                <button class="btn btn-outline-secondary btn-increase-qty" type="button" data-item-id="${item.id}">+</button>
+                            </div>
+                        `)}
                     </td>
                     <td>
-                        <p class="fw-bold mb-1 item-total-display">${itemTotal.toLocaleString('vi-VN')}đ</p>
+                        <p class="fw-bold mb-1 item-total-display ${isDiscontinued ? 'text-muted' : ''}">${itemTotal.toLocaleString('vi-VN')}đ</p>
                     </td>
                     <td>
                         <button class="btn btn-link text-danger p-0 remove-item-btn" data-item-id="${item.id}">
@@ -347,8 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Kiểm tra xem đã check hết TẤT CẢ các item trong giỏ chưa để update Select All checkbox
         if (selectAllCheckbox && allItemSummaries.length > 0) {
-            // MỚI: Chỉ quan tâm các item có hàng
-            const selectableItems = allItemSummaries.filter(item => item.stock > 0);
+            // MỚI: Chỉ quan tâm các item có hàng VÀ đang kinh doanh
+            const selectableItems = allItemSummaries.filter(item => item.stock > 0 && item.trang_thai !== false);
             selectAllCheckbox.checked = selectableItems.length > 0 && selectableItems.every(item => selectedItemsSet.has(item.id));
         }
     }
@@ -476,9 +484,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const isChecked = e.target.checked;
 
             if (isChecked) {
-                // Thêm item IDs vào Set - CHỈ THÊM NHỮNG MÓN CÒN HÀNG
+                // Thêm item IDs vào Set - CHỈ THÊM NHỮNG MÓN CÒN HÀNG VÀ ĐANG KINH DOANH
                 allItemSummaries.forEach(item => {
-                    if (item.stock > 0) {
+                    if (item.stock > 0 && item.trang_thai !== false) {
                         selectedItemsSet.add(item.id);
                     }
                 });

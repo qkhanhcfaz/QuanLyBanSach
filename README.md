@@ -35,4 +35,5 @@ Hệ thống hỗ trợ quản lý sản phẩm, người dùng và các chức 
    ```bash
    npm install
    npm start
+   node scripts/add_product_trang_thai.js
    ```

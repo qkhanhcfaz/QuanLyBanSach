@@ -44,7 +44,7 @@ const getCart = async (request, response) => {
             include: {
                 model: Product,
                 as: 'product',
-                attributes: ['id', 'ten_sach', 'gia_bia', 'img', 'so_luong_ton_kho']
+                attributes: ['id', 'ten_sach', 'gia_bia', 'img', 'so_luong_ton_kho', 'trang_thai']
             },
             order: [['id', 'DESC']],
             limit: limit,
@@ -57,7 +57,7 @@ const getCart = async (request, response) => {
             include: {
                 model: Product,
                 as: 'product',
-                attributes: ['gia_bia', 'so_luong_ton_kho'] // THÊM: so_luong_ton_kho
+                attributes: ['gia_bia', 'so_luong_ton_kho', 'trang_thai'] // THÊM: so_luong_ton_kho, trang_thai
             }
         });
 
@@ -66,7 +66,8 @@ const getCart = async (request, response) => {
             id: item.id.toString(),
             price: parseFloat(item.product.gia_bia),
             quantity: item.so_luong,
-            stock: item.product.so_luong_ton_kho // MỚI: Thêm tồn kho
+            stock: item.product.so_luong_ton_kho,
+            trang_thai: item.product.trang_thai // MỚI: Thêm trạng thái
         }));
 
         const subtotal = allItems.reduce((sum, item) => {

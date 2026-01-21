@@ -27,6 +27,7 @@ const renderHomePage = async (req, res) => {
     });
 
     const newProducts = await Product.findAll({
+      where: { trang_thai: true },
       limit: 8,
       order: [["createdAt", "DESC"]],
       include: [
@@ -62,7 +63,7 @@ const renderProductListPage = async (req, res) => {
     const limit = 12;
     const offset = (page - 1) * limit;
 
-    let where = {};
+    let where = { trang_thai: true };
     if (category) where.danh_muc_id = category;
     if (keyword) where.ten_sach = { [Op.iLike]: `%${keyword}%` };
 
@@ -110,7 +111,8 @@ const renderProductDetailPage = async (req, res) => {
     const { id } = req.params;
 
     // 1. Tìm sản phẩm
-    const product = await Product.findByPk(id, {
+    const product = await Product.findOne({
+      where: { id: id, trang_thai: true },
       include: [{ model: Category, as: "category" }],
     });
 
@@ -157,6 +159,7 @@ const renderProductDetailPage = async (req, res) => {
       where: {
         danh_muc_id: product.danh_muc_id,
         id: { [Op.ne]: product.id },
+        trang_thai: true
       },
       limit: 4,
     });
