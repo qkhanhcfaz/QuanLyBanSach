@@ -8,15 +8,29 @@
         <div class="swiper" id="hero-swiper">
             <!-- Additional required wrapper -->
             <div class="swiper-wrapper" id="hero-swiper-wrapper">
-                <!-- Slides sẽ được JS chèn vào đây -->
-                <div class="swiper-slide"><img src="/images/slider_item_1_image.png" class="img-fluid" alt="Banner">
-                </div>
-                <div class="swiper-slide"><img src="/images/slider_item_2_image.png" class="img-fluid" alt="Banner">
-                </div>
-                <div class="swiper-slide"><img src="/images/slider_item_3_image.png" class="img-fluid" alt="Banner">
-                </div>
-                <div class="swiper-slide"><img src="/images/slider_item_5_image.png" class="img-fluid" alt="Banner">
-                </div>
+                <% if (typeof slides !== 'undefined' && slides.length > 0) { %>
+                    <% slides.forEach(function(slide) { %>
+                        <div class="swiper-slide">
+                            <% if (slide.link_to) { %>
+                                <a href="<%= slide.link_to %>">
+                                    <img src="<%= slide.image_url && (slide.image_url.startsWith('/') || slide.image_url.startsWith('http')) ? slide.image_url : '/images/' + (slide.image_url || 'slider_item_1_image.png') %>" 
+                                         class="img-fluid" 
+                                         alt="<%= slide.tieu_de || 'Slide' %>"
+                                         style="width: 100%; object-fit: cover;">
+                                </a>
+                            <% } else { %>
+                                <img src="<%= slide.image_url && (slide.image_url.startsWith('/') || slide.image_url.startsWith('http')) ? slide.image_url : '/images/' + (slide.image_url || 'slider_item_1_image.png') %>" 
+                                     class="img-fluid" 
+                                     alt="<%= slide.tieu_de || 'Slide' %>"
+                                     style="width: 100%; object-fit: cover;">
+                            <% } %>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <!-- Fallback nếu chưa có slide nào -->
+                    <div class="swiper-slide"><img src="/images/slider_item_1_image.png" class="img-fluid" alt="Banner"></div>
+                    <div class="swiper-slide"><img src="/images/slider_item_2_image.png" class="img-fluid" alt="Banner"></div>
+                <% } %>
             </div>
 
             <!-- If we need pagination -->

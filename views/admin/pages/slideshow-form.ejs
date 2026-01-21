@@ -1,0 +1,103 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông tin Slide</h6>
+                </div>
+                <div class="card-body">
+                    <form action="<%= slide ? '/admin/slideshows/edit/' + slide.id : '/admin/slideshows/add' %>" 
+                          method="POST" 
+                          enctype="multipart/form-data">
+                        
+                        <!-- Tiêu đề -->
+                        <div class="mb-3 row">
+                            <label for="tieu_de" class="col-sm-3 col-form-label">Tiêu đề chính</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="tieu_de" name="tieu_de" 
+                                       value="<%= slide ? slide.tieu_de : '' %>">
+                            </div>
+                        </div>
+
+                        <!-- Phụ đề -->
+                        <div class="mb-3 row">
+                            <label for="phu_de" class="col-sm-3 col-form-label">Tiêu đề phụ</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="phu_de" name="phu_de" 
+                                       value="<%= slide ? slide.phu_de : '' %>">
+                            </div>
+                        </div>
+
+                        <!-- Đường dẫn (Link) -->
+                        <div class="mb-3 row">
+                            <label for="link_to" class="col-sm-3 col-form-label fw-bold text-primary">Đường dẫn (Link)</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="link_to" name="link_to" 
+                                       placeholder="/products hoặc https://example.com"
+                                       value="<%= slide ? slide.link_to : '' %>">
+                                <div class="form-text">Nhập đường dẫn để chuyển hướng khi click vào banner.</div>
+                            </div>
+                        </div>
+
+                        <!-- Hình ảnh (Upload) -->
+                        <div class="mb-3 row">
+                            <label for="image" class="col-sm-3 col-form-label">Upload Hình</label>
+                            <div class="col-sm-9">
+                                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                            </div>
+                        </div>
+
+                        <!-- Hình ảnh (URL) -->
+                        <div class="mb-3 row">
+                            <label for="image_url" class="col-sm-3 col-form-label">Hoặc nhập URL</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control mb-2" id="image_url" name="image_url" 
+                                       value="<%= slide ? slide.image_url : '' %>">
+                                <% if(slide && slide.image_url) { %>
+                                    <img src="<%= slide.image_url %>" alt="Preview" style="height: 100px; border-radius: 4px;">
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Thứ tự -->
+                        <div class="mb-3 row">
+                            <label for="thu_tu_hien_thi" class="col-sm-3 col-form-label">Thứ tự</label>
+                            <div class="col-sm-9">
+                                <input type="number" class="form-control" id="thu_tu_hien_thi" name="thu_tu_hien_thi" 
+                                       value="<%= slide ? slide.thu_tu_hien_thi : 0 %>">
+                            </div>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="mb-3 row">
+                            <label class="col-sm-3 col-form-label">Trạng thái</label>
+                            <div class="col-sm-9">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="trang_thai" name="trang_thai" 
+                                           <%= (!slide || slide.trang_thai) ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="trang_thai">Hiển thị</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 row">
+                            <div class="col-sm-9 offset-sm-3">
+                                <button type="submit" class="btn btn-primary">Lưu lại</button>
+                                <a href="/admin/slideshows" class="btn btn-secondary">Hủy</a>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

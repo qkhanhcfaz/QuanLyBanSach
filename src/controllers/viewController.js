@@ -360,7 +360,7 @@ const renderFAQPage = (req, res) => {
  */
 const renderBlogPage = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 6;
     const offset = (page - 1) * limit;
     const keyword = req.query.keyword || "";

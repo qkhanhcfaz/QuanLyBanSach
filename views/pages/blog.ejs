@@ -41,9 +41,33 @@
         <% if (totalPages > 1) { %>
             <nav aria-label="Page navigation" class="mt-5">
                 <ul class="pagination justify-content-center">
+                    <% if (currentPage > 1) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="/blog?page=<%= currentPage - 1 %>&keyword=<%= typeof keyword !== 'undefined' ? keyword : '' %>" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    <% } else { %>
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&laquo;</span>
+                        </li>
+                    <% } %>
+
                     <% for(let i = 1; i <= totalPages; i++) { %>
                         <li class="page-item <%= currentPage == i ? 'active' : '' %>">
                             <a class="page-link" href="/blog?page=<%= i %>&keyword=<%= typeof keyword !== 'undefined' ? keyword : '' %>"><%= i %></a>
+                        </li>
+                    <% } %>
+
+                    <% if (currentPage < totalPages) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="/blog?page=<%= currentPage + 1 %>&keyword=<%= typeof keyword !== 'undefined' ? keyword : '' %>" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    <% } else { %>
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&raquo;</span>
                         </li>
                     <% } %>
                 </ul>

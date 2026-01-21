@@ -1,0 +1,80 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý Slideshow</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Danh sách Slide</h6>
+                    <a href="/admin/slideshows/add" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Thêm Slide Mới
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Hình ảnh</th>
+                                    <th>Tiêu đề</th>
+                                    <th>Link đến</th>
+                                    <th>Thứ tự</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(slides && slides.length > 0) { %>
+                                    <% slides.forEach((slide, index) => { %>
+                                        <tr>
+                                            <td><%= index + 1 %></td>
+                                            <td>
+                                                <img src="<%= slide.image_url %>" alt="Slide" style="height: 50px; object-fit: cover; border-radius: 4px;">
+                                            </td>
+                                            <td>
+                                                <strong><%= slide.tieu_de || '---' %></strong><br>
+                                                <small class="text-muted"><%= slide.phu_de || '' %></small>
+                                            </td>
+                                            <td>
+                                                <a href="<%= slide.link_to %>" target="_blank"><%= slide.link_to || '---' %></a>
+                                            </td>
+                                            <td><%= slide.thu_tu_hien_thi %></td>
+                                            <td>
+                                                <% if(slide.trang_thai) { %>
+                                                    <span class="badge bg-success">Hiển thị</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary">Ẩn</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <a href="/admin/slideshows/edit/<%= slide.id %>" class="btn btn-warning btn-sm">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="/admin/slideshows/delete/<%= slide.id %>" 
+                                                   class="btn btn-danger btn-sm"
+                                                   onclick="return confirm('Bạn có chắc muốn xóa slide này?');">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" class="text-center">Chưa có slide nào.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

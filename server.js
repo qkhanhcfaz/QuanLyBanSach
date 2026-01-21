@@ -146,7 +146,7 @@ sequelize
     // await seedOrders();
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
-      console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/products`);
+      console.log(`🔧 Trang Admin: http://localhost:${PORT}/admin/`);
     });
   })
   .catch((err) => {

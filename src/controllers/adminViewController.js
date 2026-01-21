@@ -481,6 +481,51 @@ const renderPostFormPage = async (req, res) => {
   }
 };
 
+/**
+ * Render Danh sách Slideshow
+ */
+const renderAdminSlideshowsPage = async (req, res) => {
+  try {
+    const slides = await db.Slideshow.findAll({
+      order: [["thu_tu_hien_thi", "ASC"]],
+    });
+    res.render("admin/pages/slideshows", {
+      title: "Quản lý Slideshow",
+      user: req.user,
+      path: "/slideshows",
+      slides,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Lỗi tải danh sách slide");
+  }
+};
+
+/**
+ * Render Form Slideshow (Thêm/Sửa)
+ */
+const renderSlideshowFormPage = async (req, res) => {
+  try {
+    let slide = null;
+    let title = "Thêm Slide Mới";
+
+    if (req.params.id) {
+      slide = await db.Slideshow.findByPk(req.params.id);
+      title = "Chỉnh sửa Slide";
+    }
+
+    res.render("admin/pages/slideshow-form", {
+      title,
+      user: req.user,
+      path: "/slideshows",
+      slide,
+    });
+  } catch (error) {
+    console.error(error);
+    res.redirect("/admin/slideshows");
+  }
+};
+
 module.exports = {
   renderAdminPostsPage,
   renderPostFormPage,
@@ -502,4 +547,6 @@ module.exports = {
   renderOrderStatisticsPage,
   renderAdminReviewsPage,
   renderBestSellingStatisticsPage,
+  renderAdminSlideshowsPage,
+  renderSlideshowFormPage,
 };
