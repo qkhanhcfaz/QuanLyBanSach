@@ -8,7 +8,7 @@ const {
 } = require("../models");
 const { Op } = require("sequelize");
 const { sequelize } = require("../config/connectDB"); // <--- Thêm sequelize để dùng transaction
-const momoService = require("../services/momoService");
+
 const vnpayService = require("../services/vnpayService");
 
 /**
@@ -153,30 +153,9 @@ const createOrder = async (req, res) => {
     }
 
     await t.commit(); // Lưu thay đổi vào DB
-
     let payUrl = null;
-    if (phuong_thuc_thanh_toan === "momo") {
-      try {
-        // Tạo mã đơn hàng duy nhất cho MoMo (để tránh lỗi trùng ID khi test)
-        // Format: ORDER_[ID]_[TIMESTAMP]
-        const momoOrderId = `ORDER_${newOrder.id}_${new Date().getTime()}`;
 
-        const momoResponse = await momoService.createPaymentUrl({
-          orderId: momoOrderId,
-          amount: tong_thanh_toan,
-          orderInfo: `Thanh toan don hang #${newOrder.id} - BookZone`,
-        });
-
-        if (momoResponse && momoResponse.payUrl) {
-          payUrl = momoResponse.payUrl;
-        } else {
-          console.error("MoMo response missing payUrl:", momoResponse);
-        }
-      } catch (momoError) {
-        console.error("Lỗi tạo thanh toán MoMo:", momoError);
-        // Không fail đơn hàng, chỉ log lỗi (người dùng có thể thanh toán lại sau hoặc chọn COD)
-      }
-    } else if (phuong_thuc_thanh_toan === "vnpay") {
+    if (phuong_thuc_thanh_toan === "vnpay") {
       try {
         const vnpayUrl = await vnpayService.createPaymentUrl(req, {
           orderId: newOrder.id,
