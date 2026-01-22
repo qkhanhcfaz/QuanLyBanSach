@@ -9,6 +9,7 @@ const {
 const { Op } = require("sequelize");
 const { sequelize } = require("../config/connectDB"); // <--- Thêm sequelize để dùng transaction
 const momoService = require("../services/momoService");
+const vnpayService = require("../services/vnpayService");
 
 /**
  * Tạo đơn hàng mới (User)
@@ -174,6 +175,17 @@ const createOrder = async (req, res) => {
       } catch (momoError) {
         console.error("Lỗi tạo thanh toán MoMo:", momoError);
         // Không fail đơn hàng, chỉ log lỗi (người dùng có thể thanh toán lại sau hoặc chọn COD)
+      }
+    } else if (phuong_thuc_thanh_toan === "vnpay") {
+      try {
+        const vnpayUrl = await vnpayService.createPaymentUrl(req, {
+          orderId: newOrder.id,
+          amount: tong_thanh_toan,
+          orderInfo: `Thanh toan don hang #${newOrder.id}`,
+        });
+        payUrl = vnpayUrl;
+      } catch (error) {
+        console.error("Lỗi tạo thanh toán VNPay:", error);
       }
     }
 

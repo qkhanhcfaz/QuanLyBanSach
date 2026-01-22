@@ -45,6 +45,7 @@ const provinceRouter = require("./src/routes/provinceRouter");
 const favoriteRouter = require("./src/routes/favoriteRouter");
 const chatRouter = require("./src/routes/chatRouter");
 const contactRouter = require("./src/routes/contactRouter");
+const paymentRouter = require("./src/routes/paymentRouter");
 // const postRouter = require('./src/routes/postRouter'); -> Already declared above
 
 // --- 3. KHỞI TẠO APP ---
@@ -124,6 +125,7 @@ app.use("/api/provinces", provinceRouter);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/contacts", contactRouter);
+app.use("/api/payment", paymentRouter);
 
 // B. Admin Routes
 app.use("/admin", adminRouter);
