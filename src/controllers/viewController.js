@@ -1,7 +1,7 @@
 const { Op } = require('sequelize');
 const db = require('../models');
 
-const { Product, Category, Slideshow, Review, User, Favorite, Post } = db;
+const { sequelize, Product, Category, Slideshow, Review, User, Favorite, Post } = db;
 const { getMyFavoriteIds } = require('./favoriteController');
 
 // Configuration for model relationships
@@ -57,6 +57,8 @@ const renderProductListPage = async (req, res) => {
       page = 1,
       category,
       keyword,
+      minPrice,
+      maxPrice,
       sortBy = "createdAt",
       order = "DESC",
     } = req.query;
@@ -65,7 +67,20 @@ const renderProductListPage = async (req, res) => {
 
     let where = { trang_thai: true };
     if (category) where.danh_muc_id = category;
-    if (keyword) where.ten_sach = { [Op.iLike]: `%${keyword}%` };
+
+    if (keyword) {
+      where.ten_sach = sequelize.where(
+        sequelize.fn('unaccent', sequelize.col('ten_sach')),
+        { [Op.iLike]: sequelize.fn('unaccent', `%${keyword}%`) }
+      );
+    }
+
+    // Lọc theo giá
+    if (minPrice || maxPrice) {
+      where.gia_bia = {};
+      if (minPrice) where.gia_bia[Op.gte] = parseFloat(minPrice);
+      if (maxPrice) where.gia_bia[Op.lte] = parseFloat(maxPrice);
+    }
 
     const allCategories = await Category.findAll();
     let currentCategoryInfo = null;

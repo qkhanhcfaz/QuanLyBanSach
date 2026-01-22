@@ -97,8 +97,11 @@ const getAllProducts = async (request, response) => {
 
         // Lọc theo từ khóa (tìm kiếm tên sách)
         if (keyword) {
-            // Sử dụng Op.iLike để tìm kiếm không phân biệt hoa thường (chỉ hoạt động trên PostgreSQL)
-            whereCondition.ten_sach = { [Op.iLike]: `%${keyword}%` };
+            // Sử dụng Op.iLike kết hợp với unaccent để tìm kiếm không dấu không phân biệt hoa thường
+            whereCondition.ten_sach = sequelize.where(
+                sequelize.fn('unaccent', sequelize.col('ten_sach')),
+                { [Op.iLike]: sequelize.fn('unaccent', `%${keyword}%`) }
+            );
         }
 
         // Lọc theo danh mục

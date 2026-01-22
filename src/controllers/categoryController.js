@@ -1,10 +1,26 @@
-const { Category } = require("../models");
+const { Category, Product, sequelize } = require("../models");
 
 // GET /api/categories
 const getAllCategories = async (req, res) => {
   try {
     const categories = await Category.findAll({
-      attributes: ["id", "ten_danh_muc", "mo_ta", "danh_muc_cha_id"], // Removed "img"
+      attributes: [
+        "id",
+        "ten_danh_muc",
+        "mo_ta",
+        "danh_muc_cha_id",
+        [sequelize.fn("COUNT", sequelize.col("products.id")), "productCount"],
+      ],
+      include: [
+        {
+          model: Product,
+          as: "products",
+          attributes: [],
+          where: { trang_thai: true },
+          required: false, // LEFT JOIN to include categories with 0 products
+        },
+      ],
+      group: ["Category.id"],
       order: [["id", "ASC"]],
     });
 
@@ -80,14 +96,34 @@ const deleteCategory = async (req, res) => {
     const category = await Category.findByPk(id);
 
     if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+      return res.status(404).json({ message: "Không tìm thấy danh mục" });
+    }
+
+    // Check for child categories
+    const childCount = await Category.count({ where: { danh_muc_cha_id: id } });
+    if (childCount > 0) {
+      return res.status(400).json({
+        message: `Không thể xóa danh mục này vì có ${childCount} danh mục con.`
+      });
+    }
+
+    // Check for associated products
+    const productCount = await Product.count({ where: { danh_muc_id: id } });
+    if (productCount > 0) {
+      return res.status(400).json({
+        message: `Không thể xóa danh mục này vì có ${productCount} sản phẩm.`
+      });
     }
 
     await category.destroy();
-    res.json({ message: "Category deleted successfully" });
+    res.json({ message: "Xóa danh mục thành công" });
+
   } catch (error) {
     console.error("Error deleting category:", error);
-    res.status(500).json({ message: "Server error" });
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+      return res.status(400).json({ message: "Không thể xóa danh mục đang có chứa sản phẩm hoặc danh mục con." });
+    }
+    res.status(500).json({ message: "Lỗi Server" });
   }
 };
 
