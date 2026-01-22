@@ -411,6 +411,29 @@ const cancelMyOrder = async (req, res) => {
   }
 };
 
+/**
+ * Xóa đơn hàng (Admin - Soft Delete)
+ * DELETE /api/orders/:id
+ */
+const deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Soft delete (do paranoid: true ở model)
+    await order.destroy();
+
+    res.json({ message: "Xóa đơn hàng thành công" });
+  } catch (error) {
+    console.error("Lỗi delete order:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa đơn hàng" });
+  }
+};
+
 module.exports = {
   updateOrderStatus,
   getAllOrders,
@@ -418,4 +441,5 @@ module.exports = {
   getOrderById,
   getMyOrders,
   cancelMyOrder,
+  deleteOrder,
 };

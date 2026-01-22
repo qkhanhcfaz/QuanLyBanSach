@@ -7,6 +7,7 @@ const {
   getOrderById,
   getMyOrders,
   cancelMyOrder,
+  deleteOrder,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
 
@@ -27,6 +28,9 @@ router.put("/:id/status", protect, admin, updateOrderStatus);
 
 // PUT /api/orders/:id/cancel - Khách hàng hủy đơn (User)
 router.put("/:id/cancel", protect, cancelMyOrder);
+
+// DELETE /api/orders/:id - Xóa đơn hàng (Admin)
+router.delete("/:id", protect, admin, deleteOrder);
 
 // Tạo đơn hàng mới (User)
 // POST /api/orders
