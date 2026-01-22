@@ -35,6 +35,9 @@ router.get('/products/:id', renderProductDetailPage);
 router.get('/categories/:id', (req, res) => {
     res.redirect(`/products?category=${req.params.id}`);
 });
+router.get('/promotions', (req, res) => {
+    res.redirect('/products');
+});
 router.get('/blog', renderBlogPage);       // <--- Blog List
 router.get('/blog/:id', renderBlogDetailPage); // <--- Blog Detail
 router.get('/login', renderLoginPage);
