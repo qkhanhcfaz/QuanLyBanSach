@@ -486,6 +486,29 @@ const reorder = async (req, res) => {
   }
 };
 
+/**
+ * Xóa mềm đơn hàng (Admin)
+ * DELETE /api/orders/:id
+ */
+const deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Xóa mềm (vì model đã set paranoid: true)
+    await order.destroy();
+
+    res.json({ message: "Xóa đơn hàng thành công" });
+  } catch (error) {
+    console.error("Lỗi delete order:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa đơn hàng" });
+  }
+};
+
 module.exports = {
   updateOrderStatus,
   getAllOrders,
@@ -494,4 +517,5 @@ module.exports = {
   getMyOrders,
   cancelOrder,
   reorder,
+  deleteOrder, // <--- Export hàm mới
 };

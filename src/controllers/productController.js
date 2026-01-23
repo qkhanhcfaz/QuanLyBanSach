@@ -16,24 +16,24 @@ const excel = require('exceljs');
 const createProduct = async (request, response) => {
     try {
         // BƯỚC 1: LẤY DỮ LIỆU TỪ FORM (req.body) VÀ FILE (req.file)
-        // Middleware `multer` đã xử lý form multipart và điền dữ liệu vào req.body và req.file
         const {
-            ten_sach,
-            danh_muc_id,
-            tac_gia,
-            mo_ta_ngan,
-            gia_bia,
-            so_luong_ton_kho,
-            nha_xuat_ban,
-            nam_xuat_ban,
-            so_trang,
-            product_type,
-            ebook_url
+            ten_sach, danh_muc_id, tac_gia, mo_ta_ngan,
+            product_type, ebook_url
         } = request.body;
 
+        // Xử lý dữ liệu số (loại bỏ dấu phẩy nếu có và chuyển về số)
+        const rawGiaBia = request.body.gia_bia ? request.body.gia_bia.toString().replace(/,/g, '') : "0";
+        const gia_bia = parseFloat(rawGiaBia);
+
+        const so_luong_ton_kho = parseInt(request.body.so_luong_ton_kho) || 0;
+        const nam_xuat_ban = request.body.nam_xuat_ban ? parseInt(request.body.nam_xuat_ban) : null;
+        const so_trang = request.body.so_trang ? parseInt(request.body.so_trang) : null;
+        const nha_xuat_ban = request.body.nha_xuat_ban || null;
+
+
         // BƯỚC 2: KIỂM TRA CÁC TRƯỜNG BẮT BUỘC
-        if (!ten_sach || !gia_bia || !danh_muc_id) {
-            return response.status(400).json({ message: "Tên sách, Giá bìa, và Danh mục là bắt buộc." });
+        if (!ten_sach || isNaN(gia_bia) || !danh_muc_id) {
+            return response.status(400).json({ message: "Tên sách, Giá bìa hợp lệ, và Danh mục là bắt buộc." });
         }
 
         // BƯỚC 3: XỬ LÝ FILE ẢNH
@@ -42,7 +42,7 @@ const createProduct = async (request, response) => {
             imageUrl = `/images/${request.file.filename}`;
         }
 
-        // BƯỚC 4: TẠO SẢN PHẨM MỚI (MỘT LẦN DUY NHẤT)
+        // BƯỚC 4: TẠO SẢN PHẨM MỚI
         const newProduct = await Product.create({
             ten_sach,
             mo_ta_ngan,
@@ -53,10 +53,9 @@ const createProduct = async (request, response) => {
             img: imageUrl,
             product_type,
             ebook_url,
-            // Xử lý các trường số để tránh lỗi 'invalid input'
-            so_luong_ton_kho: so_luong_ton_kho || 0,
-            nam_xuat_ban: nam_xuat_ban || null,
-            so_trang: so_trang || null,
+            so_luong_ton_kho,
+            nam_xuat_ban,
+            so_trang,
         });
 
         // BƯỚC 5: TRẢ VỀ KẾT QUẢ THÀNH CÔNG
@@ -76,7 +75,7 @@ const createProduct = async (request, response) => {
 
         // Xử lý các lỗi khác
         response.status(500).json({
-            message: "Lỗi server khi tạo sản phẩm.",
+            message: "Lỗi server khi tạo sản phẩm: " + error.message,
             error: error.message
         });
     }

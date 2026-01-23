@@ -8,6 +8,7 @@ const {
   getMyOrders,
   cancelOrder,
   reorder,
+  deleteOrder,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middlewares/authMiddleware");
 
@@ -28,6 +29,9 @@ router.post("/:id/cancel", protect, cancelOrder);
 
 // POST /api/orders/:id/reorder - Mua lại đơn hàng (Owner)
 router.post("/:id/reorder", protect, reorder);
+
+// DELETE /api/orders/:id - Xóa mềm đơn hàng (Chỉ Admin)
+router.delete("/:id", protect, admin, deleteOrder);
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Chỉ Admin)
 router.put("/:id/status", protect, admin, updateOrderStatus);
